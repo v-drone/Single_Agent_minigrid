@@ -1,5 +1,5 @@
 from gym_minigrid.minigrid import *
-from gym_minigrid.register import register
+import random
 
 
 class LavaGapEnv(MiniGridEnv):
@@ -8,8 +8,9 @@ class LavaGapEnv(MiniGridEnv):
     This environment is similar to LavaCrossing but simpler in structure.
     """
 
-    def __init__(self, size, obstacle_type=Lava, seed=None):
+    def __init__(self, size, obstacle_type=Lava):
         self.obstacle_type = obstacle_type
+        self.size = size
         super().__init__(
             grid_size=size,
             max_steps=4 * size * size,
@@ -19,6 +20,12 @@ class LavaGapEnv(MiniGridEnv):
         )
 
     def _gen_grid(self, width, height):
+        if random.randint(0, 1) != 0:
+            self.agent_pos = (1, random.randint(1, self.size - 2))
+            self.goal_pos = (self.size - 2, random.randint(1, self.size - 2))
+        else:
+            self.agent_pos = (self.size - 2, random.randint(1, self.size - 2))
+            self.goal_pos = (1, random.randint(1, self.size - 2))
         assert width >= 5 and height >= 5
 
         # Create an empty grid
@@ -28,58 +35,22 @@ class LavaGapEnv(MiniGridEnv):
         self.grid.wall_rect(0, 0, width, height)
 
         # Place the agent in the top-left corner
-        self.agent_pos = (1, 1)
         self.agent_dir = 0
 
         # Place a goal square in the bottom-right corner
-        self.goal_pos = np.array((width - 2, height - 2))
         self.put_obj(Goal(), *self.goal_pos)
 
         # Generate and store random gap position
-        self.gap_pos = np.array((
-            self._rand_int(2, width - 2),
-            self._rand_int(1, height - 1),
-        ))
-
         # Place the obstacle wall
-        self.grid.vert_wall(self.gap_pos[0], 1, height - 2, self.obstacle_type)
-
-        # Put a hole in the wall
-        self.grid.set(*self.gap_pos, None)
+        samples = set(random.sample(range(2, width - 2), random.randint(1, width // 2)))
+        for i in samples:
+            self.grid.vert_wall(i, 1, height - 2, self.obstacle_type)
+            # Put a hole in the wall
+            for j in set(random.sample(range(2, height - 2), random.randint(1, height // 1.5))):
+                self.grid.set(i, random.randint(1, height - 2), None)
 
         self.mission = (
             "avoid the lava and get to the green goal square"
             if self.obstacle_type == Lava
             else "find the opening and get to the green goal square"
         )
-
-
-class LavaGapS5Env(LavaGapEnv):
-    def __init__(self):
-        super().__init__(size=5)
-
-
-class LavaGapS6Env(LavaGapEnv):
-    def __init__(self):
-        super().__init__(size=6)
-
-
-class LavaGapS7Env(LavaGapEnv):
-    def __init__(self):
-        super().__init__(size=7)
-
-
-register(
-    id='MiniGrid-LavaGapS5-v0',
-    entry_point='gym_minigrid.envs:LavaGapS5Env'
-)
-
-register(
-    id='MiniGrid-LavaGapS6-v0',
-    entry_point='gym_minigrid.envs:LavaGapS6Env'
-)
-
-register(
-    id='MiniGrid-LavaGapS7-v0',
-    entry_point='gym_minigrid.envs:LavaGapS7Env'
-)

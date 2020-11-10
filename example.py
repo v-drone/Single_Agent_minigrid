@@ -1,3 +1,3 @@
-from environments import SimpleEnv
+from environments.SimpleEnv import SimpleEnv
 
 env = SimpleEnv()

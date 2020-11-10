@@ -1,5 +1,5 @@
 from gym_minigrid.minigrid import *
-from gym_minigrid.register import register
+import random
 
 
 class DistShiftEnv(MiniGridEnv):
@@ -10,15 +10,17 @@ class DistShiftEnv(MiniGridEnv):
     def __init__(
             self,
             width=9,
-            height=7,
-            agent_start_pos=(1, 1),
+            height=6,
             agent_start_dir=0,
-            strip2_row=2
     ):
-        self.agent_start_pos = agent_start_pos
+
         self.agent_start_dir = agent_start_dir
-        self.goal_pos = (width - 2, 1)
-        self.strip2_row = strip2_row
+        if random.randint(0, 1) != 0:
+            self.agent_start_pos = (1, random.randint(1, height - 2))
+            self.goal_pos = (width - 2, random.randint(1, height - 2))
+        else:
+            self.agent_start_pos = (width - 2, random.randint(1, height - 2))
+            self.goal_pos = (1, random.randint(1, height - 2))
 
         super().__init__(
             width=width,
@@ -39,9 +41,10 @@ class DistShiftEnv(MiniGridEnv):
         self.put_obj(Goal(), *self.goal_pos)
 
         # Place the lava rows
-        for i in range(self.width - 6):
-            self.grid.set(3 + i, 1, Lava())
-            self.grid.set(3 + i, self.strip2_row, Lava())
+        for i in range(self.width - 5):
+            samples = set(random.sample(range(1, self.height - 1), random.randint(1, self.height // 3)))
+            for s in samples:
+                self.grid.set(2 + i, s, Lava())
 
         # Place the agent
         if self.agent_start_pos is not None:
@@ -51,24 +54,3 @@ class DistShiftEnv(MiniGridEnv):
             self.place_agent()
 
         self.mission = "get to the green goal square"
-
-
-class DistShift1(DistShiftEnv):
-    def __init__(self):
-        super().__init__(strip2_row=2)
-
-
-class DistShift2(DistShiftEnv):
-    def __init__(self):
-        super().__init__(strip2_row=5)
-
-
-register(
-    id='MiniGrid-DistShift1-v0',
-    entry_point='gym_minigrid.envs:DistShift1'
-)
-
-register(
-    id='MiniGrid-DistShift2-v0',
-    entry_point='gym_minigrid.envs:DistShift2'
-)
