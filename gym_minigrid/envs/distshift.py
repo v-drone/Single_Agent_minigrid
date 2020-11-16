@@ -1,4 +1,5 @@
-from gym_minigrid.minigrid import *
+from gym_minigrid.minigrid import MiniGridEnv, Grid, Goal
+from gym_minigrid.super_lava import Lava
 import random
 
 
@@ -40,7 +41,7 @@ class DistShiftEnv(MiniGridEnv):
         # Place a goal square in the bottom-right corner
         self.put_obj(Goal(), *self.goal_pos)
 
-        # Place the lava rows
+        # Place the Wall rows
         for i in range(self.width - 5):
             samples = set(random.sample(range(1, self.height - 1), random.randint(1, self.height // 3)))
             for s in samples:

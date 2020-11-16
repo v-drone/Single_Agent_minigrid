@@ -1,4 +1,5 @@
-from gym_minigrid.minigrid import *
+from gym_minigrid.minigrid import MiniGridEnv, Grid, Goal
+from gym_minigrid.super_lava import Lava
 import random
 
 

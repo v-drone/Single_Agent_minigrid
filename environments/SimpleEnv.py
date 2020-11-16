@@ -1,4 +1,6 @@
 import random
+import numpy as np
+from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
 from gym_minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
@@ -16,6 +18,10 @@ class SimpleEnv(object):
         self.window.show(True)
 
     def step(self, action):
+        # Turn left, turn right, move forward
+        # left = 0
+        # right = 1
+        # forward = 2
         obs, reward, done, info = self.env.step(action)
         print('step=%s, reward=%.2f' % (self.env.step_count, reward))
         if done:
@@ -45,13 +51,6 @@ class SimpleEnv(object):
         if event.key == ' ':
             self.step(self.env.actions.toggle)
             return
-        if event.key == 'pageup':
-            self.step(self.env.actions.pickup)
-            return
-        if event.key == 'pagedown':
-            self.step(self.env.actions.drop)
-            return
-
         if event.key == 'enter':
             self.step(self.env.actions.done)
             return
@@ -67,7 +66,7 @@ class SimpleEnv(object):
         :return:
         """
         size = random.randint(10, 15)
-        if random.randint(1, 2) >= 1:
+        if random.randint(1, 2) > 1:
             self.env = LavaGapEnv(size)
         else:
             self.env = DistShiftEnv(width=size, height=size)
@@ -78,32 +77,19 @@ class SimpleEnv(object):
         self.redraw()
 
     def state(self):
-        raise NotImplementedError
-
-    def collision_checking(self):
-        raise NotImplementedError
-
-    def go_forward(self):
-        """
-        forward d unit
-        :return:
-        """
-        raise NotImplementedError
-
-    def get_attitude(self):
-        """
-        get yaw state of drones
-        :return:
-        """
-        raise NotImplementedError
-
-    def turn(self, angle):
-        """
-        turn angle degree
-        :param angle: float
-        :return:
-        """
-        raise NotImplementedError
+        grid, vis_mask = self.env.gen_obs_grid()
+        agent = np.array([self.env.agent_pos[0], self.env.agent_pos[1], self.env.agent_dir])
+        view = to_numpy(grid, [3, 6, self.env.agent_dir], vis_mask)[::-1]
+        view = np.flip(view[::-1], 1)
+        whole_map = to_numpy(self.env.grid, agent, None).T
+        goal = np.array(self.env.goal_pos)
+        relative_position = agent[0:2] - goal
+        data = {
+            "agent_view": view,
+            "whole_map": whole_map,
+            "relative_position": relative_position,
+        }
+        return data
 
 
 if __name__ == '__main__':
