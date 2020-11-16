@@ -88,6 +88,7 @@ class SimpleEnv(object):
             "agent_view": view,
             "whole_map": whole_map,
             "relative_position": relative_position,
+            "attitude": self.env.agent_dir
         }
         return data
 
