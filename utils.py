@@ -38,3 +38,16 @@ def to_numpy(grid, agent=None, vis_mask=None):
                 else:
                     map_img[i, j] = object_map[v.type]
     return map_img
+
+
+def get_pad(src, size=15):
+    _ = np.array([size, size]) - src.shape
+    first_half = np.array(_ / 2).astype(int)
+    second_half = _ - first_half
+    return np.pad(src, ((first_half[0], second_half[0]), (first_half[1], second_half[1])), mode="constant")
+
+
+def translate_state(state):
+    agent_view = get_pad(state["agent_view"])
+    whole_map = get_pad(state["whole_map"])
+    return np.array([agent_view, whole_map, state["relative_position"], state["attitude"]])

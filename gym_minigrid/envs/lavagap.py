@@ -43,12 +43,23 @@ class LavaGapEnv(MiniGridEnv):
 
         # Generate and store random gap position
         # Place the obstacle wall
-        samples = set(random.sample(range(2, width - 2), random.randint(1, width // 2)))
-        for i in samples:
+        walls = []
+        s = 0
+        for each in range(2, width - 2):
+            if s == 0:
+                if random.randint(0, 100) >= 20:
+                    s = 1
+                    walls.append(each)
+            else:
+                s = 0
+        for i in walls:
+            # Set wall
             self.grid.vert_wall(i, 1, height - 2, self.obstacle_type)
             # Put a hole in the wall
-            for j in set(random.sample(range(2, height - 2), random.randint(1, height // 1.5))):
-                self.grid.set(i, random.randint(1, height - 2), None)
+            _samples = set(range(2, height - 2))
+            _samples = random.sample(_samples, random.randint(3, len(_samples) // 2))
+            for j in set(_samples):
+                self.grid.set(i, j, None)
 
         self.mission = (
             "avoid the lava and get to the green goal square"

@@ -42,10 +42,12 @@ class DistShiftEnv(MiniGridEnv):
         self.put_obj(Goal(), *self.goal_pos)
 
         # Place the Wall rows
-        for i in range(self.width - 5):
-            samples = set(random.sample(range(1, self.height - 1), random.randint(1, self.height // 3)))
-            for s in samples:
-                self.grid.set(2 + i, s, Lava())
+        all_wall = []
+        for i in range(2, self.width - 3):
+            for j in set(random.sample(range(1, self.height - 1), random.randint(1, self.height // 3))):
+                all_wall.append((i, j))
+        for i in all_wall:
+            self.grid.set(i[0], i[1], Lava())
 
         # Place the agent
         if self.agent_start_pos is not None:

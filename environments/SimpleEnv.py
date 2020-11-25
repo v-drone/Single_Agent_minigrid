@@ -5,6 +5,7 @@ from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
 from gym_minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
 from gym_minigrid.window import Window
+from algorithm.reward_function import reward_function
 
 
 class SimpleEnv(object):
@@ -12,24 +13,28 @@ class SimpleEnv(object):
         super().__init__()
         self.display = display
         self.env = None
-        self.window = Window('GYM_MiniGrid')
-        self.window.reg_key_handler(self.key_handler)
+        if self.display:
+            self.window = Window('GYM_MiniGrid')
+            self.window.reg_key_handler(self.key_handler)
+            self.window.show(True)
         self.reset_env()
-        self.window.show(True)
 
     def step(self, action):
         # Turn left, turn right, move forward
         # left = 0
         # right = 1
         # forward = 2
-        obs, reward, done, info = self.env.step(action)
-        print('step=%s, reward=%.2f' % (self.env.step_count, reward))
+        old = self.state()
+        obs, reward_get, done, info = self.env.step(action)
+        new = self.state()
+        print('step=%s, reward=%.2f' % (self.env.step_count, reward_get))
         if done:
             print('done!')
             self.reset_env()
         else:
             if self.display is True:
                 self.redraw()
+        return old, new, reward_function(old, new, reward_get)
 
     def key_handler(self, event):
         print('pressed', event.key)
@@ -74,7 +79,7 @@ class SimpleEnv(object):
         if self.display:
             self.env = RGBImgPartialObsWrapper(self.env)
             self.env = ImgObsWrapper(self.env)
-        self.redraw()
+            self.redraw()
 
     def state(self):
         grid, vis_mask = self.env.gen_obs_grid()
