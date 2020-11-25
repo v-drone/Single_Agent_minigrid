@@ -29,3 +29,25 @@ class Stack(nn.Block):
         all_features.append(agent_view)
         all_features.append(whole_map)
         return self.decision_making(nd.concat(*all_features))
+
+
+class SimpleStack(nn.Block):
+    def __init__(self):
+        """
+        MLP in mxnet with input by Lidar and Distance sensor
+        """
+        super(SimpleStack, self).__init__()
+        with self.name_scope():
+            self.decision_making = nn.Sequential()
+            self.decision_making.add(nn.Dense(256, activation="relu"))
+            self.decision_making.add(nn.BatchNorm())
+            self.decision_making.add(nn.Dense(128, activation="relu"))
+            self.decision_making.add(nn.BatchNorm())
+            self.decision_making.add(nn.Dense(64, activation="relu"))
+            self.decision_making.add(nn.BatchNorm())
+            self.decision_making.add(nn.Dense(12, activation="relu"))
+            self.decision_making.add(nn.BatchNorm())
+            self.decision_making.add(nn.Dense(3, activation="relu"))
+
+    def forward(self, income, *args):
+        return self.decision_making(income)
