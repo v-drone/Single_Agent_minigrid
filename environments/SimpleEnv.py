@@ -75,9 +75,6 @@ class SimpleEnv(object):
         self.env.reset()
         if self.display and self.window:
             self.window.close()
-            # self.window = Window('GYM_MiniGrid')
-            # self.window.reg_key_handler(self.key_handler)
-            # self.window.show(True)
 
     def state(self):
         grid, vis_mask = self.env.gen_obs_grid()

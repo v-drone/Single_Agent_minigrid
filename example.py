@@ -1,5 +1,6 @@
 import os
 import pickle
+import numpy as np
 import mxnet as mx
 from model import Stack
 from utils import check_dir
@@ -23,7 +24,7 @@ else:
     offline_model.collect_params().initialize(ctx=ctx)
     print("create model")
 
-env = SimpleEnv(display=True)
+env = SimpleEnv(display=False)
 env.reset_env()
 # create pool
 memory_pool = Memory(memory_length)
@@ -35,7 +36,7 @@ while True:
         env.reset_env()
         finish = 0
     else:
-        action = algorithm.get_action(env.state(), 0.15)
+        action = algorithm.get_action(env.state(), np.maximum(1 - all_step_counter / annealing_end, epsilon_min))
         old, new, reward, finish = env.step(action[0])
         memory_pool.add(old, new, action[0], sum(reward), finish)
         all_step_counter += 1
