@@ -9,49 +9,15 @@ from model import Stack
 from datetime import datetime
 import time
 
-# learning rate
-model_save = "./model_save/"
-lr = 0.005
-# gamma in q-loss calculation
-gamma = 0.9
-# memory pool size
-memory_length = 100000
-# each goal repeat number
-replace_target_iter = 100
-# maximum step avoid
-step_limit = 50
-# file to save train log
-result_saver = "./test_{}".format(str(time.time()))
-# the number of step it take to linearly anneal the epsilon to it min value
-annealing_end = 100
-# min level of stochasticity of policy (epsilon)-greedy
-epsilon_min = 0.15
-# temporary files
-temporary_model = "./{}/model.params".format(model_save)
-temporary_pool = "./{}/pool".format(model_save)
 ctx = mx.cpu(0)
-
-# create required path
-for i in ["model_save", "data_save"]:
-    if not os.path.exists("./{}/".format(i)):
-        os.mkdir("./{}/".format(i))
 
 # build models
 online_model = Stack()
 offline_model = Stack()
-if os.path.exists(temporary_model):
-    online_model.load_parameters(temporary_model, ctx=ctx)
-    offline_model.load_parameters(temporary_model, ctx=ctx)
-    print("load model")
-else:
-    online_model.collect_params().initialize(ctx=ctx)
-    offline_model.collect_params().initialize(ctx=ctx)
-    print("create model")
 
 # read from database
 memory_pool = Memory(memory_length)
-print("reading database")
-data = read(memory_length)
+
 memory_pool.memory = data
 print("overwrite memory with length ", len(memory_pool.memory))
 

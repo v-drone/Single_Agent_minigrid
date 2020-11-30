@@ -13,11 +13,12 @@ class SimpleEnv(object):
         super().__init__()
         self.display = display
         self.env = None
+        self.window = None
+        self.reset_env()
         if self.display:
             self.window = Window('GYM_MiniGrid')
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
-        self.reset_env()
 
     def step(self, action):
         # Turn left, turn right, move forward
@@ -31,10 +32,12 @@ class SimpleEnv(object):
         if done:
             print('done!')
             self.reset_env()
+            finish = 1
         else:
             if self.display is True:
                 self.redraw()
-        return old, new, reward_function(old, new, reward_get)
+            finish = 0
+        return old, new, reward_function(old, new, reward_get), finish
 
     def key_handler(self, event):
         print('pressed', event.key)
@@ -45,25 +48,19 @@ class SimpleEnv(object):
             self.reset_env()
             return
         if event.key == 'left':
-            self.step(self.env.actions.left)
+            self.step(0)
             return
         if event.key == 'right':
-            self.step(self.env.actions.right)
+            self.step(1)
             return
         if event.key == 'up':
-            self.step(self.env.actions.forward)
-            return
-        if event.key == ' ':
-            self.step(self.env.actions.toggle)
-            return
-        if event.key == 'enter':
-            self.step(self.env.actions.done)
+            self.step(2)
             return
 
     def redraw(self):
         if self.window is not None:
-            img = self.env.render('rgb_array', tile_size=32)
-            self.window.show_img(img)
+            self.env.render('human')
+            # self.window.show_img(img)
 
     def reset_env(self):
         """
@@ -76,10 +73,11 @@ class SimpleEnv(object):
         else:
             self.env = DistShiftEnv(width=size, height=size)
         self.env.reset()
-        if self.display:
-            self.env = RGBImgPartialObsWrapper(self.env)
-            self.env = ImgObsWrapper(self.env)
-            self.redraw()
+        if self.display and self.window:
+            self.window.close()
+            # self.window = Window('GYM_MiniGrid')
+            # self.window.reg_key_handler(self.key_handler)
+            # self.window.show(True)
 
     def state(self):
         grid, vis_mask = self.env.gen_obs_grid()
@@ -95,6 +93,7 @@ class SimpleEnv(object):
             "relative_position": relative_position,
             "attitude": self.env.agent_dir
         }
+        # self.redraw()
         return data
 
 

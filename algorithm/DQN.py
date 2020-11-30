@@ -6,7 +6,7 @@ from utils import translate_state
 
 
 class DQN(object):
-    def __init__(self, models, ctx, lr, gamma, pool):
+    def __init__(self, models, ctx, lr, gamma, pool, action_max, temporary_model):
         """
         mxnet DQN algorithm train case
         :param models: two model
@@ -16,6 +16,8 @@ class DQN(object):
         learning rate
         :param gamma float
         """
+        self.action_max = action_max
+        self.temporary_model = temporary_model
         self.batch_size = 2048
         self.training_counter = 0
         self.lr = lr
@@ -28,16 +30,22 @@ class DQN(object):
         self.ctx = ctx
         self.loss_func = gluon.loss.HuberLoss(batch_axis=0)
 
+    def reload(self):
+        self.offline.save_parameters(self.temporary_model)
+        self.online.load_parameters(self.temporary_model, self.ctx)
+
     def get_action(self, state, poss):
         # epsilon greedy policy
         # with probability select a random action
         # execute action at in emulator and observe reward rt and location xt+1
         if np.random.random() < poss:
             by = "Random"
-            action = np.random.randint(1, 2)
+            action = np.random.randint(0, self.action_max)
         else:
             by = "Model"
-            action = self.offline(state[0], state[1], state[2], state[3], ctx=self.ctx)
+            state = nd.array([translate_state(state)])
+            state = state.as_in_context(self.ctx)
+            action = self.offline(state)
             action = int(nd.argmax(action, axis=1).asnumpy()[0])
         return action, by
 

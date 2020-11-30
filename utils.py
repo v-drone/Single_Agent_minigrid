@@ -1,4 +1,12 @@
+import os
 import numpy as np
+from mxnet import nd
+
+
+def check_dir(i):
+    # create required path
+    if not os.path.exists("./{}/".format(i)):
+        os.mkdir("./{}/".format(i))
 
 
 def to_numpy(grid, agent=None, vis_mask=None):
@@ -50,4 +58,4 @@ def get_pad(src, size=15):
 def translate_state(state):
     agent_view = get_pad(state["agent_view"])
     whole_map = get_pad(state["whole_map"])
-    return np.array([agent_view, whole_map, state["relative_position"], state["attitude"]])
+    return np.concatenate([agent_view.flatten(), whole_map.flatten(), state["relative_position"], [state["attitude"]]])

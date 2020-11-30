@@ -1,21 +1,50 @@
-from environments.SimpleEnv import SimpleEnv
+import os
+import pickle
 import mxnet as mx
 from model import Stack
-from utils import translate_state
-from mxnet import nd
-import numpy as np
+from utils import check_dir
+from memory import Memory
+from config import *
+from algorithm.DQN import DQN
+from environments.SimpleEnv import SimpleEnv
 
-env = SimpleEnv(display=False)
+ctx = mx.gpu()
+for i in ["model_save", "data_save"]:
+    check_dir(i)
+# build models
+online_model = Stack()
+offline_model = Stack()
+if os.path.exists(temporary_model):
+    online_model.load_parameters(temporary_model, ctx=ctx)
+    offline_model.load_parameters(temporary_model, ctx=ctx)
+    print("load model")
+else:
+    online_model.collect_params().initialize(ctx=ctx)
+    offline_model.collect_params().initialize(ctx=ctx)
+    print("create model")
+
+env = SimpleEnv(display=True)
 env.reset_env()
-state = translate_state(env.state())
-agent_in = nd.array(np.array([state[0], state[0]]))
-agent_in = nd.expand_dims(agent_in, 1)
-whole_in = nd.array(np.array([state[1], state[1]]))
-whole_in = nd.expand_dims(whole_in, 1)
-location = nd.array(np.array([state[2], state[2]]))
-attitude = nd.array(np.array([state[3], state[3]]))
-attitude = nd.expand_dims(attitude, 1)
-income = nd.concat(*[agent_in.flatten(), whole_in.flatten(), location.flatten(), attitude.flatten()])
-stack = Stack()
-stack.collect_params().initialize(ctx=mx.cpu())
-x = stack(income)
+# create pool
+memory_pool = Memory(memory_length)
+algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model)
+finish = 0
+all_step_counter = 0
+while True:
+    if finish:
+        env.reset_env()
+        finish = 0
+    else:
+        action = algorithm.get_action(env.state(), 0.15)
+        old, new, reward, finish = env.step(action[0])
+        memory_pool.add(old, new, action[0], sum(reward), finish)
+        all_step_counter += 1
+    #  train 5 step once
+    if all_step_counter % 5 == 0:
+        algorithm.train()
+    # save model and replace online model each 20 steps
+    if all_step_counter % 20 == 0:
+        algorithm.reload()
+        if all_step_counter % 500 == 0:
+            with open(temporary_pool, "wb") as f:
+                pickle.dump(memory_pool, f)

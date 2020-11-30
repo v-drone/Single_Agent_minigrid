@@ -3,16 +3,22 @@ from utils import translate_state
 
 
 class Memory(object):
-    def __init__(self, memory_length=2048):
+    def __init__(self, memory_length=2048, memory=None):
         """
         dataset in mxnet case
         :param memory_length: int
         memory_length
         memory_size of ('state', 'action', 'next_state', 'reward','finish')
         """
+        if memory is None:
+            memory = []
         self.memory_length = memory_length
-        self.memory = []
-        self.index = 0
+        self.memory = memory
+
+    def add(self, old, new, action, reward, finish):
+        self.memory.append(
+            {"state": old, "state_next": new, "action": action, "reward": reward, "finish": finish}
+        )
 
     def next_batch(self, bz):
         result = {
@@ -24,6 +30,16 @@ class Memory(object):
         }
         index = np.random.choice(len(self.memory), bz)
         _ = [self.memory[i] for i in index]
-        import pdb
-        pdb.set_trace()
+
+        for i in _:
+            result["state"].extend(translate_state(i["state"]))
+            result["state_next"].extend(translate_state(i["state"]))
+            result["action"].extend(np.array([i["action"]]))
+            result["finish"].extend(np.array([i["finish"]]))
+            result["reward"].extend(np.array([i["reward"]]))
+        result["state"] = np.array(result["state"]).reshape((bz, -1))
+        result["state_next"] = np.array(result["state_next"]).reshape((bz, -1))
+        result["action"] = np.array(result["action"])
+        result["finish"] = np.array(result["finish"])
+        result["reward"] = np.array(result["reward"])
         return result
