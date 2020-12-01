@@ -2,13 +2,12 @@ import os
 import pickle
 import numpy as np
 import mxnet as mx
-from model import Stack
+from model import Stack, SimpleStack
 from utils import check_dir
 from memory import Memory
 from config import *
 from algorithm.DQN import DQN
 from environments.SimpleEnv import SimpleEnv
-
 ctx = mx.gpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)

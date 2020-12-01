@@ -19,5 +19,5 @@ annealing_end = 100
 # min level of stochastically of policy (epsilon)-greedy
 epsilon_min = 0.15
 # temporary files
-temporary_model = "./{}/model.params".format(model_save)
+temporary_model = "./{}/model_with_cnn.params".format(model_save)
 temporary_pool = "./{}/pool".format(model_save)

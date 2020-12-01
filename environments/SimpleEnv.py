@@ -3,7 +3,6 @@ import numpy as np
 from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
-from gym_minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
 from gym_minigrid.window import Window
 from algorithm.reward_function import reward_function
 
@@ -27,8 +26,16 @@ class SimpleEnv(object):
         # forward = 2
         old = self.state()
         obs, reward_get, done, info = self.env.step(action)
+        if done == 1 and reward_get == 0:
+            reward_get = -0.2
         new = self.state()
-        print('step=%s, reward=%.2f' % (self.env.step_count, reward_get))
+        reward_get = reward_function(old, new, reward_get, self.env.step_count)
+        _ = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
+        if sum(reward_get) > 0:
+            _ = _ + "      *"
+        elif sum(reward_get) > 1:
+            _ = _ + "      ***********"
+        print(_)
         if done:
             print('done!')
             self.reset_env()
@@ -37,7 +44,7 @@ class SimpleEnv(object):
             if self.display is True:
                 self.redraw()
             finish = 0
-        return old, new, reward_function(old, new, reward_get), finish
+        return old, new, reward_get, finish
 
     def key_handler(self, event):
         print('pressed', event.key)

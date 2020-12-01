@@ -18,7 +18,7 @@ class DQN(object):
         """
         self.action_max = action_max
         self.temporary_model = temporary_model
-        self.batch_size = 2048
+        self.batch_size = 1024
         self.training_counter = 0
         self.lr = lr
         self.gamma = gamma
