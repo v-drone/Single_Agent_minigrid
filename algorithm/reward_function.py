@@ -1,6 +1,3 @@
-import numpy as np
-
-
 def reward_function(old, new, basic_reward, step_count, same_position):
     """
     calculate reward
@@ -18,10 +15,10 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     v = 0.001
     distance_change = old["relative_position"] - new["relative_position"]
     # basic reward
-    distance_reward = 0
+    distance_reward = sum(distance_change) * c
     basic_reward = basic_reward * a
     step_discount = - v * same_position - v * step_count
-    if distance_reward == 0:
+    if distance_reward != 0:
         return [distance_reward, basic_reward]
     else:
         return [step_discount, basic_reward]
