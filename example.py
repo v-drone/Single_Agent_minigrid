@@ -39,12 +39,12 @@ while True:
         old, new, reward, finish = env.step(action[0])
         memory_pool.add(old, new, action[0], sum(reward), finish)
         all_step_counter += 1
-    #  train 5 step once
-    if all_step_counter % 5 == 0:
-        algorithm.train()
-    # save model and replace online model each 20 steps
+    #  train 20 step once
     if all_step_counter % 20 == 0:
+        algorithm.train()
+    # save model and replace online model each 100 steps
+    if all_step_counter % 100 == 0:
         algorithm.reload()
-        if all_step_counter % 500 == 0:
+        if all_step_counter % 10000 == 0:
             with open(temporary_pool, "wb") as f:
                 pickle.dump(memory_pool, f)

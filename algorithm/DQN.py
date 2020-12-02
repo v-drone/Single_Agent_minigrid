@@ -25,7 +25,7 @@ class DQN(object):
         self.dataset = pool
         self.online = models[0]
         self.offline = models[1]
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'adam', {'learning_rate': self.lr})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'sgd', {'learning_rate': self.lr})
         self.online.collect_params().zero_grad()
         self.ctx = ctx
         self.loss_func = gluon.loss.HuberLoss(batch_axis=0)

@@ -3,6 +3,7 @@ import numpy as np
 from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
+from gym_minigrid.envs.empty import EmptyEnv
 from gym_minigrid.window import Window
 from algorithm.reward_function import reward_function
 
@@ -18,6 +19,7 @@ class SimpleEnv(object):
             self.window = Window('GYM_MiniGrid')
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
+        self.same_position = 0
 
     def step(self, action):
         # Turn left, turn right, move forward
@@ -26,15 +28,22 @@ class SimpleEnv(object):
         # forward = 2
         old = self.state()
         obs, reward_get, done, info = self.env.step(action)
-        if done == 1 and reward_get == 0:
-            reward_get = -0.2
         new = self.state()
+        if done == 1 and reward_get == 0:
+            reward_get = -10
+        elif reward_get == 1:
+            reward_get = 50
+        if np.equal(old["relative_position"], new["relative_position"]).all():
+            reward_get = - 0.02 * self.same_position
+            self.same_position += 1
+        else:
+            self.same_position = 0
         reward_get = reward_function(old, new, reward_get, self.env.step_count)
         _ = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
-        if sum(reward_get) > 0:
-            _ = _ + "      *"
-        elif sum(reward_get) > 1:
+        if sum(reward_get) > 10:
             _ = _ + "      ***********"
+        elif sum(reward_get) > 0:
+            _ = _ + "      *"
         print(_)
         if done:
             print('done!')
@@ -74,11 +83,15 @@ class SimpleEnv(object):
         reset environment to the start point
         :return:
         """
-        size = random.randint(10, 15)
-        if random.randint(1, 2) > 1:
+        # size = random.randint(9, 15)
+        size = 10
+        _ = random.randint(-2, 2)
+        if _ > 1:
             self.env = LavaGapEnv(size)
-        else:
+        elif _ < -1:
             self.env = DistShiftEnv(width=size, height=size)
+        else:
+            self.env = EmptyEnv(width=size, height=size)
         self.env.reset()
         if self.display and self.window:
             self.window.close()
