@@ -30,15 +30,12 @@ class SimpleEnv(object):
         obs, reward_get, done, info = self.env.step(action)
         new = self.state()
         if done == 1 and reward_get == 0:
-            reward_get = -10
-        elif reward_get == 1:
-            reward_get = 50
+            reward_get = -0.1
         if np.equal(old["relative_position"], new["relative_position"]).all():
-            reward_get = - 0.02 * self.same_position
             self.same_position += 1
         else:
             self.same_position = 0
-        reward_get = reward_function(old, new, reward_get, self.env.step_count)
+        reward_get = reward_function(old, new, reward_get, self.env.step_count, self.same_position)
         _ = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
         if sum(reward_get) > 10:
             _ = _ + "      ***********"
