@@ -51,7 +51,7 @@ for epoch in range(5000):
             all_step_counter += 1
         if success_text is not None:
             with open("summary.txt", "a") as f:
-                f.writelines("\n".join(texts) + "\n")
+                f.writelines("\n".join(success_text) + "\n")
         #  train 100 step once
         if all_step_counter % 100 == 0:
             cost.append(algorithm.train())
