@@ -26,7 +26,7 @@ class DQN(object):
         self.dataset = pool
         self.online = models[0]
         self.offline = models[1]
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'RMSProp', {'learning_rate': lr, 'gamma1': 0.95, 'gamma2': 0.95, 'epsilon': 0.01, 'centered': True})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'sgd', {'learning_rate': lr, 'wd': 0.0001})
         self.online.collect_params().zero_grad()
         self.ctx = ctx
         self.loss_func = gluon.loss.L2Loss()
