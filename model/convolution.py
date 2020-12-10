@@ -1,5 +1,3 @@
-from abc import ABC
-
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.gluon import HybridBlock

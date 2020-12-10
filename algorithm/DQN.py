@@ -3,6 +3,7 @@ from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 from utils import translate_state
+import time
 
 
 class DQN(object):
@@ -18,17 +19,17 @@ class DQN(object):
         """
         self.action_max = action_max
         self.temporary_model = temporary_model
-        self.batch_size = 1024
+        self.batch_size = 512
         self.training_counter = 0
         self.lr = lr
         self.gamma = gamma
         self.dataset = pool
         self.online = models[0]
         self.offline = models[1]
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'sgd', {'learning_rate': self.lr})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'RMSProp', {'learning_rate': lr, 'gamma1': 0.95, 'gamma2': 0.95, 'epsilon': 0.01, 'centered': True})
         self.online.collect_params().zero_grad()
         self.ctx = ctx
-        self.loss_func = gluon.loss.HuberLoss(batch_axis=0)
+        self.loss_func = gluon.loss.L2Loss()
 
     def reload(self):
         self.offline.save_parameters(self.temporary_model)
@@ -37,7 +38,6 @@ class DQN(object):
     def get_action(self, state, poss):
         # epsilon greedy policy
         # with probability select a random action
-        # execute action at in emulator and observe reward rt and location xt+1
         if np.random.random() < poss:
             by = "Random"
             action = np.random.randint(0, self.action_max)
@@ -61,7 +61,8 @@ class DQN(object):
         batch_action = nd.array(for_train["action"], self.ctx).astype('uint8')
         batch_reward = nd.array(for_train["reward"], self.ctx)
         batch_finish = nd.array(for_train["finish"], self.ctx)
-        with autograd.record():
+
+        with autograd.record(train_mode=True):
             # non final
             mask = nd.ones(bz, ctx=self.ctx) - batch_finish
             # next state V(s_{t+1})
@@ -72,7 +73,7 @@ class DQN(object):
             # Q(s_t, a) - the model computes Q(s_t)
             q_eval = self.offline(batch_state)
             q_eval = nd.pick(q_eval, batch_action, 1)
-            _ = self.loss_func(q_eval, q_target)
-            loss = _
+            loss = nd.mean(self.loss_func(q_eval, q_target))
         loss.backward()
         self.trainer.step(bz)
+        return nd.mean(loss).asscalar()

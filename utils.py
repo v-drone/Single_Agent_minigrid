@@ -3,6 +3,20 @@ import numpy as np
 from mxnet import nd
 
 
+def copy_params(offline, online):
+    layer = list(offline.collect_params().values())
+    for i in layer:
+        _1 = online.collect_params().get("_".join(i.name.split("_")[1:])).data().asnumpy()
+        online.collect_params().get("_".join(i.name.split("_")[1:])).set_data(i.data())
+        _2 = online.collect_params().get("_".join(i.name.split("_")[1:])).data().asnumpy()
+
+
+def replace_self(grid, attitude):
+    on_off = (grid == 6).astype(int)
+    on_off *= attitude
+    return grid + on_off
+
+
 def check_dir(i):
     # create required path
     if not os.path.exists("./{}/".format(i)):
@@ -56,6 +70,9 @@ def get_pad(src, size=15):
 
 
 def translate_state(state):
-    agent_view = get_pad(state["agent_view"])
-    whole_map = get_pad(state["whole_map"])
+    # agent_view = get_pad(state["agent_view"])
+    # whole_map = get_pad(state["whole_map"])
+    agent_view = state["agent_view"]
+    whole_map = state["whole_map"]
     return np.concatenate([agent_view.flatten(), whole_map.flatten(), state["relative_position"], [state["attitude"]]])
+    # return np.concatenate([whole_map.flatten(), state["relative_position"], [state["attitude"]]])

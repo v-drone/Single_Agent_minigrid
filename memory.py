@@ -14,11 +14,14 @@ class Memory(object):
             memory = []
         self.memory_length = memory_length
         self.memory = memory
+        self.position = 0
 
     def add(self, old, new, action, reward, finish):
-        self.memory.append(
-            {"state": old, "state_next": new, "action": action, "reward": reward, "finish": finish}
-        )
+        _ = {"state": old, "state_next": new, "action": action, "reward": reward, "finish": finish}
+        if len(self.memory) < self.memory_length:
+            self.memory.append(None)
+        self.memory[self.position] = _
+        self.position = (self.position + 1) % self.memory_length
 
     def next_batch(self, bz):
         result = {

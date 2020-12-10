@@ -1,12 +1,12 @@
 import random
 import numpy as np
-from utils import to_numpy
+from utils import to_numpy, replace_self
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
 from gym_minigrid.envs.empty import EmptyEnv
 from gym_minigrid.window import Window
 from algorithm.reward_function import reward_function
-
+import time
 
 class SimpleEnv(object):
     def __init__(self, display=True):
@@ -20,6 +20,9 @@ class SimpleEnv(object):
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
         self.same_position = 0
+        self.success = 0
+        self.all = 0
+        self.total_return = 0
 
     def step(self, action):
         # Turn left, turn right, move forward
@@ -27,30 +30,35 @@ class SimpleEnv(object):
         # right = 1
         # forward = 2
         old = self.state()
-        obs, reward_get, done, info = self.env.step(action)
+        obs, original_get, done, info = self.env.step(action)
         new = self.state()
-        if done == 1 and reward_get == 0:
-            reward_get = -0.1
+        if done == 1 and original_get == 0:
+            reward_get = -0.5
+        else:
+            reward_get = original_get
+        reward_get = reward_function(old, new, reward_get, self.env.step_count, self.same_position)
+        self.total_return += sum(reward_get)
         if np.equal(old["relative_position"], new["relative_position"]).all():
             self.same_position += 1
         else:
             self.same_position = 0
-        reward_get = reward_function(old, new, reward_get, self.env.step_count, self.same_position)
-        _ = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
-        if sum(reward_get) > 10:
-            _ = _ + "      ***********"
-        elif sum(reward_get) > 0:
-            _ = _ + "      *"
-        print(_)
         if done:
-            print('done!')
             self.reset_env()
             finish = 1
+            self.all += 1
+            if original_get > 0:
+                self.success += 1
+            print("success rate %f, avg return %f" % (self.success / self.all, self.total_return / self.all))
         else:
             if self.display is True:
                 self.redraw()
             finish = 0
-        return old, new, reward_get, finish
+        text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
+        if sum(reward_get) > 10:
+            text = text + "      ***********"
+        elif sum(reward_get) > 0:
+            text = text + "      *"
+        return old, new, reward_get, finish, text
 
     def key_handler(self, event):
         print('pressed', event.key)
@@ -81,8 +89,9 @@ class SimpleEnv(object):
         :return:
         """
         # size = random.randint(9, 15)
-        size = 10
-        _ = random.randint(-2, 2)
+        size = 7
+        # _ = random.randint(-2, 2)
+        _ = 0
         if _ > 1:
             self.env = LavaGapEnv(size)
         elif _ < -1:
@@ -94,20 +103,27 @@ class SimpleEnv(object):
             self.window.close()
 
     def state(self):
-        grid, vis_mask = self.env.gen_obs_grid()
+        precision = 10
+        attitude = self.env.agent_dir
         agent = np.array([self.env.agent_pos[0], self.env.agent_pos[1], self.env.agent_dir])
-        view = to_numpy(grid, [3, 6, self.env.agent_dir], vis_mask)[::-1]
-        view = np.flip(view[::-1], 1)
-        whole_map = to_numpy(self.env.grid, agent, None).T
+        # view = to_numpy(grid, [3, 6, self.env.agent_dir], vis_mask)[::-1]
+        # view = np.flip(view[::-1], 1)
+        # view = replace_self(view, attitude)
+        view = self.env.gen_obs()["image"]
+
+        view = self.env.get_obs_render(view, precision)
+        whole_map = self.env.grid.render(precision, (agent[0], agent[1]), agent[2])
+
+        # whole_map = to_numpy(self.env.grid, agent, None).T
+        # whole_map = replace_self(whole_map, attitude)
         goal = np.array(self.env.goal_pos)
-        relative_position = agent[0:2] - goal
+        relative_position = goal - agent[0:2]
         data = {
             "agent_view": view,
             "whole_map": whole_map,
             "relative_position": relative_position,
-            "attitude": self.env.agent_dir
+            "attitude": attitude
         }
-        # self.redraw()
         return data
 
 
