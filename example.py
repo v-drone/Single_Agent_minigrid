@@ -45,10 +45,13 @@ for epoch in range(5000):
             break
         else:
             action = algorithm.get_action(env.state(), np.maximum(1 - all_step_counter / annealing_end, epsilon_min))
-            old, new, reward, finish, text = env.step(action[0])
+            old, new, reward, finish, text, success_text = env.step(action[0])
             texts.append(text)
             memory_pool.add(old, new, action[0], sum(reward), finish)
             all_step_counter += 1
+        if success_text is not None:
+            with open("summary.txt", "a") as f:
+                f.writelines("\n".join(texts) + "\n")
         #  train 100 step once
         if all_step_counter % 100 == 0:
             cost.append(algorithm.train())

@@ -25,6 +25,7 @@ class SimpleEnv(object):
         self.total_return = 0
 
     def step(self, action):
+        success_text = None
         # Turn left, turn right, move forward
         # left = 0
         # right = 1
@@ -48,7 +49,7 @@ class SimpleEnv(object):
             self.all += 1
             if original_get > 0:
                 self.success += 1
-            print("success rate %f, avg return %f" % (self.success / self.all, self.total_return / self.all))
+            success_text = "success rate %f, avg return %f" % (self.success / self.all, self.total_return / self.all)
         else:
             if self.display is True:
                 self.redraw()
@@ -58,7 +59,7 @@ class SimpleEnv(object):
             text = text + "      ***********"
         elif sum(reward_get) > 0:
             text = text + "      *"
-        return old, new, reward_get, finish, text
+        return old, new, reward_get, finish, text, success_text
 
     def key_handler(self, event):
         print('pressed', event.key)
