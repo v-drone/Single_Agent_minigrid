@@ -34,7 +34,7 @@ algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, acti
 finish = 0
 all_step_counter = 0
 cost = []
-for epoch in range(5000):
+for epoch in range(10000):
     texts = []
     while True:
         if finish:
