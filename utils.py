@@ -69,6 +69,18 @@ def get_pad(src, size=15):
     return np.pad(src, ((first_half[0], second_half[0]), (first_half[1], second_half[1])), mode="constant")
 
 
+def preprocess(raw_frame, currentState=None, initial_state=False):
+    raw_frame = nd.transpose(raw_frame, (2, 0, 1))
+    raw_frame = raw_frame.astype('float32') / 255.
+    if initial_state == True:
+        state = raw_frame
+        for _ in range(opt.frame_len - 1):
+            state = nd.concat(state, raw_frame, dim=0)
+    else:
+        state = mx.nd.concat(currentState[1:, :, :], raw_frame, dim=0)
+    return state
+
+
 def translate_state(state):
     # agent_view = get_pad(state["agent_view"])
     # whole_map = get_pad(state["whole_map"])

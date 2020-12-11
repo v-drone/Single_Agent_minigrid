@@ -2,7 +2,6 @@ import numpy as np
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
-from utils import translate_state
 from . import AbstractAlgorithm
 
 
@@ -32,20 +31,6 @@ class DQN(AbstractAlgorithm):
         self.offline.save_parameters(self.temporary_model)
         self.online.load_parameters(self.temporary_model, self.ctx)
 
-    def get_action(self, state, poss):
-        # epsilon greedy policy
-        # with probability select a random action
-        if np.random.random() < poss:
-            by = "Random"
-            action = np.random.randint(0, self.action_max)
-        else:
-            by = "Model"
-            state = nd.array([translate_state(state)])
-            state = state.as_in_context(self.ctx)
-            action = self.offline(state)
-            action = int(nd.argmax(action, axis=1).asnumpy()[0])
-        return action, by
-
     def train(self):
         # Sample random mini batch of transitions
         if len(self.dataset.memory) > self.batch_size:
@@ -60,17 +45,11 @@ class DQN(AbstractAlgorithm):
         batch_finish = nd.array(for_train["finish"], self.ctx)
 
         with autograd.record(train_mode=True):
-            # non final
-            mask = nd.ones(bz, ctx=self.ctx) - batch_finish
-            # next state V(s_{t+1})
-            batch_state_next = batch_state_next * mask.expand_dims(1)
-            q_target = self.online(batch_state_next).detach()
-            q_target = nd.max(q_target, axis=1)
-            q_target = batch_reward + self.gamma * q_target
-            # Q(s_t, a) - the model computes Q(s_t)
-            q_eval = self.offline(batch_state)
-            q_eval = nd.pick(q_eval, batch_action, 1)
-            loss = nd.mean(self.loss_func(q_eval, q_target))
+            Q_sp = nd.max(self.online(batch_state_next), axis=1)
+            Q_sp = Q_sp * (nd.ones(bz, ctx=self.ctx) - batch_finish)
+            Q_s_array = self.offline(batch_state)
+            Q_s = nd.pick(Q_s_array, batch_action, 1)
+            loss = nd.mean(self.loss_func(Q_s, (batch_reward + self.gamma * Q_sp)))
         loss.backward()
         self.trainer.step(bz)
-        return nd.mean(loss).asscalar()
+        return loss.asscalar()

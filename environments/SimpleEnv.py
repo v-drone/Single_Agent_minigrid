@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from utils import to_numpy, replace_self
+from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
 from gym_minigrid.envs.empty import EmptyEnv
@@ -98,21 +98,19 @@ class SimpleEnv(object):
         self.env.reset()
         if self.display and self.window:
             self.window.close()
+        return self.state()
 
     def state(self):
         precision = 10
         attitude = self.env.agent_dir
+        grid, vis_mask = self.env.gen_obs_grid()
         agent = np.array([self.env.agent_pos[0], self.env.agent_pos[1], self.env.agent_dir])
-        # view = to_numpy(grid, [3, 6, self.env.agent_dir], vis_mask)[::-1]
-        # view = np.flip(view[::-1], 1)
-        # view = replace_self(view, attitude)
-        view = self.env.gen_obs()["image"]
-
-        view = self.env.get_obs_render(view, precision)
-        whole_map = self.env.grid.render(precision, (agent[0], agent[1]), agent[2])
-
-        # whole_map = to_numpy(self.env.grid, agent, None).T
-        # whole_map = replace_self(whole_map, attitude)
+        view = to_numpy(grid, [3, 6, self.env.agent_dir], vis_mask)[::-1]
+        view = np.flip(view[::-1], 1)
+        # view = self.env.gen_obs()["image"]
+        # view = self.env.get_obs_render(view, precision)
+        # whole_map = self.env.grid.render(precision, (agent[0], agent[1]), agent[2])
+        whole_map = to_numpy(self.env.grid, agent, None).T
         goal = np.array(self.env.goal_pos)
         relative_position = goal - agent[0:2]
         data = {

@@ -33,26 +33,32 @@ class Stack(nn.Block):
 
 
 class SimpleStack(nn.Block):
-    def __init__(self):
+    def __init__(self, agent_view, whole_map):
         """
         MLP in mxnet with input by Lidar and Distance sensor
         """
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            self.map_decode = nn.Sequential()
-            self.map_decode.add(nn.Dense(64, activation="tanh"))
-            self.map_decode.add(nn.Dense(12, activation="tanh"))
+            self.map_decode1 = nn.Sequential()
+            self.map_decode1.add(nn.Dense(64, activation="tanh"))
+            self.map_decode1.add(nn.Dense(12, activation="relu"))
+            self.map_decode2 = nn.Sequential()
+            self.map_decode2.add(nn.Dense(64, activation="tanh"))
+            self.map_decode2.add(nn.Dense(12, activation="relu"))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(3, activation="sigmoid"))
+        self.agent_view = agent_view
+        self.whole_map = whole_map
 
     def forward(self, income, *args):
-        agent_in = income[:, 0:225].reshape(-1, 1, 15, 15)
-        whole_map_in = income[:, 225:450].reshape(-1, 1, 15, 15) * 100
-        location_in = income[:, 225: 227]
-        attitude_in = income[:, -1]
-        map_feature = self.map_decode(whole_map_in.flatten())
+        agent_in = income[:, 0:self.agent_view * self.agent_view].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32') / 255.
+        whole_map_in = income[:, self.agent_view * self.agent_view:income.shape(-1) - 3].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32') / 255.
+        location_in = income[:, -3:-1]
+        attitude_in = income[:, -1:]
+        agent_feature = self.map_decode1(agent_in.flatten())
+        map_feature = self.map_decode2(whole_map_in.flatten())
         # relative angle, distance to goal, distance sensor result
         # all_features = [agent_in.flatten(), whole_map_in.flatten(), location_in.flatten(), attitude_in.flatten()]
-        all_features = [map_feature, location_in.flatten(), attitude_in.flatten()]
+        all_features = [agent_feature, map_feature, location_in.flatten(), attitude_in.flatten()]
         all_features = nd.concat(*all_features)
         return self.decision_making(all_features)
