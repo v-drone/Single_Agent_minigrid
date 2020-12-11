@@ -18,13 +18,13 @@ class Stack(nn.Block):
 
     def forward(self, income, *args):
         # agent_in = income[:, 0:225].reshape(-1, 1, 15, 15)
-        whole_map_in = income[:, 225:450].reshape(-1, 1, 15, 15) * 100
+        whole_map_in = income[:, 225:450].reshape(-1, 1, 15, 15).astype('float32') / 255
         location_in = income[:, 450: 452]
         attitude_in = income[:, -1]
         # relative angle, distance to goal, distance sensor result
         # all_features = [agent_in.flatten(), whole_map_in.flatten(), location_in.flatten(), attitude_in.flatten()]
-        # all_features = [location_in.flatten(), attitude_in.flatten()]
-        all_features = []
+        all_features = [location_in.flatten(), attitude_in.flatten()]
+        # all_features = []
         # agent_view = self.agent_view(agent_in).flatten()
         whole_map = self.whole_view(whole_map_in).flatten()
         all_features.append(whole_map)

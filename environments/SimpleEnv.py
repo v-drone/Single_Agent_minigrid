@@ -6,7 +6,7 @@ from gym_minigrid.envs.distshift import DistShiftEnv
 from gym_minigrid.envs.empty import EmptyEnv
 from gym_minigrid.window import Window
 from algorithm.reward_function import reward_function
-import time
+
 
 class SimpleEnv(object):
     def __init__(self, display=True):

@@ -3,10 +3,9 @@ from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 from utils import translate_state
-import time
 
 
-class DQN(object):
+class DQN(AbstractAlgorithm):
     def __init__(self, models, ctx, lr, gamma, pool, action_max, temporary_model):
         """
         mxnet DQN algorithm train case
@@ -17,18 +16,15 @@ class DQN(object):
         learning rate
         :param gamma float
         """
-        self.action_max = action_max
+        super(DQN, self).__init__(models, action_max, ctx)
         self.temporary_model = temporary_model
         self.batch_size = 512
         self.training_counter = 0
         self.lr = lr
         self.gamma = gamma
         self.dataset = pool
-        self.online = models[0]
-        self.offline = models[1]
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'sgd', {'learning_rate': lr, 'wd': 0.0001})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'RMSProp', {'learning_rate': lr, 'gamma1': 0.95, 'gamma2': 0.95, 'epsilon': 0.01, 'centered': True})
         self.online.collect_params().zero_grad()
-        self.ctx = ctx
         self.loss_func = gluon.loss.L2Loss()
 
     def reload(self):
