@@ -36,7 +36,7 @@ class Memory(object):
 
         for i in _:
             result["state"].extend(translate_state(i["state"]))
-            result["state_next"].extend(translate_state(i["state"]))
+            result["state_next"].extend(translate_state(i["state_next"]))
             result["action"].extend(np.array([i["action"]]))
             result["finish"].extend(np.array([i["finish"]]))
             result["reward"].extend(np.array([i["reward"]]))
