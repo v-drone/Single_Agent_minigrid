@@ -18,12 +18,12 @@ class DQN(AbstractAlgorithm):
         """
         super(DQN, self).__init__(models, action_max, ctx)
         self.temporary_model = temporary_model
-        self.batch_size = 512
+        self.batch_size = 32
         self.training_counter = 0
         self.lr = lr
         self.gamma = gamma
         self.dataset = pool
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'sgd', {'learning_rate': lr, 'wd': 0.0001})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'RMSProp', {'learning_rate': lr, 'gamma1': 0.95, 'gamma2': 0.95, 'epsilon': 0.01, 'centered': True})
         self.online.collect_params().zero_grad()
         self.loss_func = gluon.loss.L2Loss()
 

@@ -4,7 +4,7 @@ import time
 action_max = 3
 # learning rate
 model_save = "./model_save/"
-lr = 0.01
+lr = 0.00025
 
 # skip frame
 # Skip 4-1 raw frames between steps
