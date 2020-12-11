@@ -3,7 +3,6 @@ from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
 from utils import translate_state
-import time
 
 
 class DQN(object):
