@@ -1,5 +1,3 @@
-import os
-import pickle
 import numpy as np
 import mxnet as mx
 from model import Stack, SimpleStack
@@ -48,15 +46,16 @@ for epoch in range(1, num_episode):
             print('annealing and learning are started')
         eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
         state = env.state()
-        action, by = algorithm.get_action(translate_state(state), eps)
+        action, by = algorithm.get_action(state, eps)
         old, new, reward_get, finish, text, success_text = env.step(action)
         texts.append(text)
-        memory_pool.add(old, new, action[0], sum(reward_get), finish)
+        memory_pool.add(old, new, action, sum(reward_get), finish)
         cum_clipped_reward += sum(reward_get)
         all_step_counter += 1
         if success_text is not None:
             with open("summary.txt", "a") as f:
                 f.writelines(success_text + "\n")
+                print(success_text)
     #  train 100 step once
     if epoch % 4 == 0:
         cost.append(algorithm.train())
