@@ -32,6 +32,7 @@ class SimpleEnv(object):
         # forward = 2
         old = self.state()
         obs, original_get, done, info = self.env.step(action)
+        print(original_get)
         new = self.state()
         reward_get = reward_function(old, new, original_get, self.env.step_count, self.same_position)
         self.total_return += sum(original_get)
