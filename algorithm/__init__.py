@@ -22,7 +22,6 @@ class AbstractAlgorithm(object):
             state = nd.array([translate_state(state)])
             state = state.as_in_context(self.ctx)
             action = self.offline(state)
-            print(action)
             action = int(nd.argmax(action, axis=1).asnumpy()[0])
         return action, by
 
