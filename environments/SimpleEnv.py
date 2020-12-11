@@ -33,13 +33,8 @@ class SimpleEnv(object):
         old = self.state()
         obs, original_get, done, info = self.env.step(action)
         new = self.state()
-        # if done == 1 and original_get == 0:
-        #     reward_get = -0.5
-        # else:
-        #     reward_get = original_get
-        reward_get = original_get
-        reward_get = reward_function(old, new, reward_get, self.env.step_count, self.same_position)
-        self.total_return += sum(reward_get)
+        reward_get = reward_function(old, new, original_get, self.env.step_count, self.same_position)
+        self.total_return += sum(original_get)
         if np.equal(old["relative_position"], new["relative_position"]).all():
             self.same_position += 1
         else:
