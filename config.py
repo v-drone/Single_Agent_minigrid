@@ -1,7 +1,7 @@
 import time
 
 # action max
-action_max = 3
+action_max = 2
 # learning rate
 model_save = "./model_save/"
 lr = 0.00025

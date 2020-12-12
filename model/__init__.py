@@ -14,7 +14,7 @@ class Stack(nn.Block):
             self.whole_view = MapView()
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(64, activation="tanh"))
-            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(2, activation="sigmoid"))
 
     def forward(self, income, *args):
         # agent_in = income[:, 0:225].reshape(-1, 1, 15, 15)

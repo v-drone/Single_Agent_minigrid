@@ -39,6 +39,7 @@ num_episode = 100000
 tot_reward = np.zeros(num_episode)
 moving_average_clipped = 0.
 moving_average = 0.
+moving_average = 0.
 _epoch = 0
 for epoch in range(1, num_episode):
     _epoch += 1

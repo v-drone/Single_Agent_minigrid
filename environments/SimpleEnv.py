@@ -27,11 +27,13 @@ class SimpleEnv(object):
     def step(self, action):
         success_text = None
         # Turn left, turn right, move forward
-        # left = 0
-        # right = 1
-        # forward = 2
+        # forward = 0
+        # left = 1
         old = self.state()
-        obs, original_get, done, info = self.env.step(action)
+        if action == 1:
+            obs, original_get, done, info = self.env.step(0)
+        else:
+            obs, original_get, done, info = self.env.step(2)
         new = self.state()
         reward_get = reward_function(old, new, original_get, self.env.step_count, self.same_position)
         self.total_return += sum(reward_get)
