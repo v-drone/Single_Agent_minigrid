@@ -40,11 +40,11 @@ class SimpleStack(nn.Block):
         super(SimpleStack, self).__init__()
         with self.name_scope():
             self.map_decode1 = nn.Sequential()
-            self.map_decode1.add(nn.Dense(64, activation="tanh"))
-            self.map_decode1.add(nn.Dense(32, activation="tanh"))
+            self.map_decode1.add(nn.Dense(64, activation="relu"))
+            self.map_decode1.add(nn.Dense(32, activation="relu"))
             self.map_decode2 = nn.Sequential()
-            self.map_decode2.add(nn.Dense(64, activation="tanh"))
-            self.map_decode2.add(nn.Dense(32, activation="tanh"))
+            self.map_decode2.add(nn.Dense(64, activation="relu"))
+            self.map_decode2.add(nn.Dense(32, activation="relu"))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(3, activation="sigmoid"))
         self.agent_view = agent_view
