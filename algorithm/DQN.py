@@ -6,7 +6,7 @@ from . import AbstractAlgorithm
 
 
 class DQN(AbstractAlgorithm):
-    def __init__(self, models, ctx, lr, gamma, pool, action_max, temporary_model):
+    def __init__(self, models, ctx, lr, gamma, pool, action_max, temporary_model, bz=32):
         """
         mxnet DQN algorithm train case
         :param models: two model
@@ -18,7 +18,7 @@ class DQN(AbstractAlgorithm):
         """
         super(DQN, self).__init__(models, action_max, ctx)
         self.temporary_model = temporary_model
-        self.batch_size = 32
+        self.batch_size = bz
         self.training_counter = 0
         self.lr = lr
         self.gamma = gamma
