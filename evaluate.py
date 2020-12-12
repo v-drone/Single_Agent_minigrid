@@ -45,11 +45,12 @@ for epoch in range(1, num_episode):
     while not finish:
         if all_step_counter > replay_start_size:
             annealing_count += 1
-        if all_step_counter == replay_start_size:
-            print('annealing and learning are started')
         state = env.state()
-        action, by = algorithm.get_action(state, 0)
+        eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
+        action, by = algorithm.get_action(state, eps)
         old, new, reward_get, finish, text, success_text = env.step(action)
+        if success_text is not None:
+            print(success_text)
         texts.append(text)
         memory_pool.add(old, new, action, sum(reward_get), finish)
         cum_clipped_reward += sum(reward_get)

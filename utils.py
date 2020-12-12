@@ -74,4 +74,5 @@ def translate_state(state):
     # whole_map = get_pad(state["whole_map"])
     agent_view = state["agent_view"]
     whole_map = state["whole_map"]
-    return np.concatenate([agent_view.flatten(), whole_map.flatten(), state["relative_position"], [state["attitude"]]])
+    # whole_map.flatten(),
+    return np.concatenate([agent_view.flatten(), state["relative_position"], [state["attitude"]]])

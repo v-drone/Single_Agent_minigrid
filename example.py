@@ -73,7 +73,7 @@ for epoch in range(1, num_episode):
     if annealing_count > replay_start_size and annealing_count % update_step == 0:
         copy_params(offline_model, online_model)
         offline_model.save_parameters(temporary_model)
-        print("over-write")
+        print("over-write %d" % _epoch)
     tot_reward[int(epoch) - 1] = cum_clipped_reward
     if epoch > 50.:
         moving_average = np.mean(tot_reward[int(epoch) - 1 - 50:int(epoch) - 1])
