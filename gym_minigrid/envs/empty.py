@@ -13,19 +13,18 @@ class EmptyEnv(MiniGridEnv):
             width=9,
             height=6,
     ):
-        self.agent_start_pos = (2, 2)
-        self.agent_start_dir = 0
-        self.goal_pos = (4, 4)
-        # if random.randint(0, 1) != 0:
-        #     self.agent_start_pos = (1, random.randint(1, height - 2))
-        #     self.agent_start_dir = 0
-        # else:
-        #     self.agent_start_pos = (width - 2, random.randint(1, height - 2))
-        #     self.agent_start_dir = 1
-        # self.goal_pos = (random.randint(1, width - 2), random.randint(1, height - 2))
-        # while self.goal_pos == self.agent_start_pos:
-        #     self.goal_pos = (random.randint(1, width - 2), random.randint(1, height - 2))
-
+        # self.agent_start_pos = (2, 2)
+        # self.agent_start_dir = 0
+        # self.goal_pos = (4, 4)
+        if random.randint(0, 1) != 0:
+            self.agent_start_pos = (1, random.randint(1, height - 2))
+            self.agent_start_dir = 0
+        else:
+            self.agent_start_pos = (width - 2, random.randint(1, height - 2))
+            self.agent_start_dir = 1
+        self.goal_pos = (random.randint(1, width - 2), random.randint(1, height - 2))
+        while self.goal_pos == self.agent_start_pos:
+            self.goal_pos = (random.randint(1, width - 2), random.randint(1, height - 2))
         super().__init__(
             width=width,
             height=height,
