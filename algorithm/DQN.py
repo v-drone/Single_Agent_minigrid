@@ -23,7 +23,8 @@ class DQN(AbstractAlgorithm):
         self.lr = lr
         self.gamma = gamma
         self.dataset = pool
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'RMSProp', {'learning_rate': lr, 'gamma1': 0.95, 'gamma2': 0.95, 'epsilon': 0.01, 'centered': True})
+        # self.trainer = gluon.Trainer(self.offline.collect_params(), 'RMSProp', {'learning_rate': lr, 'gamma1': 0.95, 'gamma2': 0.95, 'epsilon': 0.01, 'centered': True})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'adam', {'learning_rate': lr})
         self.online.collect_params().zero_grad()
         self.loss_func = gluon.loss.L2Loss()
 
