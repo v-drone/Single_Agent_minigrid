@@ -13,7 +13,7 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     c = 0
     a = 1
     v1 = 0
-    v2 = 0
+    v2 = 0.0001
     distance_change = old["relative_position"] - new["relative_position"]
     # basic reward
     distance_reward = sum(distance_change) * c

@@ -46,8 +46,7 @@ for epoch in range(1, num_episode):
         if all_step_counter > replay_start_size:
             annealing_count += 1
         state = env.state()
-        eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
-        action, by = algorithm.get_action(state, eps)
+        action, by = algorithm.get_action(state, 0  )
         old, new, reward_get, finish, text, success_text = env.step(action)
         if success_text is not None:
             print(success_text)
