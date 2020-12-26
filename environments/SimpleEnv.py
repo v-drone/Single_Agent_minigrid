@@ -54,7 +54,7 @@ class SimpleEnv(object):
                 self.success.append(1)
             else:
                 self.success.append(0)
-            success_text = "success rate last 50 %f, avg return %f; total %f, avg return %f" % (
+            success_text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
                 sum(self.success[-50:]) / min(self.all, 50), sum(self.total_return[-50:]) / sum(self.total_steps[-50:]),
                 sum(self.success) / self.all, sum(self.total_return) / sum(self.total_steps))
         else:
