@@ -51,8 +51,8 @@ for epoch in range(1, num_episode):
         if success_text is not None:
             print(success_text)
         texts.append(text)
-        memory_pool.add(old, new, action, sum(reward_get), finish)
-        cum_clipped_reward += sum(reward_get)
+        memory_pool.add(old, new, action, reward_get, finish)
+        cum_clipped_reward += reward_get
         all_step_counter += 1
     tot_reward[int(epoch) - 1] = cum_clipped_reward
     if epoch > 50.:

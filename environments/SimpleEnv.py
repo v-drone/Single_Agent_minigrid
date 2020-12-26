@@ -1,4 +1,3 @@
-import random
 import numpy as np
 from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
@@ -36,11 +35,11 @@ class SimpleEnv(object):
             obs, original_get, done, info = self.env.step(2)
         new = self.state()
         reward_get = reward_function(old, new, original_get, self.env.step_count, self.same_position)
-        self.total_return += sum(reward_get)
+        self.total_return += reward_get
         if np.equal(old["relative_position"], new["relative_position"]).all():
             self.same_position += 1
         else:
-            self.same_position = 0
+            self.same_position = -3
         if done:
             self.reset_env()
             finish = 1
@@ -52,10 +51,10 @@ class SimpleEnv(object):
             if self.display is True:
                 self.redraw()
             finish = 0
-        text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
-        if sum(reward_get) > 10:
+        text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, reward_get, action)
+        if reward_get > 10:
             text = text + "      ***********"
-        elif sum(reward_get) > 0:
+        elif reward_get > 0:
             text = text + "      *"
         return old, new, reward_get, finish, text, success_text
 
@@ -87,7 +86,6 @@ class SimpleEnv(object):
         reset environment to the start point
         :return:
         """
-        # size = random.randint(9, 15)
         size = 7
         # _ = random.randint(-2, 2)
         _ = 0

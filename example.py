@@ -58,8 +58,8 @@ for epoch in range(1, num_episode):
         action, by = algorithm.get_action(state, eps)
         old, new, reward_get, finish, text, success_text = env.step(action)
         texts.append(text)
-        memory_pool.add(old, new, action, sum(reward_get), finish)
-        cum_clipped_reward += sum(reward_get)
+        memory_pool.add(old, new, action, reward_get, finish)
+        cum_clipped_reward += reward_get
         all_step_counter += 1
         if success_text is not None:
             with open("summary.txt", "a") as f:
