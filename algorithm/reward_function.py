@@ -22,6 +22,6 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     # basic reward
     distance_reward = sum(distance_change) * c
     basic_reward = basic_reward * a
-    same_position_discount = - v1 * np.power(2, same_position)
+    same_position_discount = - v1 * (2 ** same_position)
     step_discount = - v2 * step_count
     return sum([distance_reward, basic_reward, same_position_discount, step_discount])
