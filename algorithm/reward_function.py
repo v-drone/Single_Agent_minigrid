@@ -24,5 +24,4 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     basic_reward = basic_reward
     same_position_discount = - np.tanh(same_position / 5)
     step_discount = - step_count
-    print(distance_reward, basic_reward, same_position_discount, step_discount)
     return sum([c * distance_reward, a * basic_reward, v1 * same_position_discount, v2 * step_discount])
