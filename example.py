@@ -51,10 +51,10 @@ for epoch in range(1, num_episode):
         eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
         state = env.state()
         action, by = algorithm.get_action(state, eps)
-        old, new, reward_get, finish, text, success_text = env.step(action)
+        old, new, reward_get, finish, text, success_text, original_reward = env.step(action)
         texts.append(text)
         memory_pool.add(old, new, action, reward_get, finish)
-        cum_clipped_reward += reward_get
+        cum_clipped_reward += original_reward
         all_step_counter += 1
         if success_text is not None:
             with open("summary.txt", "a") as f:

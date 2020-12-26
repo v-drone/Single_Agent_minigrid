@@ -66,7 +66,7 @@ class SimpleEnv(object):
             text = text + "      ***********"
         elif reward_get > 0:
             text = text + "      *"
-        return old, new, reward_get, finish, text, success_text
+        return old, new, reward_get, finish, text, success_text, original_get
 
     def key_handler(self, event):
         print('pressed', event.key)
