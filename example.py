@@ -13,29 +13,24 @@ from utils import copy_params
 ctx = mx.gpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
+# build models
 online_model = SimpleStack(7, 7)
 offline_model = SimpleStack(7, 7)
-# build models
-if os.path.exists(temporary_model):
-    online_model.load_parameters(temporary_model, ctx=ctx)
-    offline_model.load_parameters(temporary_model, ctx=ctx)
-    print("load model")
-else:
-    online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
-    offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
-    offline_model.collect_params().zero_grad()
-    print("create model")
-env = SimpleEnv(display=True)
+online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
+offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
+offline_model.collect_params().zero_grad()
+print("create model")
+env = SimpleEnv(display=False)
 env.reset_env()
 # create pool
 memory_pool = Memory(memory_length)
-algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model)
+algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model, bz=1024)
 finish = 0
 all_step_counter = 0
 annealing_count = 0
 cost = []
 texts = []
-num_episode = 100000
+num_episode = 1000000
 tot_reward = np.zeros(num_episode)
 moving_average_clipped = 0.
 moving_average = 0.
