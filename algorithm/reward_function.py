@@ -14,7 +14,7 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     """
     # parameters
     c = 0
-    a = 1
+    a = 2
     v1 = 0.0001
     v2 = 0.0001
     # distance change
