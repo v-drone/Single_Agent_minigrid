@@ -22,7 +22,9 @@ class SimpleEnv(object):
         self.success = []
         self.all = 0
         self.total_return = []
+        self.total_steps = []
         self.this_turn = []
+        self.this_steps = 0
 
     def step(self, action):
         success_text = None
@@ -41,9 +43,10 @@ class SimpleEnv(object):
             self.same_position += 1
         else:
             self.same_position = -3
+        self.this_steps += 1
         if done:
-
             self.total_return.append(sum(self.this_turn))
+            self.total_steps.append(self.this_steps)
             self.reset_env()
             finish = 1
             self.all += 1
@@ -52,8 +55,8 @@ class SimpleEnv(object):
             else:
                 self.success.append(0)
             success_text = "success rate last 50 %f, avg return %f; total %f, avg return %f" % (
-                sum(self.success[-50:]) / min(self.all, 50), sum(self.total_return[-50:]) / min(self.all, 50),
-                sum(self.success) / self.all, sum(self.total_return) / self.all)
+                sum(self.success[-50:]) / min(self.all, 50), sum(self.total_return[-50:]) / sum(self.total_steps[-50:]),
+                sum(self.success) / self.all, sum(self.total_return) / sum(self.total_steps))
         else:
             if self.display is True:
                 self.redraw()
@@ -106,6 +109,7 @@ class SimpleEnv(object):
         if self.display and self.window:
             self.window.close()
         self.this_turn = []
+        self.this_steps = 0
         return self.state()
 
     def state(self):
