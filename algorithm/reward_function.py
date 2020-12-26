@@ -15,7 +15,7 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     # parameters
     c = 0
     a = 1
-    v1 = 0.001
+    v1 = 0.002
     v2 = 0.0002
     # distance change
     distance_change = old["relative_position"] - new["relative_position"]

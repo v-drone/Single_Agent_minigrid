@@ -19,9 +19,10 @@ class SimpleEnv(object):
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
         self.same_position = 0
-        self.success = 0
+        self.success = []
         self.all = 0
-        self.total_return = 0
+        self.total_return = []
+        self.this_turn = []
 
     def step(self, action):
         success_text = None
@@ -35,18 +36,24 @@ class SimpleEnv(object):
             obs, original_get, done, info = self.env.step(2)
         new = self.state()
         reward_get = reward_function(old, new, original_get, self.env.step_count, self.same_position)
-        self.total_return += reward_get
+        self.this_turn.append(reward_get)
         if np.equal(old["relative_position"], new["relative_position"]).all():
             self.same_position += 1
         else:
             self.same_position = -3
         if done:
+
+            self.total_return.append(sum(self.this_turn))
             self.reset_env()
             finish = 1
             self.all += 1
             if original_get > 0:
-                self.success += 1
-            success_text = "success rate %f, avg return %f" % (self.success / self.all, self.total_return / self.all)
+                self.success.append(1)
+            else:
+                self.success.append(0)
+            success_text = "success rate last 50 %f, avg return %f; total %f, avg return %f" % (
+                sum(self.success[-50:]) / min(self.all, 50), sum(self.total_return[-50:]) / min(self.all, 50),
+                sum(self.success) / self.all, sum(self.total_return) / self.all)
         else:
             if self.display is True:
                 self.redraw()
@@ -98,6 +105,7 @@ class SimpleEnv(object):
         self.env.reset()
         if self.display and self.window:
             self.window.close()
+        self.this_turn = []
         return self.state()
 
     def state(self):
