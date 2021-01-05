@@ -97,7 +97,7 @@ class SimpleEnv(object):
         reset environment to the start point
         :return:
         """
-        size = 7
+        size = 10
         _ = random.randint(-2, 2)
         if _ > 1:
             self.env = LavaGapEnv(size)
