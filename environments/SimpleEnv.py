@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
@@ -97,8 +98,7 @@ class SimpleEnv(object):
         :return:
         """
         size = 7
-        # _ = random.randint(-2, 2)
-        _ = 0
+        _ = random.randint(-2, 2)
         if _ > 1:
             self.env = LavaGapEnv(size)
         elif _ < -1:
