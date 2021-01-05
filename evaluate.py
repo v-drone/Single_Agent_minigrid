@@ -16,8 +16,8 @@ for i in ["model_save", "data_save"]:
 online_model = SimpleStack(7, 7)
 offline_model = SimpleStack(7, 7)
 # build models
-online_model.load_parameters(temporary_model, ctx=ctx)
-offline_model.load_parameters(temporary_model, ctx=ctx)
+online_model.load_parameters("./phase_1.params", ctx=ctx)
+offline_model.load_parameters("./phase_1.params", ctx=ctx)
 print("load model")
 env = SimpleEnv(display=True)
 env.reset_env()

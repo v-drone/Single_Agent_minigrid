@@ -21,7 +21,6 @@ offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().zero_grad()
 print("create model")
 env = SimpleEnv(display=False)
-env.reset_env()
 # create pool
 memory_pool = Memory(memory_length)
 algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model, bz=1024)
