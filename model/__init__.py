@@ -51,8 +51,8 @@ class SimpleStack(nn.Block):
         self.whole_map = whole_map
 
     def forward(self, income, *args):
-        agent_in = income[:, 0:self.agent_view * self.agent_view].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32')
-        # whole_map_in = income[:, self.agent_view * self.agent_view:income.shape[-1] - 3].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32')
+        agent_in = income[:, 0:self.agent_view * self.agent_view].reshape(-1, 1, self.agent_view,
+                                                                          self.agent_view).astype('float32')
         location_in = income[:, -3:-1]
         attitude_in = income[:, -1:]
         agent_feature = self.map_decode1(agent_in.flatten())
