@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import random
 from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
