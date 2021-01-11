@@ -42,7 +42,7 @@ class SimpleEnv(object):
         else:
             self.same_position = -1
         reward_get = reward_function(old, new, original_reward, self.env.step_count, self.same_position)
-        self.current_show_reward.append(sum(self.current_show_reward))
+        self.current_show_reward.append(sum(reward_get))
         self.current_step_count += 1
         if done:
             self.total_reward.append(sum(self.current_show_reward))
@@ -61,7 +61,6 @@ class SimpleEnv(object):
             if self.display is True:
                 self.redraw()
             finish = 0
-        text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
         return old, new, reward_get, finish, success_text, original_reward
 
     def key_handler(self, event):
