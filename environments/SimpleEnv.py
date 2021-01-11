@@ -50,15 +50,11 @@ class SimpleEnv(object):
                 self.finish.append(1)
             else:
                 self.finish.append(0)
-            if len(self.finish) > 50:
-                success_text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
-                    sum(self.finish[-50:]) / min(len(self.finish), 50), sum(self.total_reward[-50:]) / sum(self.total_step_count[-50:]),
-                    sum(self.finish) / len(self.finish), sum(self.total_reward) / sum(self.total_step_count))
         else:
             if self.display is True:
                 self.redraw()
             finish = 0
-        return old, new, reward_get, finish, success_text, original_reward
+        return old, new, reward_get, finish, original_reward
 
     def key_handler(self, event):
         print('pressed', event.key)
