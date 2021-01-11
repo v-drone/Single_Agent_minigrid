@@ -13,7 +13,7 @@ gamma = 0.99
 # memory pool size
 memory_length = 100000
 # file to save train log
-result_saver = "./test_{}".format(str(time.time()))
+summary = "./test_{}".format(str(time.time()))
 # the number of step it take to linearly anneal the epsilon to it min value
 annealing_end = 100000
 # min level of stochastically of policy (epsilon)-greedy

@@ -1,6 +1,5 @@
 import random
 import numpy as np
-import random
 from utils import to_numpy
 from gym_minigrid.envs.lavagap import LavaGapEnv
 from gym_minigrid.envs.distshift import DistShiftEnv
@@ -21,12 +20,11 @@ class SimpleEnv(object):
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
         self.same_position = 0
-        self.success = []
-        self.all = 0
-        self.total_return = []
-        self.total_steps = []
-        self.this_turn = []
-        self.this_steps = 0
+        self.finish = []
+        self.total_reward = []
+        self.total_step_count = []
+        self.current_show_reward = []
+        self.current_step_count = 0
 
     def step(self, action):
         success_text = None
@@ -35,40 +33,36 @@ class SimpleEnv(object):
         # left = 1
         old = self.state()
         if action == 1:
-            obs, original_get, done, info = self.env.step(0)
+            obs, original_reward, done, info = self.env.step(0)
         else:
-            obs, original_get, done, info = self.env.step(2)
+            obs, original_reward, done, info = self.env.step(2)
         new = self.state()
-        reward_get = reward_function(old, new, original_get, self.env.step_count, self.same_position)
-        self.this_turn.append(reward_get)
         if np.equal(old["relative_position"], new["relative_position"]).all():
             self.same_position += 1
         else:
-            self.same_position = -3
-        self.this_steps += 1
+            self.same_position = -1
+        reward_get = reward_function(old, new, original_reward, self.env.step_count, self.same_position)
+        self.current_show_reward.append(sum(self.current_show_reward))
+        self.current_step_count += 1
         if done:
-            self.total_return.append(sum(self.this_turn))
-            self.total_steps.append(self.this_steps)
+            self.total_reward.append(sum(self.current_show_reward))
+            self.total_step_count.append(self.current_step_count)
             self.reset_env()
             finish = 1
-            self.all += 1
-            if original_get > 0:
-                self.success.append(1)
+            if original_reward > 0:
+                self.finish.append(1)
             else:
-                self.success.append(0)
-            success_text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
-                sum(self.success[-50:]) / min(self.all, 50), sum(self.total_return[-50:]) / sum(self.total_steps[-50:]),
-                sum(self.success) / self.all, sum(self.total_return) / sum(self.total_steps))
+                self.finish.append(0)
+            if len(self.finish) > 50:
+                success_text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
+                    sum(self.finish[-50:]) / min(len(self.finish), 50), sum(self.total_reward[-50:]) / sum(self.total_step_count[-50:]),
+                    sum(self.finish) / len(self.finish), sum(self.total_reward) / sum(self.total_step_count))
         else:
             if self.display is True:
                 self.redraw()
             finish = 0
-        text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, reward_get, action)
-        if reward_get > 10:
-            text = text + "      ***********"
-        elif reward_get > 0:
-            text = text + "      *"
-        return old, new, reward_get, finish, text, success_text, original_get
+        text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
+        return old, new, reward_get, finish, text, success_text, original_reward
 
     def key_handler(self, event):
         print('pressed', event.key)
@@ -110,8 +104,8 @@ class SimpleEnv(object):
         self.env.reset()
         if self.display and self.window:
             self.window.close()
-        self.this_turn = []
-        self.this_steps = 0
+        self.current_show_reward = []
+        self.current_step_count = 0
         return self.state()
 
     def state(self):

@@ -14,8 +14,8 @@ ctx = mx.gpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
 # build models
-online_model = SimpleStack(7, 7)
-offline_model = SimpleStack(7, 7)
+online_model = SimpleStack(7, 10)
+offline_model = SimpleStack(7, 10)
 online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().zero_grad()
@@ -28,17 +28,13 @@ finish = 0
 all_step_counter = 0
 annealing_count = 0
 cost = []
-texts = []
 num_episode = 1000000
 tot_reward = np.zeros(num_episode)
 moving_average_clipped = 0.
 moving_average = 0.
 _epoch = 0
-for epoch in range(1, num_episode):
+for epoch in range(_epoch, num_episode):
     _epoch += 1
-    with open("map_simple.txt", "a") as f:
-        f.writelines("\n".join(texts) + "\n")
-        texts = []
     env.reset_env()
     finish = 0
     cum_clipped_reward = 0
@@ -48,26 +44,23 @@ for epoch in range(1, num_episode):
         if all_step_counter == replay_start_size:
             print('annealing and learning are started')
         eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
-        state = env.state()
-        action, by = algorithm.get_action(state, eps)
-        old, new, reward_get, finish, text, success_text, original_reward = env.step(action)
-        texts.append(text)
-        memory_pool.add(old, new, action, reward_get, finish)
+        action, by = algorithm.get_action(env.state(), eps)
+        old, new, reward, finish, success_text, original_reward = env.step(action)
+        memory_pool.add(old, new, action, reward, finish)
         cum_clipped_reward += original_reward
         all_step_counter += 1
         if success_text is not None:
-            with open("summary.txt", "a") as f:
+            with open(summary, "a") as f:
                 f.writelines(success_text + "\n")
             if epoch % 100 == 0:
                 print(success_text)
-    #  train every 4 epoch
-    if annealing_count > replay_start_size and epoch % 4 == 0:
+            # save model and replace online model each epoch
+        if annealing_count > replay_start_size and annealing_count % update_step == 0:
+            copy_params(offline_model, online_model)
+            offline_model.save_parameters(temporary_model)
+    #  train every 2 epoch
+    if annealing_count > replay_start_size and epoch % 2 == 0:
         cost.append(algorithm.train())
-    # save model and replace online model each epoch
-    if annealing_count > replay_start_size and annealing_count % update_step == 0:
-        copy_params(offline_model, online_model)
-        offline_model.save_parameters(temporary_model)
-        print("over-write %d, last lost %d" % (_epoch, cost[-1]))
     tot_reward[int(epoch) - 1] = cum_clipped_reward
     if epoch > 50.:
         moving_average = np.mean(tot_reward[int(epoch) - 1 - 50:int(epoch) - 1])

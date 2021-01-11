@@ -1,6 +1,3 @@
-import numpy as np
-
-
 def reward_function(old, new, basic_reward, step_count, same_position):
     """
     calculate reward
@@ -14,14 +11,16 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     """
     # parameters
     c = 0
-    a = 10
-    v1 = 0.0005
-    v2 = 0.0005
-    # distance change
-    distance_change = old["relative_position"] - new["relative_position"]
+    a = 1
+    v1 = 0
+    v2 = 0
     # basic reward
-    distance_reward = sum(distance_change)
-    basic_reward = basic_reward
-    same_position_discount = - np.tanh(same_position / 5)
-    step_discount = - step_count
-    return sum([c * distance_reward, a * basic_reward, v1 * same_position_discount, v2 * step_discount])
+    # the reward from environment
+    basic_reward = basic_reward * a
+    # distance to goal changed
+    distance_change = old["relative_position"] - new["relative_position"]
+    distance_change = sum(distance_change) * c
+    # stay over
+    step_discount = - v1 * same_position - v2 * step_count
+    return [step_discount + distance_change, basic_reward]
+
