@@ -14,7 +14,7 @@ class Stack(nn.Block):
             self.whole_view = MapView()
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(64, activation="tanh"))
-            self.decision_making.add(nn.Dense(2, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
 
     def forward(self, income, *args):
         # agent_in = income[:, 0:225].reshape(-1, 1, 15, 15)
@@ -46,13 +46,13 @@ class SimpleStack(nn.Block):
             # self.map_decode2.add(nn.Dense(64, activation="tanh"))
             # self.map_decode2.add(nn.Dense(12, activation="tanh"))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(2, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
         self.agent_view = agent_view
         self.whole_map = whole_map
 
     def forward(self, income, *args):
-        agent_in = income[:, 0:self.agent_view * self.agent_view].reshape(-1, 1, self.agent_view,
-                                                                          self.agent_view).astype('float32')
+        agent_in = income[:, 0:self.agent_view * self.agent_view].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32')
+        # whole_map_in = income[:, self.agent_view * self.agent_view:income.shape[-1] - 3].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32')
         location_in = income[:, -3:-1]
         attitude_in = income[:, -1:]
         agent_feature = self.map_decode1(agent_in.flatten())

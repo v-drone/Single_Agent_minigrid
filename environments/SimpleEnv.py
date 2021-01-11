@@ -32,10 +32,7 @@ class SimpleEnv(object):
         # forward = 0
         # left = 1
         old = self.state()
-        if action == 1:
-            obs, original_reward, done, info = self.env.step(0)
-        else:
-            obs, original_reward, done, info = self.env.step(2)
+        obs, original_reward, done, info = self.env.step(action)
         new = self.state()
         if np.equal(old["relative_position"], new["relative_position"]).all():
             self.same_position += 1
