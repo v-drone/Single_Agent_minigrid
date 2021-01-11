@@ -62,7 +62,7 @@ class SimpleEnv(object):
                 self.redraw()
             finish = 0
         text = 'step=%s, reward=%.2f, action=%d' % (self.env.step_count, sum(reward_get), action)
-        return old, new, reward_get, finish, text, success_text, original_reward
+        return old, new, reward_get, finish, success_text, original_reward
 
     def key_handler(self, event):
         print('pressed', event.key)
