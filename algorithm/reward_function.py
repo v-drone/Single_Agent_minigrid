@@ -11,7 +11,7 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     """
     # parameters
     b = 5
-    d = 1
+    d = 0.5
     v1 = 0.001
     v2 = 0.002
     # the reward from environment
