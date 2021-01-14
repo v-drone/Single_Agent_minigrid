@@ -33,6 +33,8 @@ tot_reward = np.zeros(num_episode)
 moving_average_clipped = 0.
 moving_average = 0.
 _epoch = 0
+negative_addition = 0
+tmp_reward = 0
 for epoch in range(_epoch, num_episode):
     _epoch += 1
     env.reset_env()
@@ -45,16 +47,22 @@ for epoch in range(_epoch, num_episode):
             print('annealing and learning are started')
         eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
         action, by = algorithm.get_action(env.state(), eps)
-        old, new, reward, finish, success_text, original_reward = env.step(action)
-        memory_pool.add(old, new, action, reward, finish)
+        old, new, reward_get, finish, original_reward = env.step(action)
+        memory_pool.add(old, new, action, reward_get, finish)
         cum_clipped_reward += original_reward
         all_step_counter += 1
-        if success_text is not None:
+        if finish and len(env.finish) > 50:
+            sr_50 = sum(env.finish[-50:]) / min(len(env.finish), 50)
+            ar_50 = sum(env.total_reward[-50:]) / sum(env.total_step_count[-50:])
+            sr_all = sum(env.finish) / len(env.finish)
+            ar_all = sum(env.total_reward) / sum(env.total_step_count)
+            text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
+                sr_50, ar_50, sr_all, ar_all)
             with open(summary, "a") as f:
-                f.writelines(success_text + "\n")
+                f.writelines(text + "\n")
             if epoch % 100 == 0:
-                print(success_text)
-            # save model and replace online model each epoch
+                print(text + "; %f" % eps)
+        # save model and replace online model each epoch
         if annealing_count > replay_start_size and annealing_count % update_step == 0:
             copy_params(offline_model, online_model)
             offline_model.save_parameters(temporary_model)
@@ -62,5 +70,3 @@ for epoch in range(_epoch, num_episode):
     if annealing_count > replay_start_size and epoch % 4 == 0:
         cost.append(algorithm.train())
     tot_reward[int(epoch) - 1] = cum_clipped_reward
-    if epoch > 50.:
-        moving_average = np.mean(tot_reward[int(epoch) - 1 - 50:int(epoch) - 1])

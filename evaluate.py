@@ -15,9 +15,10 @@ for i in ["model_save", "data_save"]:
     check_dir(i)
 online_model = SimpleStack(7, 7)
 offline_model = SimpleStack(7, 7)
+online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
+offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
+offline_model.collect_params().zero_grad()
 # build models
-online_model.load_parameters(temporary_model, ctx=ctx)
-offline_model.load_parameters(temporary_model, ctx=ctx)
 print("load model")
 env = SimpleEnv(display=True)
 env.reset_env()
@@ -47,10 +48,7 @@ for epoch in range(1, num_episode):
             annealing_count += 1
         state = env.state()
         action, by = algorithm.get_action(state, 0)
-        old, new, reward_get, finish, text, success_text, original_get = env.step(action)
-        if success_text is not None:
-            print(success_text)
-        texts.append(text)
+        old, new, reward_get, finish, original_get = env.step(action)
         memory_pool.add(old, new, action, reward_get, finish)
         cum_clipped_reward += reward_get
         all_step_counter += 1
