@@ -10,10 +10,10 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     reward
     """
     # parameters
-    b = 5
-    d = 0.5
+    b = 10
+    d = 0
     v1 = 0.001
-    v2 = 0.002
+    v2 = 0.001
     # the reward from environment
     basic_reward = basic_reward * b
     # distance to goal changed
