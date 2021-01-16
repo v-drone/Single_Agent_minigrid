@@ -10,7 +10,7 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     reward
     """
     # parameters
-    b = 10
+    b = 20
     d = 0
     v1 = 0.001
     v2 = 0.001
