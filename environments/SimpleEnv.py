@@ -38,7 +38,7 @@ class SimpleEnv(object):
             self.same_position += 1
         else:
             self.same_position = -1
-        reward_get = sum(reward_function(old, new, original_reward, self.env.step_count, self.same_position))
+        reward_get = sum(reward_function(old, new, original_reward, self.env.step_count, self.same_position, done))
         self.current_show_reward.append(reward_get)
         self.current_step_count += 1
         if done:
