@@ -10,16 +10,12 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     reward
     """
     # parameters
-    b = 20
-    d = 0
-    v1 = 0.001
-    v2 = 0.001
+    b = 100
+    v1 = 0.0002
+    v2 = 0.0002
     # the reward from environment
     basic_reward = basic_reward * b
-    # distance to goal changed
-    distance_change = old["relative_position"] - new["relative_position"]
-    distance_change = sum(distance_change) * d
     # stay over
     step_discount = - v1 * same_position - v2 * step_count
-    return [step_discount + distance_change, basic_reward]
+    return [step_discount, basic_reward]
 
