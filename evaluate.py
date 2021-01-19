@@ -13,12 +13,11 @@ from utils import copy_params
 ctx = mx.gpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
-online_model = SimpleStack(7, 7)
-offline_model = SimpleStack(7, 7)
-online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
-offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
-offline_model.collect_params().zero_grad()
+online_model = SimpleStack(7, 10)
+offline_model = SimpleStack(7, 10)
 # build models
+online_model.load_parameters(temporary_model, ctx=ctx)
+offline_model.load_parameters(temporary_model, ctx=ctx)
 print("load model")
 env = SimpleEnv(display=True)
 env.reset_env()

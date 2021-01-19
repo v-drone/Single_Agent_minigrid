@@ -41,7 +41,10 @@ class SimpleStack(nn.Block):
         with self.name_scope():
             self.map_decode1 = nn.Sequential()
             self.map_decode1.add(nn.Dense(64, activation="tanh"))
-            self.map_decode1.add(nn.Dense(12, activation="tanh"))
+            self.map_decode1.add(nn.Dense(64, activation="tanh"))
+            self.map_decode1.add(nn.Dense(64, activation="tanh"))
+            self.map_decode1.add(nn.Dense(32, activation="tanh"))
+            self.map_decode1.add(nn.Dense(16, activation="tanh"))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(3, activation="sigmoid"))
         self.agent_view = agent_view
@@ -52,6 +55,7 @@ class SimpleStack(nn.Block):
         location_in = income[:, -3:-1]
         attitude_in = income[:, -1:]
         agent_feature = self.map_decode1(agent_in.flatten())
+        # relative angle, distance to goal, distance sensor result
         all_features = [agent_feature.flatten(), location_in.flatten(), attitude_in.flatten()]
         all_features = nd.concat(*all_features)
         return self.decision_making(all_features)
