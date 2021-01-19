@@ -1,4 +1,4 @@
-def reward_function(old, new, basic_reward, step_count, same_position):
+def reward_function(old, new, basic_reward, step_count, same_position, done):
     """
     calculate reward
     :param old: state old
@@ -6,6 +6,7 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     :param basic_reward: basic reward of finish come from env
     :param step_count: number of steps
     :param same_position: number of steps in same position
+    :param done: the game is finish or not
     :return: float
     reward
     """
