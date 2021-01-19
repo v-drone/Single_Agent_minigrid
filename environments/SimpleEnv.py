@@ -27,7 +27,6 @@ class SimpleEnv(object):
         self.current_step_count = 0
 
     def step(self, action):
-        success_text = None
         # Turn left, turn right, move forward
         # forward = 0
         # left = 1
@@ -38,7 +37,7 @@ class SimpleEnv(object):
             self.same_position += 1
         else:
             self.same_position = -1
-        reward_get = sum(reward_function(old, new, original_reward, self.env.step_count, self.same_position))
+        reward_get = sum(reward_function(old, new, original_reward, self.env.step_count, self.same_position, done))
         self.current_show_reward.append(reward_get)
         self.current_step_count += 1
         if done:
@@ -117,7 +116,8 @@ class SimpleEnv(object):
             "agent_view": view,
             "whole_map": whole_map,
             "relative_position": relative_position,
-            "attitude": attitude
+            "attitude": attitude,
+            "fuzzy_distance": sum([abs(x) for x in (np.array(self.env.goal_pos) - np.array(self.env.agent_start_pos))])
         }
         return data
 
