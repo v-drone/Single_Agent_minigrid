@@ -1,4 +1,4 @@
-def reward_function(old, new, basic_reward, step_count, same_position):
+def reward_function(old, new, basic_reward, step_count, same_position, done):
     """
     calculate reward
     :param old: state old
@@ -6,20 +6,16 @@ def reward_function(old, new, basic_reward, step_count, same_position):
     :param basic_reward: basic reward of finish come from env
     :param step_count: number of steps
     :param same_position: number of steps in same position
+    :param done: the game is finish or not
     :return: float
     reward
     """
     # parameters
     b = 10
-    d = 0
-    v1 = 0.001
-    v2 = 0.001
+    v1 = 0.0001
+    v2 = 0.0001
     # the reward from environment
     basic_reward = basic_reward * b
-    # distance to goal changed
-    distance_change = old["relative_position"] - new["relative_position"]
-    distance_change = sum(distance_change) * d
     # stay over
     step_discount = - v1 * same_position - v2 * step_count
-    return [step_discount + distance_change, basic_reward]
-
+    return [step_discount, basic_reward]
