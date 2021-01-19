@@ -14,10 +14,10 @@ class LavaGapEnv(MiniGridEnv):
         self.size = size
         super().__init__(
             grid_size=size,
-            max_steps=4 * size * size,
+            max_steps=2 * size * size,
             # Set this to True for maximum speed
             see_through_walls=False,
-            seed=None
+            seed=None,
         )
 
     def _gen_grid(self, width, height):

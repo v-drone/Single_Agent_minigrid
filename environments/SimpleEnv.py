@@ -27,7 +27,6 @@ class SimpleEnv(object):
         self.current_step_count = 0
 
     def step(self, action):
-        success_text = None
         # Turn left, turn right, move forward
         # forward = 0
         # left = 1

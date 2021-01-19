@@ -28,7 +28,7 @@ class EmptyEnv(MiniGridEnv):
         super().__init__(
             width=width,
             height=height,
-            max_steps=width * height,
+            max_steps=2 * width * height,
             # Set this to True for maximum speed
             see_through_walls=True
         )

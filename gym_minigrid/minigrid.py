@@ -831,7 +831,7 @@ class MiniGridEnv(gym.Env):
         Compute the reward to be given upon success
         """
 
-        return 1 - 0.9 * (self.step_count / self.max_steps)
+        return 1
 
     def _rand_int(self, low, high):
         """
