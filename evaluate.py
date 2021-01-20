@@ -20,7 +20,7 @@ if os.path.exists("./model_save/model.params"):
     online_model.load_parameters("./model_save/model.params", ctx=ctx)
     offline_model.load_parameters("./model_save/model.params", ctx=ctx)
     print("load model")
-env = SimpleEnv(display=False)
+env = SimpleEnv(display=True)
 # create pool
 memory_pool = Memory(memory_length)
 algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model, bz=1024)
@@ -39,7 +39,7 @@ for epoch in range(_epoch, num_episode):
     env.reset_env()
     finish = 0
     while not finish:
-        eps = 0.2
+        eps = 0
         action, by = algorithm.get_action(env.state(), eps)
         old, new, reward_get, finish, original_reward = env.step(action)
         memory_pool.add(old, new, action, reward_get, finish)
