@@ -21,9 +21,7 @@ if os.path.exists("./model_save/model.params"):
     offline_model.load_parameters("./model_save/model.params", ctx=ctx)
     print("load model")
 env = SimpleEnv(display=True)
-# create pool
-memory_pool = Memory(memory_length)
-algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model, bz=1024)
+algorithm = DQN([online_model, offline_model], ctx, lr, gamma, None, action_max, temporary_model, bz=1024)
 finish = 0
 all_step_counter = 0
 annealing_count = 0
@@ -42,7 +40,6 @@ for epoch in range(_epoch, num_episode):
         eps = 0
         action, by = algorithm.get_action(env.state(), eps)
         old, new, reward_get, finish, original_reward = env.step(action)
-        memory_pool.add(old, new, action, reward_get, finish)
         if finish and len(env.finish) > 50:
             sr_50 = sum(env.finish[-50:]) / min(len(env.finish), 50)
             ar_50 = sum(env.total_reward[-50:]) / sum(env.total_step_count[-50:])
