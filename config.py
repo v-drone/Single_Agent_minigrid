@@ -11,7 +11,7 @@ update_step = 1000
 # gamma in q-loss calculation
 gamma = 0.99
 # memory pool size
-memory_length = 300000
+memory_length = 500000
 # file to save train log
 summary = "./test_{}".format(str(time.time()))
 # the number of step it take to linearly anneal the epsilon to it min value
