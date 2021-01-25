@@ -13,8 +13,10 @@ class DistShiftEnv(MiniGridEnv):
             width=9,
             height=6,
             agent_start_dir=0,
+            max_step=None,
     ):
-
+        if max_step is None:
+            max_step = 2 * width * height
         self.agent_start_dir = agent_start_dir
         if random.randint(0, 1) != 0:
             self.agent_start_pos = (1, random.randint(1, height - 2))
@@ -26,7 +28,7 @@ class DistShiftEnv(MiniGridEnv):
         super().__init__(
             width=width,
             height=height,
-            max_steps=2 * width * height,
+            max_steps=max_step,
             # Set this to True for maximum speed
             see_through_walls=True
         )

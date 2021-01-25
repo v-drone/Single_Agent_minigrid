@@ -12,10 +12,10 @@ class EmptyEnv(MiniGridEnv):
             self,
             width=9,
             height=6,
+            max_step=None,
     ):
-        # self.agent_start_pos = (2, 2)
-        # self.agent_start_dir = 0
-        # self.goal_pos = (4, 4)
+        if max_step is None:
+            max_step = 2 * width * height
         if random.randint(0, 1) != 0:
             self.agent_start_pos = (1, random.randint(1, height - 2))
             self.agent_start_dir = 0
@@ -28,7 +28,7 @@ class EmptyEnv(MiniGridEnv):
         super().__init__(
             width=width,
             height=height,
-            max_steps=2 * width * height,
+            max_steps=max_step,
             # Set this to True for maximum speed
             see_through_walls=True
         )
