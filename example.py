@@ -28,12 +28,13 @@ finish = 0
 all_step_counter = 0
 annealing_count = 0
 cost = []
-texts = []
-num_episode = 10000000
+num_episode = 1000000
 tot_reward = np.zeros(num_episode)
 moving_average_clipped = 0.
 moving_average = 0.
 _epoch = 0
+negative_addition = 0
+tmp_reward = 0
 for epoch in range(_epoch, num_episode):
     _epoch += 1
     env.reset_env()

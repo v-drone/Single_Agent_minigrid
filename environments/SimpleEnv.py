@@ -25,7 +25,6 @@ class SimpleEnv(object):
         self.total_step_count = []
         self.current_show_reward = []
         self.current_step_count = 0
-        self.fuzzy_distance = None
 
     def step(self, action):
         # Turn left, turn right, move forward
@@ -98,7 +97,6 @@ class SimpleEnv(object):
             self.window.close()
         self.current_show_reward = []
         self.current_step_count = 0
-        self.fuzzy_distance = sum([abs(x) for x in (np.array(self.env.goal_pos) - np.array(self.env.agent_start_pos))])
         return self.state()
 
     def state(self):
@@ -118,9 +116,7 @@ class SimpleEnv(object):
             "whole_map": whole_map,
             "relative_position": relative_position,
             "attitude": attitude,
-            "fuzzy_distance": sum([abs(x) for x in (np.array(self.env.goal_pos) - np.array(self.env.agent_start_pos))]),
-            "start": self.env.agent_start_pos,
-            "goal": self.env.goal_pos
+            "fuzzy_distance": sum([abs(x) for x in (np.array(self.env.goal_pos) - np.array(self.env.agent_start_pos))])
         }
         return data
 
