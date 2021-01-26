@@ -46,7 +46,8 @@ for epoch in range(10000):
             ar_50 = sum(env.total_reward[-50:]) / sum(env.total_step_count[-50:])
             sr_all = sum(env.finish) / len(env.finish)
             ar_all = sum(env.total_reward) / sum(env.total_step_count)
-            text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (sr_50, ar_50, sr_all, ar_all)
+            text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
+            sr_50, ar_50, sr_all, ar_all)
             if epoch % 100 == 0:
                 print(text + "; %f" % eps)
         tot_reward[int(epoch) - 1] = cum_clipped_reward
@@ -62,5 +63,5 @@ plt.legend()
 print('Running after %d number of episodes' % _epoch)
 plt.xlabel("Number of episode")
 plt.ylabel("Average Reward per episode")
-plt.savefig("./add_same_position_step_discount_by_buffer_negative_reward_function_eval_%s.jpg" % argv[1])
-np.save("add_same_position_step_discount_by_buffer_negative_%s_eval.array" % argv[1], total_rew)
+plt.savefig("./reward_3_eval_%s.jpg" % argv[1])
+np.save("reward_3_eval_%s.array" % argv[1], env.total_step_count)
