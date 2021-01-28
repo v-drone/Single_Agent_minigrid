@@ -16,13 +16,14 @@ def reward_function(old, new, basic_reward, step_count, same_position, done):
     v2 = 0.005
     # the reward from environment
     basic_reward = basic_reward * b
+    if done:
+        if basic_reward == 1:
+            basic_reward -= v2 * step_count
+        else:
+            basic_reward = 0
+    else:
+        basic_reward = 0
     # stay over
     same_position = - v1 * same_position
-    # step used discount
-    if done:
-        step_discount = - v2 * step_count
-    else:
-        step_discount = 0
-    return [same_position + step_discount, basic_reward]
 
-
+    return [same_position, basic_reward]
