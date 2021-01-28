@@ -20,7 +20,6 @@ def reward_function(old, new, basic_reward, step_count, same_position, done):
         buffer = (fuzzy_distance - step_count) / 10
         if basic_reward == 1:
             basic_reward *= 1 + buffer
-            print("+", buffer, step_count, new["fuzzy_distance"])
         else:
             basic_reward = 0
     else:
