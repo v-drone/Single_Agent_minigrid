@@ -15,15 +15,17 @@ def reward_function(old, new, basic_reward, step_count, same_position, done):
     v1 = 0.005
     v2 = 0
     # the reward from environment
-    basic_reward = basic_reward * b
+    if done:
+        fuzzy_distance = (new["fuzzy_distance"][0] + 1) * (new["fuzzy_distance"][1] + 1)
+        buffer = (fuzzy_distance - step_count) / 10
+        if basic_reward == 1:
+            basic_reward *= 1 + buffer
+            print("+", buffer, step_count, new["fuzzy_distance"])
+        else:
+            basic_reward = 0
+    else:
+        basic_reward = 0
     # stay over
     same_position = - v1 * same_position
     # step used discount
-    if done:
-        buffer = new["fuzzy_distance"] / step_count
-    else:
-        buffer = 1
-
-    return [same_position, basic_reward * buffer]
-
-
+    return [same_position, basic_reward]
