@@ -1,8 +1,6 @@
-import matplotlib.pyplot as plt
-import os
 import numpy as np
 import mxnet as mx
-from model import Stack, SimpleStack
+from model import SimpleStack
 from utils import check_dir
 from memory import Memory
 from config import *
@@ -14,8 +12,8 @@ ctx = mx.gpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
 # build models
-online_model = SimpleStack(7, 10)
-offline_model = SimpleStack(7, 10)
+online_model = SimpleStack(agent_view, map_size)
+offline_model = SimpleStack(agent_view, map_size)
 online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().zero_grad()
