@@ -103,7 +103,7 @@ class SimpleEnv(object):
         attitude = self.env.agent_dir
         grid, vis_mask = self.env.gen_obs_grid()
         agent = np.array([self.env.agent_pos[0], self.env.agent_pos[1], self.env.agent_dir])
-        view = to_numpy(grid, agent, vis_mask)[::-1]
+        view = to_numpy(grid, [3, 6, agent[-1]], vis_mask)[::-1]
         view = np.flip(view[::-1], 1)
         # view = self.env.gen_obs()["image"]
         # view = self.env.get_obs_render(view, precision)
