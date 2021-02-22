@@ -1,4 +1,7 @@
 import time
+# agent view
+agent_view = 7
+map_size = 10
 # action max
 action_max = 3
 # learning rate
