@@ -116,7 +116,6 @@ class SimpleEnv(object):
             "whole_map": whole_map,
             "relative_position": relative_position,
             "attitude": attitude,
-            "fuzzy_distance": sum([abs(x) for x in (np.array(self.env.goal_pos) - np.array(self.env.agent_start_pos))])
         }
         return data
 
