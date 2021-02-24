@@ -84,8 +84,8 @@ class SimpleEnv(object):
         :return:
         """
         size = 10
-        _ = 0
-        # _ = random.randint(-2, 2)
+        # _ = 0
+        _ = random.randint(-2, 2)
         if _ > 1:
             self.env = LavaGapEnv(size, max_step=50)
         elif _ < -1:
