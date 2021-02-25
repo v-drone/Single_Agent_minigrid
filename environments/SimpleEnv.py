@@ -84,14 +84,7 @@ class SimpleEnv(object):
         :return:
         """
         size = 10
-        # _ = 0
-        _ = random.randint(-2, 2)
-        if _ > 1:
-            self.env = LavaGapEnv(size, max_step=50)
-        elif _ < -1:
-            self.env = DistShiftEnv(width=size, height=size, max_step=50)
-        else:
-            self.env = EmptyEnv(width=size, height=size, max_step=50)
+        self.env = LavaGapEnv(size, max_step=50)
         self.env.reset()
         if self.display and self.window:
             self.window.close()
