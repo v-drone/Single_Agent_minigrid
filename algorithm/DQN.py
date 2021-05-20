@@ -1,4 +1,3 @@
-import numpy as np
 from mxnet import nd
 from mxnet import gluon
 from mxnet import autograd
@@ -6,7 +5,8 @@ from . import AbstractAlgorithm
 
 
 class DQN(AbstractAlgorithm):
-    def __init__(self, models, ctx, lr, gamma, pool, action_max, temporary_model, bz=32):
+    def __init__(self, models, ctx, lr, gamma, pool, action_max,
+                 temporary_model, bz=32):
         """
         mxnet DQN algorithm train case
         :param models: two model
@@ -23,7 +23,8 @@ class DQN(AbstractAlgorithm):
         self.lr = lr
         self.gamma = gamma
         self.dataset = pool
-        self.trainer = gluon.Trainer(self.offline.collect_params(), 'adam', {'learning_rate': lr})
+        self.trainer = gluon.Trainer(self.offline.collect_params(), 'adam',
+                                     {'learning_rate': lr})
         self.online.collect_params().zero_grad()
         self.loss_func = gluon.loss.L2Loss()
 
@@ -38,18 +39,13 @@ class DQN(AbstractAlgorithm):
         else:
             bz = len(self.dataset.memory)
         for_train = self.dataset.next_batch(bz)
-        batch_state = nd.array(for_train["state"], self.ctx)
-        batch_state_next = nd.array(for_train["state_next"], self.ctx)
-        batch_action = nd.array(for_train["action"], self.ctx).astype('uint8')
-        batch_reward = nd.array(for_train["reward"], self.ctx)
-        batch_finish = nd.array(for_train["finish"], self.ctx)
-
         with autograd.record(train_mode=True):
-            Q_sp = nd.max(self.online(batch_state_next), axis=1)
-            Q_sp = Q_sp * (nd.ones(bz, ctx=self.ctx) - batch_finish)
-            Q_s_array = self.offline(batch_state)
-            Q_s = nd.pick(Q_s_array, batch_action, 1)
-            loss = nd.mean(self.loss_func(Q_s, (batch_reward + self.gamma * Q_sp)))
+            q_sp = nd.max(self.online(for_train["state_next"]), axis=1)
+            q_sp = q_sp * (nd.ones(bz, ctx=self.ctx) - for_train["finish"])
+            q_s_array = self.offline(for_train["state"])
+            q_s = nd.pick(q_s_array, for_train["action"], 1)
+            loss = nd.mean(
+                self.loss_func(q_s, (for_train["reward"] + self.gamma * q_sp)))
         loss.backward()
         self.trainer.step(bz)
         return loss.asscalar()

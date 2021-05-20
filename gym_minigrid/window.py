@@ -5,11 +5,13 @@ import numpy as np
 try:
     import matplotlib.pyplot as plt
 except:
-    print('To display the environment in a window, please install matplotlib, eg:')
+    print(
+        'To display the environment in a window, please install matplotlib, eg:')
     print('pip3 install --user matplotlib')
     sys.exit(-1)
 
-class Window:
+
+class Window(object):
     """
     Window to draw a gridworld instance using Matplotlib
     """

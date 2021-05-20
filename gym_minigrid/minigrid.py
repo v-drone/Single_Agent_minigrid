@@ -1,9 +1,7 @@
-import math
 import hashlib
 import gym
 from enum import IntEnum
-import numpy as np
-from gym import error, spaces, utils
+from gym import spaces
 from gym.utils import seeding
 from .rendering import *
 
@@ -17,7 +15,8 @@ COLORS = {
     'blue': np.array([0, 0, 255]),
     'purple': np.array([112, 39, 195]),
     'yellow': np.array([255, 255, 0]),
-    'grey': np.array([100, 100, 100])
+    'grey': np.array([100, 100, 100]),
+    'orange': np.array([255, 127, 0]),
 }
 
 COLOR_NAMES = sorted(list(COLORS.keys()))
@@ -29,7 +28,8 @@ COLOR_TO_IDX = {
     'blue': 2,
     'purple': 3,
     'yellow': 4,
-    'grey': 5
+    'grey': 5,
+    'orange': 6
 }
 
 IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
@@ -47,6 +47,7 @@ OBJECT_TO_IDX = {
     'goal': 8,
     'lava': 9,
     'agent': 10,
+    'cs': 11,
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
@@ -71,21 +72,19 @@ DIR_TO_VEC = [
 ]
 
 
-class WorldObj:
+class WorldObj(object):
     """
     Base class for grid world objects
     """
 
-    def __init__(self, type, color):
-        assert type in OBJECT_TO_IDX, type
+    def __init__(self, obj_type, color):
+        assert obj_type in OBJECT_TO_IDX, obj_type
         assert color in COLOR_TO_IDX, color
-        self.type = type
+        self.type = obj_type
         self.color = color
         self.contains = None
-
         # Initial position of the object
         self.init_pos = None
-
         # Current position of the object
         self.cur_pos = None
 
@@ -95,10 +94,6 @@ class WorldObj:
 
     def can_pickup(self):
         """Can the agent pick this up?"""
-        return False
-
-    def can_contain(self):
-        """Can this contain another object?"""
         return False
 
     def see_behind(self):
@@ -111,7 +106,7 @@ class WorldObj:
 
     def encode(self):
         """Encode the a description of this object as a 3-tuple of integers"""
-        return (OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], 0)
+        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], 0
 
     @staticmethod
     def decode(type_idx, color_idx, state):
@@ -164,6 +159,17 @@ class Goal(WorldObj):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
 
+class ChargingStation(WorldObj):
+    def __init__(self):
+        super().__init__('cs', 'orange')
+
+    def can_overlap(self):
+        return True
+
+    def render(self, img):
+        fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
+
+
 class Floor(WorldObj):
     """
     Colored floor tile the agent can walk over
@@ -188,6 +194,9 @@ class Lava(WorldObj):
     def can_overlap(self):
         return True
 
+    def see_behind(self):
+        return False
+
     def render(self, img):
         c = (255, 128, 0)
 
@@ -198,10 +207,14 @@ class Lava(WorldObj):
         for i in range(3):
             ylo = 0.3 + 0.2 * i
             yhi = 0.4 + 0.2 * i
-            fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
+            fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03),
+                        (0, 0, 0))
+            fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03),
+                        (0, 0, 0))
+            fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03),
+                        (0, 0, 0))
+            fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03),
+                        (0, 0, 0))
 
 
 class Wall(WorldObj):
@@ -231,7 +244,8 @@ class Door(WorldObj):
     def toggle(self, env, pos):
         # If the player has the right key to open the door
         if self.is_locked:
-            if isinstance(env.carrying, Key) and env.carrying.color == self.color:
+            if isinstance(env.carrying,
+                          Key) and env.carrying.color == self.color:
                 self.is_locked = False
                 self.is_open = True
                 return True
@@ -250,8 +264,10 @@ class Door(WorldObj):
             state = 2
         elif not self.is_open:
             state = 1
+        else:
+            raise Exception
 
-        return (OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], state)
+        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], state
 
     def render(self, img):
         c = COLORS[self.color]
@@ -264,7 +280,8 @@ class Door(WorldObj):
         # Door frame and door
         if self.is_locked:
             fill_coords(img, point_in_rect(0.00, 1.00, 0.00, 1.00), c)
-            fill_coords(img, point_in_rect(0.06, 0.94, 0.06, 0.94), 0.45 * np.array(c))
+            fill_coords(img, point_in_rect(0.06, 0.94, 0.06, 0.94),
+                        0.45 * np.array(c))
 
             # Draw key slot
             fill_coords(img, point_in_rect(0.52, 0.75, 0.50, 0.56), c)
@@ -283,6 +300,9 @@ class Key(WorldObj):
         super(Key, self).__init__('key', color)
 
     def can_pickup(self):
+        return True
+
+    def can_overlap(self):
         return True
 
     def render(self, img):
@@ -305,6 +325,9 @@ class Ball(WorldObj):
         super(Ball, self).__init__('ball', color)
 
     def can_pickup(self):
+        return False
+
+    def can_overlap(self):
         return True
 
     def render(self, img):
@@ -335,7 +358,7 @@ class Box(WorldObj):
         return True
 
 
-class Grid:
+class Grid(object):
     """
     Represent a grid and operations on it
     """
@@ -380,13 +403,13 @@ class Grid:
         return deepcopy(self)
 
     def set(self, i, j, v):
-        assert i >= 0 and i < self.width
-        assert j >= 0 and j < self.height
+        assert 0 <= i < self.width
+        assert 0 <= j < self.height
         self.grid[j * self.width + i] = v
 
     def get(self, i, j):
-        assert i >= 0 and i < self.width
-        assert j >= 0 and j < self.height
+        assert 0 <= i < self.width
+        assert 0 <= j < self.height
         return self.grid[j * self.width + i]
 
     def horz_wall(self, x, y, length=None, obj_type=Wall):
@@ -421,7 +444,7 @@ class Grid:
 
         return grid
 
-    def slice(self, topX, topY, width, height):
+    def slice(self, top_x, top_y, width, height):
         """
         Get a subset of the grid
         """
@@ -430,11 +453,9 @@ class Grid:
 
         for j in range(0, height):
             for i in range(0, width):
-                x = topX + i
-                y = topY + j
-
-                if x >= 0 and x < self.width and \
-                        y >= 0 and y < self.height:
+                x = top_x + i
+                y = top_y + j
+                if 0 <= x < self.width and 0 <= y < self.height:
                     v = self.get(x, y)
                 else:
                     v = Wall()
@@ -455,7 +476,6 @@ class Grid:
         """
         Render a tile and cache the result
         """
-
         # Hash map lookup key for the cache
         key = (agent_dir, highlight, tile_size)
         key = obj.encode() + key if obj else key
@@ -463,13 +483,14 @@ class Grid:
         if key in cls.tile_cache:
             return cls.tile_cache[key]
 
-        img = np.zeros(shape=(tile_size * subdivs, tile_size * subdivs, 3), dtype=np.uint8)
+        img = np.zeros(shape=(tile_size * subdivs, tile_size * subdivs, 3),
+                       dtype=np.uint8)
 
         # Draw the grid lines (top and left edges)
         fill_coords(img, point_in_rect(0, 0.031, 0, 1), (100, 100, 100))
         fill_coords(img, point_in_rect(0, 1, 0, 0.031), (100, 100, 100))
 
-        if obj != None:
+        if obj is not None:
             obj.render(img)
 
         # Overlay the agent on top
@@ -481,7 +502,8 @@ class Grid:
             )
 
             # Rotate the agent based on its direction
-            tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi * agent_dir)
+            tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5,
+                               theta=0.5 * math.pi * agent_dir)
             fill_coords(img, tri_fn, (255, 0, 0))
 
         # Highlight the cell if needed
@@ -496,21 +518,11 @@ class Grid:
 
         return img
 
-    def render(
-            self,
-            tile_size,
-            agent_pos=None,
-            agent_dir=None,
-            highlight_mask=None
-    ):
-        """
-        Render this grid at a given scale
-        :param r: target renderer object
-        :param tile_size: tile size in pixels
-        """
-
+    def render(self, tile_size, agent_pos=None, agent_dir=None,
+               highlight_mask=None):
         if highlight_mask is None:
-            highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
+            highlight_mask = np.zeros(shape=(self.width, self.height),
+                                      dtype=np.bool)
 
         # Compute the total grid size
         width_px = self.width * tile_size
@@ -660,14 +672,16 @@ class MiniGridEnv(gym.Env):
             max_steps=100,
             see_through_walls=False,
             seed=1337,
-            agent_view_size=7
+            agent_view_size=7,
+            agent_battery=100
     ):
         # Can't set both grid_size and width/height
+        self.np_random, _ = seeding.np_random(seed)
         if grid_size:
-            assert width == None and height == None
+            assert width is None and height is None
             width = grid_size
             height = grid_size
-
+        self.grid = None
         # Action enumeration for this environment
         self.actions = MiniGridEnv.Actions
 
@@ -678,7 +692,8 @@ class MiniGridEnv(gym.Env):
         assert agent_view_size % 2 == 1
         assert agent_view_size >= 3
         self.agent_view_size = agent_view_size
-
+        self.agent_battery = agent_battery
+        self.full_agent_battery = agent_battery
         # Observations are dictionaries containing an
         # encoding of the grid and a textual 'mission' string
         self.observation_space = spaces.Box(
@@ -710,6 +725,12 @@ class MiniGridEnv(gym.Env):
         # Initialize the RNG
         self.seed(seed=seed)
 
+        # Item picked up, being carried, initially nothing
+        self.carrying = None
+
+        # Step count since episode start
+        self.step_count = 0
+
         # Initialize the state
         self.reset()
 
@@ -722,11 +743,11 @@ class MiniGridEnv(gym.Env):
         # To keep the same grid for each episode, call env.seed() with
         # the same seed before calling env.reset()
         self._gen_grid(self.width, self.height)
-
         # These fields should be defined by _gen_grid
+
         assert self.agent_pos is not None
         assert self.agent_dir is not None
-
+        assert self.grid is not None
         # Check that the agent doesn't overlap with an object
         start_cell = self.grid.get(*self.agent_pos)
         assert start_cell is None or start_cell.can_overlap()
@@ -737,17 +758,20 @@ class MiniGridEnv(gym.Env):
         # Step count since episode start
         self.step_count = 0
 
+        # battery level
+        self.agent_battery = self.full_agent_battery
         # Return first observation
         obs = self.gen_obs()
         return obs
 
     def seed(self, seed=1337):
         # Seed the random number generator
-        self.np_random, _ = seeding.np_random(seed)
         return [seed]
 
     def hash(self, size=16):
-        """Compute a hash that uniquely identifies the current state of the environment.
+        """
+        Compute a hash that uniquely identifies the current state of the 
+        environment.
         :param size: Size of the hashing
         """
         sample_hash = hashlib.sha256()
@@ -770,7 +794,7 @@ class MiniGridEnv(gym.Env):
         """
 
         # Map of object types to short string
-        OBJECT_TO_STR = {
+        object_to_str = {
             'wall': 'W',
             'floor': 'F',
             'door': 'D',
@@ -782,46 +806,40 @@ class MiniGridEnv(gym.Env):
         }
 
         # Short string for opened door
-        OPENDED_DOOR_IDS = '_'
+        opened_door_ids = '_'
 
         # Map agent's direction to short string
-        AGENT_DIR_TO_STR = {
+        agent_dir_to_str = {
             0: '>',
             1: 'V',
             2: '<',
             3: '^'
         }
-
-        str = ''
-
+        text = ''
         for j in range(self.grid.height):
-
             for i in range(self.grid.width):
                 if i == self.agent_pos[0] and j == self.agent_pos[1]:
-                    str += 2 * AGENT_DIR_TO_STR[self.agent_dir]
+                    text += 2 * agent_dir_to_str[self.agent_dir]
                     continue
-
                 c = self.grid.get(i, j)
-
-                if c == None:
-                    str += '  '
+                if c is None:
+                    text += '  '
                     continue
-
                 if c.type == 'door':
                     if c.is_open:
-                        str += '__'
+                        text += '__'
                     elif c.is_locked:
-                        str += 'L' + c.color[0].upper()
+                        text += 'L' + c.color[0].upper()
                     else:
-                        str += 'D' + c.color[0].upper()
+                        text += 'D' + c.color[0].upper()
                     continue
 
-                str += OBJECT_TO_STR[c.type] + c.color[0].upper()
+                text += object_to_str[c.type] + c.color[0].upper()
 
             if j < self.grid.height - 1:
-                str += '\n'
+                text += '\n'
 
-        return str
+        return text
 
     def _gen_grid(self, width, height):
         assert False, "_gen_grid needs to be implemented by each environment"
@@ -852,7 +870,7 @@ class MiniGridEnv(gym.Env):
         Generate random boolean value
         """
 
-        return (self.np_random.randint(0, 2) == 0)
+        return self.np_random.randint(0, 2) == 0
 
     def _rand_elem(self, iterable):
         """
@@ -887,14 +905,14 @@ class MiniGridEnv(gym.Env):
 
         return self._rand_elem(COLOR_NAMES)
 
-    def _rand_pos(self, xLow, xHigh, yLow, yHigh):
+    def _rand_pos(self, x_low, x_high, y_low, y_high):
         """
         Generate a random (x,y) position tuple
         """
 
         return (
-            self.np_random.randint(xLow, xHigh),
-            self.np_random.randint(yLow, yHigh)
+            self.np_random.randint(x_low, x_high),
+            self.np_random.randint(y_low, y_high)
         )
 
     def place_obj(self,
@@ -907,6 +925,8 @@ class MiniGridEnv(gym.Env):
         """
         Place an object at an empty position in the grid
 
+        :param obj: 
+        :param max_tries: 
         :param top: top-left position of the rectangle where to place
         :param size: size of the rectangle where to place
         :param reject_fn: function to filter out potential positions
@@ -936,7 +956,7 @@ class MiniGridEnv(gym.Env):
             ))
 
             # Don't place the object on top of another object
-            if self.grid.get(*pos) != None:
+            if self.grid.get(*pos) is not None:
                 continue
 
             # Don't place the object where the agent is
@@ -993,7 +1013,7 @@ class MiniGridEnv(gym.Env):
         of forward movement.
         """
 
-        assert self.agent_dir >= 0 and self.agent_dir < 4
+        assert 0 <= self.agent_dir < 4
         return DIR_TO_VEC[self.agent_dir]
 
     @property
@@ -1048,36 +1068,38 @@ class MiniGridEnv(gym.Env):
 
         # Facing right
         if self.agent_dir == 0:
-            topX = self.agent_pos[0]
-            topY = self.agent_pos[1] - self.agent_view_size // 2
+            top_x = self.agent_pos[0]
+            top_y = self.agent_pos[1] - self.agent_view_size // 2
         # Facing down
         elif self.agent_dir == 1:
-            topX = self.agent_pos[0] - self.agent_view_size // 2
-            topY = self.agent_pos[1]
+            top_x = self.agent_pos[0] - self.agent_view_size // 2
+            top_y = self.agent_pos[1]
         # Facing left
         elif self.agent_dir == 2:
-            topX = self.agent_pos[0] - self.agent_view_size + 1
-            topY = self.agent_pos[1] - self.agent_view_size // 2
+            top_x = self.agent_pos[0] - self.agent_view_size + 1
+            top_y = self.agent_pos[1] - self.agent_view_size // 2
         # Facing up
         elif self.agent_dir == 3:
-            topX = self.agent_pos[0] - self.agent_view_size // 2
-            topY = self.agent_pos[1] - self.agent_view_size + 1
+            top_x = self.agent_pos[0] - self.agent_view_size // 2
+            top_y = self.agent_pos[1] - self.agent_view_size + 1
         else:
             assert False, "invalid agent direction"
 
-        botX = topX + self.agent_view_size
-        botY = topY + self.agent_view_size
+        bot_x = top_x + self.agent_view_size
+        bot_y = top_y + self.agent_view_size
 
-        return (topX, topY, botX, botY)
+        return top_x, top_y, bot_x, bot_y
 
     def relative_coords(self, x, y):
         """
-        Check if a grid position belongs to the agent's field of view, and returns the corresponding coordinates
+        Check if a grid position belongs to the agent's field of view
+        returns the corresponding coordinates
         """
 
         vx, vy = self.get_view_coords(x, y)
 
-        if vx < 0 or vy < 0 or vx >= self.agent_view_size or vy >= self.agent_view_size:
+        if vx < 0 or vy < 0 or vx >= self.agent_view_size \
+                or vy >= self.agent_view_size:
             return None
 
         return vx, vy
@@ -1108,7 +1130,6 @@ class MiniGridEnv(gym.Env):
 
     def step(self, action):
         self.step_count += 1
-
         reward = 0
         done = False
 
@@ -1130,12 +1151,12 @@ class MiniGridEnv(gym.Env):
 
         # Move forward
         elif action == self.actions.forward:
-            if fwd_cell == None or fwd_cell.can_overlap():
+            if fwd_cell is None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
-            if fwd_cell != None and fwd_cell.type == 'goal':
+            if fwd_cell is not None and fwd_cell.type == 'goal':
                 done = True
                 reward = self._reward()
-            if fwd_cell != None and fwd_cell.type == 'lava':
+            if fwd_cell is not None and fwd_cell.type == 'lava':
                 done = True
 
         # Pick up an object
@@ -1179,9 +1200,10 @@ class MiniGridEnv(gym.Env):
         cells the agent can actually see.
         """
 
-        topX, topY, botX, botY = self.get_view_exts()
+        top_x, top_y, bot_x, bot_y = self.get_view_exts()
 
-        grid = self.grid.slice(topX, topY, self.agent_view_size, self.agent_view_size)
+        grid = self.grid.slice(top_x, top_y, self.agent_view_size,
+                               self.agent_view_size)
 
         for i in range(self.agent_dir + 1):
             grid = grid.rotate_left()
@@ -1189,7 +1211,8 @@ class MiniGridEnv(gym.Env):
         # Process occluders and visibility
         # Note that this incurs some performance cost
         if not self.see_through_walls:
-            vis_mask = grid.process_vis(agent_pos=(self.agent_view_size // 2, self.agent_view_size - 1))
+            vis_mask = grid.process_vis(agent_pos=(
+                self.agent_view_size // 2, self.agent_view_size - 1))
         else:
             vis_mask = np.ones(shape=(grid.width, grid.height), dtype=np.bool)
 
@@ -1206,7 +1229,8 @@ class MiniGridEnv(gym.Env):
 
     def gen_obs(self):
         """
-        Generate the agent's view (partially observable, low-resolution encoding)
+        Generate the agent's view (partially observable, low-resolution
+        encoding)
         """
 
         grid, vis_mask = self.gen_obs_grid()
@@ -1214,7 +1238,8 @@ class MiniGridEnv(gym.Env):
         # Encode the partially observable view into a numpy array
         image = grid.encode(vis_mask)
 
-        assert hasattr(self, 'mission'), "environments must define a textual mission string"
+        assert hasattr(self, 'mission'), "environments must define" \
+                                         " a textual mission string "
 
         # Observations are dictionaries containing:
         # - an image (partially observable view of the environment)
@@ -1223,7 +1248,6 @@ class MiniGridEnv(gym.Env):
         obs = {
             'image': image,
             'direction': self.agent_dir,
-            'mission': self.mission
         }
 
         return obs
@@ -1245,7 +1269,8 @@ class MiniGridEnv(gym.Env):
 
         return img
 
-    def render(self, mode='human', close=False, highlight=True, tile_size=TILE_PIXELS):
+    def render(self, mode='human', close=False, highlight=True,
+               tile_size=TILE_PIXELS):
         """
         Render the whole-grid human view
         """
@@ -1267,10 +1292,13 @@ class MiniGridEnv(gym.Env):
         # of the agent's view area
         f_vec = self.dir_vec
         r_vec = self.right_vec
-        top_left = self.agent_pos + f_vec * (self.agent_view_size - 1) - r_vec * (self.agent_view_size // 2)
+        top_left = self.agent_pos + f_vec * (
+                self.agent_view_size - 1) - r_vec * (
+                           self.agent_view_size // 2)
 
         # Mask of which cells to highlight
-        highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
+        highlight_mask = np.zeros(shape=(self.width, self.height),
+                                  dtype=np.bool)
 
         # For each cell in the visibility mask
         for vis_j in range(0, self.agent_view_size):

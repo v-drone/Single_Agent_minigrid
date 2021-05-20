@@ -1,20 +1,11 @@
-def reward_function(old, new, basic_reward, step_count, same_position, done):
-    """
-    calculate reward
-    :param old: state old
-    :param new: state now
-    :param basic_reward: basic reward of finish come from env
-    :param step_count: number of steps
-    :param same_position: number of steps in same position
-    :param done: the game is finish or not
-    :return: float
-    reward
-    """
+def short_term_reward_function(old, new, same_position):
     # parameters
-    b = 1
-    v1 = 0.005
+    v1 = - 0.005
     # the reward from environment
-    basic_reward = basic_reward * b
     # stay over
-    same_position = - v1 * same_position
-    return [same_position, basic_reward]
+    same_position = v1 * same_position
+    return sum([same_position])
+
+
+def long_term_reward_function(find_keys, travel_area):
+    return find_keys + travel_area

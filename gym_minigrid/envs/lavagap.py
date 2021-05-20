@@ -1,5 +1,4 @@
-from gym_minigrid.minigrid import MiniGridEnv, Grid, Goal
-from gym_minigrid.super_lava import Lava
+from gym_minigrid.minigrid import MiniGridEnv, Grid, Goal, Lava
 import random
 
 
@@ -59,7 +58,8 @@ class LavaGapEnv(MiniGridEnv):
             self.grid.vert_wall(i, 1, height - 2, self.obstacle_type)
             # Put a hole in the wall
             _samples = set(range(2, height - 2))
-            _samples = random.sample(_samples, random.randint(3, len(_samples) // 2))
+            _samples = random.sample(_samples,
+                                     random.randint(3, len(_samples) // 2))
             for j in set(_samples):
                 self.grid.set(i, j, None)
 

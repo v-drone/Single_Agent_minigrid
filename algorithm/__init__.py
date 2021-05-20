@@ -1,6 +1,6 @@
 import numpy as np
 from mxnet import nd
-from utils import translate_state
+from utils import create_input, translate_state
 
 
 class AbstractAlgorithm(object):
@@ -19,9 +19,8 @@ class AbstractAlgorithm(object):
             action = np.random.randint(0, self.action_max)
         else:
             by = "Model"
-            state = nd.array([translate_state(state)])
-            state = state.as_in_context(self.ctx)
-            action = self.offline(state)
+            data = create_input([translate_state(state)], self.ctx)
+            action = self.offline(data)
             action = int(nd.argmax(action, axis=1).asnumpy()[0])
         return action, by
 

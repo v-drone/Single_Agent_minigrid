@@ -1,13 +1,19 @@
+from config import *
+import os
 import numpy as np
 import mxnet as mx
+import pandas as pd
+import matplotlib.pyplot as plt
 from model import SimpleStack
 from utils import check_dir
 from memory import Memory
-from config import *
 from algorithm.DQN import DQN
 from environments.SimpleEnv import SimpleEnv
 from utils import copy_params
+from evaluation import evaluate
 
+if os.path.exists(summary):
+    os.remove(summary)
 ctx = mx.gpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
@@ -17,54 +23,63 @@ offline_model = SimpleStack(agent_view, map_size)
 online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().zero_grad()
-print("create model")
+# create env
 env = SimpleEnv(display=False)
-# create pool
-memory_pool = Memory(memory_length)
-algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool, action_max, temporary_model, bz=1024)
-finish = 0
-all_step_counter = 0
-annealing_count = 0
-cost = []
-num_episode = 1000000
-tot_reward = np.zeros(num_episode)
-moving_average_clipped = 0.
-moving_average = 0.
-_epoch = 0
-negative_addition = 0
-tmp_reward = 0
-for epoch in range(_epoch, num_episode):
-    _epoch += 1
+env.reset_env()
+memory_pool = Memory(memory_length, ctx=ctx)
+# workflow
+algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool,
+                action_max, temporary_model, bz=2048)
+annealing = 0
+total_reward = np.zeros(num_episode)
+eval_result = []
+for epoch in range(num_episode):
     env.reset_env()
     finish = 0
-    cum_clipped_reward = 0
+    cum_clipped_dr = 0
     while not finish:
-        if all_step_counter > replay_start_size:
-            annealing_count += 1
-        if all_step_counter == replay_start_size:
+        if sum(env.step_count) > replay_start:
+            annealing += 1
+        if sum(env.step_count) == replay_start:
             print('annealing and learning are started')
-        eps = np.maximum(1 - all_step_counter / annealing_end, epsilon_min)
-        action, by = algorithm.get_action(env.state(), eps)
-        old, new, reward_get, finish, original_reward = env.step(action)
+        eps = np.maximum(1 - sum(env.step_count) / annealing_end, epsilon_min)
+        action, by = algorithm.get_action(env.map.state(), eps)
+        old, new, reward_get, finish = env.step(action)
         memory_pool.add(old, new, action, reward_get, finish)
-        cum_clipped_reward += original_reward
-        all_step_counter += 1
-        if finish and len(env.finish) > 50:
-            sr_50 = sum(env.finish[-50:]) / min(len(env.finish), 50)
-            ar_50 = sum(env.total_reward[-50:]) / sum(env.total_step_count[-50:])
-            sr_all = sum(env.finish) / len(env.finish)
-            ar_all = sum(env.total_reward) / sum(env.total_step_count)
-            text = "success rate last 50 %f, avg return %f; success rate total %f, avg return total %f" % (
-                sr_50, ar_50, sr_all, ar_all)
-            with open(summary, "a") as f:
-                f.writelines(text + "\n")
-            if epoch % 100 == 0:
-                print(text + "; %f" % eps)
-        # save model and replace online model each epoch
-        if annealing_count > replay_start_size and annealing_count % update_step == 0:
+        if finish and epoch > 50:
+            cum_clipped_dr += env.detect_rate[-1]
+            dr_50 = float(np.mean(env.detect_rate[-50:]))
+            dr_all = float(np.mean(env.detect_rate))
+            if epoch % 50 == 0:
+                text = "DR: %f(50), %f(all), eps: %f" % (dr_50, dr_all, eps)
+                print(text)
+                with open(summary, "a") as f:
+                    f.writelines(text + "\n")
+            if epoch % 100 == 0 and annealing > replay_start:
+                eval_result.extend(evaluate(offline_model, 5, ctx))
+        # save model and replace online model each update_step
+        if annealing > replay_start and annealing % update_step == 0:
             copy_params(offline_model, online_model)
             offline_model.save_parameters(temporary_model)
     #  train every 4 epoch
-    if annealing_count > replay_start_size and epoch % 4 == 0:
-        cost.append(algorithm.train())
-    tot_reward[int(epoch) - 1] = cum_clipped_reward
+    if annealing > replay_start and epoch % 4 == 0:
+        algorithm.train()
+    total_reward[int(epoch) - 1] = cum_clipped_dr
+#
+# # statistics
+# step_used = pd.DataFrame(data={"success": eval_result, "step": eval_step})
+# step_used.to_csv(eval_statistics, index=False)
+# bandwidth = 1000  # Moving average bandwidth
+# total_rew = np.zeros(num_episode - bandwidth)
+# for i in range(int(num_episode) - bandwidth):
+#     total_rew[i] = np.sum(total_reward[i:i + bandwidth]) / bandwidth
+# bel_plt = plt.plot(np.arange(int(num_episode) - bandwidth),
+#                    total_rew[0:int(num_episode) - bandwidth], "r",
+#                    label="Return")
+# plt.legend()
+# print('Running after %d number of episodes' % num_episode)
+# plt.xlabel("Number of episode")
+# plt.ylabel("Average Reward per episode")
+# plt.savefig("%s_train.jpg" % order)
+# plt.show()
+# np.save("%s_train.array" % order, env.total_step_count)

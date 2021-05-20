@@ -3,12 +3,20 @@ import numpy as np
 from mxnet import nd
 
 
+def translate_state(state):
+    return (state["agent_view"], state["whole_map"],
+            state["pos"], state["attitude"])
+
+
 def copy_params(offline, online):
     layer = list(offline.collect_params().values())
     for i in layer:
-        _1 = online.collect_params().get("_".join(i.name.split("_")[1:])).data().asnumpy()
-        online.collect_params().get("_".join(i.name.split("_")[1:])).set_data(i.data())
-        _2 = online.collect_params().get("_".join(i.name.split("_")[1:])).data().asnumpy()
+        _1 = online.collect_params().get(
+            "_".join(i.name.split("_")[1:])).data().asnumpy()
+        online.collect_params().get("_".join(i.name.split("_")[1:])).set_data(
+            i.data())
+        _2 = online.collect_params().get(
+            "_".join(i.name.split("_")[1:])).data().asnumpy()
 
 
 def replace_self(grid, attitude):
@@ -44,6 +52,8 @@ def to_numpy(grid, agent=None, vis_mask=None):
         'goal': 1,
         'wall': 2,
         'lava': 3,
+        'ball': 4,
+        'key': 5,
         '>': 6,
         '<': 7,
         '^': 8,
@@ -66,13 +76,19 @@ def get_pad(src, size=15):
     _ = np.array([size, size]) - src.shape
     first_half = np.array(_ / 2).astype(int)
     second_half = _ - first_half
-    return np.pad(src, ((first_half[0], second_half[0]), (first_half[1], second_half[1])), mode="constant")
+    return np.pad(src, (
+        (first_half[0], second_half[0]), (first_half[1], second_half[1])),
+                  mode="constant")
 
 
-def translate_state(state):
-    # agent_view = get_pad(state["agent_view"])
-    # whole_map = get_pad(state["whole_map"])
-    agent_view = state["agent_view"]
-    whole_map = state["whole_map"]
-    # whole_map.flatten(),
-    return np.concatenate([agent_view.flatten(), state["relative_position"], [state["attitude"]]])
+def create_input(data, ctx):
+    target = []
+    for i in range(len(data[0])):
+        target.append([])
+    for arg in data:
+        _ = [np.array([i]) if type(i) is int else np.array(i)
+             for i in arg]
+        for i, each in enumerate(_):
+            target[i].append(each)
+    target = [np.array(i) for i in target]
+    return [nd.array(i, ctx=ctx) for i in target]

@@ -3,35 +3,6 @@ from .Map import MapView
 from mxnet import nd
 
 
-class Stack(nn.Block):
-    def __init__(self):
-        """
-        MLP in mxnet with input by Lidar and Distance sensor
-        """
-        super(Stack, self).__init__()
-        with self.name_scope():
-            # self.agent_view = MapView()
-            self.whole_view = MapView()
-            self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(64, activation="tanh"))
-            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
-
-    def forward(self, income, *args):
-        # agent_in = income[:, 0:225].reshape(-1, 1, 15, 15)
-        whole_map_in = income[:, 225:450].reshape(-1, 1, 15, 15).astype('float32') / 255
-        location_in = income[:, 450: 452]
-        attitude_in = income[:, -1]
-        # relative angle, distance to goal, distance sensor result
-        # all_features = [agent_in.flatten(), whole_map_in.flatten(), location_in.flatten(), attitude_in.flatten()]
-        all_features = [location_in.flatten(), attitude_in.flatten()]
-        # all_features = []
-        # agent_view = self.agent_view(agent_in).flatten()
-        whole_map = self.whole_view(whole_map_in).flatten()
-        all_features.append(whole_map)
-        # all_features.append(whole_map)
-        return self.decision_making(nd.concat(*all_features))
-
-
 class SimpleStack(nn.Block):
     def __init__(self, agent_view, whole_map):
         """
@@ -39,23 +10,41 @@ class SimpleStack(nn.Block):
         """
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            self.map_decode1 = nn.Sequential()
-            self.map_decode1.add(nn.Dense(64, activation="tanh"))
-            self.map_decode1.add(nn.Dense(64, activation="tanh"))
-            self.map_decode1.add(nn.Dense(64, activation="tanh"))
-            self.map_decode1.add(nn.Dense(32, activation="tanh"))
-            self.map_decode1.add(nn.Dense(16, activation="tanh"))
+            self.view_decode = nn.Sequential()
+            self.view_decode.add(nn.Dense(64, activation="tanh"))
+            self.view_decode.add(nn.Dense(64, activation="tanh"))
+            self.view_decode.add(nn.Dense(64, activation="tanh"))
+            self.view_decode.add(nn.Dense(32, activation="tanh"))
+            self.view_decode.add(nn.Dense(16, activation="tanh"))
+            self.map_decode = nn.Sequential()
+            self.map_decode.add(nn.Dense(512, activation="tanh"))
+            self.map_decode.add(nn.Dense(512, activation="tanh"))
+            self.map_decode.add(nn.Dense(256, activation="tanh"))
+            self.map_decode.add(nn.Dense(256, activation="tanh"))
+            self.map_decode.add(nn.Dense(128, activation="tanh"))
+            self.map_decode.add(nn.Dense(64, activation="tanh"))
+            self.map_decode.add(nn.Dense(64, activation="tanh"))
+            self.map_decode.add(nn.Dense(64, activation="tanh"))
+            self.memory = nn.Sequential()
+            self.memory.add(nn.Dense(512, activation="tanh"))
+            self.memory.add(nn.Dense(512, activation="tanh"))
+            self.memory.add(nn.Dense(256, activation="tanh"))
+            self.memory.add(nn.Dense(256, activation="tanh"))
+            self.memory.add(nn.Dense(128, activation="tanh"))
+            self.memory.add(nn.Dense(64, activation="tanh"))
+            self.memory.add(nn.Dense(64, activation="tanh"))
+            self.memory.add(nn.Dense(64, activation="tanh"))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(4, activation="sigmoid"))
         self.agent_view = agent_view
         self.whole_map = whole_map
 
     def forward(self, income, *args):
-        agent_in = income[:, 0:self.agent_view * self.agent_view].reshape(-1, 1, self.agent_view, self.agent_view).astype('float32')
-        location_in = income[:, -3:-1]
-        attitude_in = income[:, -1:]
-        agent_feature = self.map_decode1(agent_in.flatten())
+        view, whole_map, pos, attitude = income
+        view = self.view_decode(view).flatten()
+        whole_map = self.map_decode(whole_map).flatten()
+        memory = self.memory(pos).flatten()
         # relative angle, distance to goal, distance sensor result
-        all_features = [agent_feature.flatten(), location_in.flatten(), attitude_in.flatten()]
+        all_features = [view, whole_map, memory.flatten(), attitude]
         all_features = nd.concat(*all_features)
         return self.decision_making(all_features)
