@@ -1,10 +1,12 @@
+import numpy as np
+
+
 def short_term_reward_function(old, new, same_position):
-    # parameters
-    v1 = - 0.005
-    # the reward from environment
     # stay over
-    same_position = v1 * same_position
-    return sum([same_position])
+    same_position = - 0.005 * same_position
+    # small pos for search
+    search = sum(np.array(new["reward"]) - np.array(old["reward"]))
+    return sum([same_position, search])
 
 
 def long_term_reward_function(find_keys, travel_area):

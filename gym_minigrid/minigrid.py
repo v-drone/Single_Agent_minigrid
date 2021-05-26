@@ -5,6 +5,7 @@ from gym import spaces
 from gym.utils import seeding
 from .rendering import *
 
+
 # Size in pixels of a tile in the full-scale human view
 TILE_PIXELS = 32
 
@@ -321,7 +322,7 @@ class Key(WorldObj):
 
 
 class Ball(WorldObj):
-    def __init__(self, color='blue'):
+    def __init__(self, color='green'):
         super(Ball, self).__init__('ball', color)
 
     def can_pickup(self):

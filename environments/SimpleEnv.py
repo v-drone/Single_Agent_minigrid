@@ -44,7 +44,7 @@ class SimpleEnv(object):
             self.redraw()
         if done:
             self.step_count.append(self.map.step_count)
-            r += self.get_long_term_reward()
+            r += 10 * self.get_long_term_reward()
         return self.old, self.new, float(r), done
 
     def key_handler(self, event):

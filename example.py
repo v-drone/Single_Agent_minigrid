@@ -4,7 +4,7 @@ import numpy as np
 import mxnet as mx
 import pandas as pd
 import matplotlib.pyplot as plt
-from model import SimpleStack
+from model.simple_stack import SimpleStack
 from utils import check_dir
 from memory import Memory
 from algorithm.DQN import DQN
@@ -29,7 +29,7 @@ env.reset_env()
 memory_pool = Memory(memory_length, ctx=ctx)
 # workflow
 algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool,
-                action_max, temporary_model, bz=2048)
+                action_max, temporary_model, bz=1024)
 annealing = 0
 total_reward = np.zeros(num_episode)
 eval_result = []
@@ -37,6 +37,9 @@ for epoch in range(num_episode):
     env.reset_env()
     finish = 0
     cum_clipped_dr = 0
+    if epoch == 100:
+        print("Model Structure: ")
+        print(offline_model)
     while not finish:
         if sum(env.step_count) > replay_start:
             annealing += 1
@@ -61,25 +64,7 @@ for epoch in range(num_episode):
         if annealing > replay_start and annealing % update_step == 0:
             copy_params(offline_model, online_model)
             offline_model.save_parameters(temporary_model)
-    #  train every 4 epoch
-    if annealing > replay_start and epoch % 4 == 0:
+    #  train every 2 epoch
+    if annealing > replay_start and epoch % 2 == 0:
         algorithm.train()
     total_reward[int(epoch) - 1] = cum_clipped_dr
-#
-# # statistics
-# step_used = pd.DataFrame(data={"success": eval_result, "step": eval_step})
-# step_used.to_csv(eval_statistics, index=False)
-# bandwidth = 1000  # Moving average bandwidth
-# total_rew = np.zeros(num_episode - bandwidth)
-# for i in range(int(num_episode) - bandwidth):
-#     total_rew[i] = np.sum(total_reward[i:i + bandwidth]) / bandwidth
-# bel_plt = plt.plot(np.arange(int(num_episode) - bandwidth),
-#                    total_rew[0:int(num_episode) - bandwidth], "r",
-#                    label="Return")
-# plt.legend()
-# print('Running after %d number of episodes' % num_episode)
-# plt.xlabel("Number of episode")
-# plt.ylabel("Average Reward per episode")
-# plt.savefig("%s_train.jpg" % order)
-# plt.show()
-# np.save("%s_train.array" % order, env.total_step_count)

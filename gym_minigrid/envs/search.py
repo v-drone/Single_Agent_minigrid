@@ -1,16 +1,8 @@
 from gym_minigrid.minigrid import MiniGridEnv, Grid, Key, Ball
 from enum import IntEnum
 import random
-from utils import to_numpy
+from utils import to_numpy, object_map, to_one_hot
 import numpy as np
-
-
-def translate_state(state):
-    # agent_view = get_pad(state["agent_view"])
-    # whole_map = get_pad(state["whole_map"])
-    agent_view = state["agent_view"]
-    whole_map = state["whole_map"]
-    return agent_view, whole_map
 
 
 class SearchEnv(MiniGridEnv):
@@ -29,25 +21,31 @@ class SearchEnv(MiniGridEnv):
 
     def __init__(self, width=100, height=100, agent_view_size=5, goals=20,
                  max_step=None):
-        self.agent_start_pos = np.array([random.randint(1, width - 2),
-                                         random.randint(1, height - 2)])
-        self.agent_start_dir = 0
+        self.width = width
+        self.height = height
         self.goals = goals
         if max_step is None:
             max_step = 2 * (width + height)
         self.faults = set()
         self.faults_count = 0
         self.history = []
+        self.agent_start_pos = None
+        self.agent_start_dir = None
+        self.memory = None
         super().__init__(width=width, height=height, max_steps=max_step,
                          agent_view_size=agent_view_size,
-                         see_through_walls=True)
+                         see_through_walls=False)
         # Action enumeration for this environment
+        self.reset()
         self.actions = self.Actions
-        self.memory = np.zeros([self.width, self.height])
 
     def reset(self):
+        self.agent_start_pos = np.array([random.randint(1, self.width - 2),
+                                         random.randint(1, self.height - 2)])
+        self.agent_start_dir = random.randint(0, 3)
         self.history = []
         self.faults = set()
+        self.faults_count = 0
         self.memory = np.zeros([self.width, self.height])
         super(SearchEnv, self).reset()
 
@@ -112,11 +110,14 @@ class SearchEnv(MiniGridEnv):
         view = to_numpy(grid, [3, 6, agent[-1]], vis_mask)[::-1]
         view = np.flip(view[::-1], 1)
         whole_map = to_numpy(self.grid, agent, None).T
+        whole_map = np.where(whole_map == object_map.get("ball"), 0,
+                             whole_map)
         return {
-            "agent_view": view,
-            "whole_map": whole_map,
+            "agent_view": to_one_hot(view, len(object_map)),
+            "whole_map": to_one_hot(whole_map, len(object_map)),
             "attitude": attitude,
             "pos": self.memory,
+            "reward": self.reward()
         }
 
     def _gen_grid(self, width, height):

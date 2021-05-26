@@ -16,7 +16,7 @@ update_step = 1000
 # gamma in q-loss calculation
 gamma = 0.99
 # memory pool size
-memory_length = 500000
+memory_length = 2000000
 # file to save train log
 summary = "./{}_Reward.csv".format(order)
 eval_statistics = "./{}_CSV.csv".format(order)

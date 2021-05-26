@@ -1,5 +1,4 @@
 from mxnet.gluon import nn
-from .Map import MapView
 from mxnet import nd
 
 
@@ -18,22 +17,18 @@ class SimpleStack(nn.Block):
             self.view_decode.add(nn.Dense(16, activation="tanh"))
             self.map_decode = nn.Sequential()
             self.map_decode.add(nn.Dense(512, activation="tanh"))
-            self.map_decode.add(nn.Dense(512, activation="tanh"))
-            self.map_decode.add(nn.Dense(256, activation="tanh"))
             self.map_decode.add(nn.Dense(256, activation="tanh"))
             self.map_decode.add(nn.Dense(128, activation="tanh"))
             self.map_decode.add(nn.Dense(64, activation="tanh"))
-            self.map_decode.add(nn.Dense(64, activation="tanh"))
-            self.map_decode.add(nn.Dense(64, activation="tanh"))
+            self.map_decode.add(nn.Dense(32, activation="tanh"))
+            self.map_decode.add(nn.Dense(16, activation="tanh"))
             self.memory = nn.Sequential()
             self.memory.add(nn.Dense(512, activation="tanh"))
-            self.memory.add(nn.Dense(512, activation="tanh"))
-            self.memory.add(nn.Dense(256, activation="tanh"))
             self.memory.add(nn.Dense(256, activation="tanh"))
             self.memory.add(nn.Dense(128, activation="tanh"))
             self.memory.add(nn.Dense(64, activation="tanh"))
-            self.memory.add(nn.Dense(64, activation="tanh"))
-            self.memory.add(nn.Dense(64, activation="tanh"))
+            self.memory.add(nn.Dense(32, activation="tanh"))
+            self.memory.add(nn.Dense(16, activation="tanh"))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(4, activation="sigmoid"))
         self.agent_view = agent_view

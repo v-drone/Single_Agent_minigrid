@@ -1,6 +1,28 @@
 import os
+from mpu.ml import indices2one_hot
+
 import numpy as np
 from mxnet import nd
+
+# Map of object types to numbers
+object_map = {
+    'empty': 0,
+    'goal': 1,
+    'wall': 2,
+    'lava': 3,
+    'ball': 4,
+    'key': 5,
+    '>': 6,
+    '<': 7,
+    '^': 8,
+    'V': 9,
+}
+
+
+def to_one_hot(array, classes):
+    shape = list(array.shape) + [-1]
+    array = array.flatten()
+    return np.array(indices2one_hot(array, nb_classes=classes)).reshape(shape)
 
 
 def translate_state(state):
@@ -45,19 +67,6 @@ def to_numpy(grid, agent=None, vis_mask=None):
         1: 'V',
         2: '<',
         3: '^'
-    }
-    # Map of object types to numbers
-    object_map = {
-        'empty': 0,
-        'goal': 1,
-        'wall': 2,
-        'lava': 3,
-        'ball': 4,
-        'key': 5,
-        '>': 6,
-        '<': 7,
-        '^': 8,
-        'V': 9,
     }
     for i in range(grid.width):
         for j in range(grid.height):
