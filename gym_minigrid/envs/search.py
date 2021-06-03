@@ -111,11 +111,13 @@ class SearchEnv(MiniGridEnv):
             attitude = self.agent_dir
         else:
             attitude = '*'
-        # allow = ["wall", "key", ">", "<", "^", "V", "*"]
-        allow = list(object_map.keys())
+        allow = ["wall", "key", ">", "<", "^", "V", "*"]
+        # allow = list(object_map.keys())
         agent = np.array(list(self.agent_pos) + [attitude])
-        whole_map = to_numpy(self.grid, allow, agent).T
-        return whole_map
+        whole_map = to_one_hot(to_numpy(self.grid, allow, agent).T,
+                               len(object_map))
+        memory = np.expand_dims(self.memory.T, -1)
+        return np.concatenate([whole_map, memory], axis=-1)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
@@ -123,9 +125,10 @@ class SearchEnv(MiniGridEnv):
         if tf:
             agent = [self.view_size - 1, int(self.view_size / 2), 3]
             view = to_numpy(view, allow, agent, vis)
+
         else:
             view = to_numpy(view, allow, None, vis)
-        return view
+        return to_one_hot(view, len(object_map))
 
     def state(self, tf=True):
 
@@ -217,4 +220,4 @@ if __name__ == '__main__':
     env.step(3)
     env.render('human')
     _map = env.get_memory(True)
-    memory = env.memory
+    _memory = env.memory.T
