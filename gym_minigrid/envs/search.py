@@ -1,10 +1,9 @@
 from gym_minigrid.minigrid import MiniGridEnv, Grid, Key, Ball, Box
 from enum import IntEnum
 import random
-from utils import to_numpy, object_map, agent_dir, to_one_hot
+from utils import to_numpy, object_map, to_one_hot
 import numpy as np
 import itertools
-from gym_minigrid.window import Window
 
 
 class SearchEnv(MiniGridEnv):
@@ -112,7 +111,6 @@ class SearchEnv(MiniGridEnv):
         else:
             attitude = '*'
         allow = ["wall", "key", ">", "<", "^", "V", "*"]
-        # allow = list(object_map.keys())
         agent = np.array(list(self.agent_pos) + [attitude])
         whole_map = to_one_hot(to_numpy(self.grid, allow, agent).T,
                                len(object_map))
@@ -174,6 +172,11 @@ class SearchEnv(MiniGridEnv):
                 self.faults.add(tuple(i))
             else:
                 self.put_obj(Ball(color="blue"), *i)
+        if len(self.faults) == 0:
+            if random.randint(0, 10) > 8:
+                point = _points[random.randint(0, len(_points))]
+                self.put_obj(Box(color="green"), *point)
+                self.faults.add(tuple(point))
 
         # Place the agent
         if self.agent_start_pos is not None:
@@ -190,23 +193,6 @@ if __name__ == '__main__':
     env = SearchEnv(20, 20, max_step=200, goals=50, agent_view_size=7)
     env.reset()
     env.render('human')
-
-
-    def key_handler(self, event):
-        if event.key == 'left':
-            self.step(0)
-            return
-        if event.key == 'right':
-            self.step(1)
-            return
-        if event.key == 'up':
-            self.step(2)
-            return
-
-
-    window = Window('GYM_MiniGrid')
-    window.reg_key_handler(key_handler)
-    window.show(True)
     env.step(3)
     env.step(3)
     env.step(3)

@@ -2,8 +2,6 @@ from config import *
 import os
 import numpy as np
 import mxnet as mx
-import pandas as pd
-import matplotlib.pyplot as plt
 from model.simple_stack import SimpleStack
 from utils import check_dir
 from memory import Memory
@@ -24,7 +22,7 @@ online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().zero_grad()
 # create env
-env = SimpleEnv(display=False)
+env = SimpleEnv(display=True)
 env.reset_env()
 memory_pool = Memory(memory_length, ctx=ctx)
 # workflow
