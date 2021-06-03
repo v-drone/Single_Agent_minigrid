@@ -343,6 +343,9 @@ class Box(WorldObj):
     def can_pickup(self):
         return True
 
+    def can_overlap(self):
+        return True
+
     def render(self, img):
         c = COLORS[self.color]
 

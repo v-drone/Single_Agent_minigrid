@@ -7,7 +7,7 @@ from mxnet import nd
 # Map of object types to numbers
 object_map = {
     'empty': 0,
-    'goal': 1,
+    'box': 1,
     'wall': 2,
     'lava': 3,
     'ball': 4,
@@ -16,6 +16,15 @@ object_map = {
     '<': 7,
     '^': 8,
     'V': 9,
+    '*': 10
+}
+
+agent_dir = {
+    0: '>',
+    1: 'V',
+    2: '<',
+    3: '^',
+    4: '*'
 }
 
 
@@ -53,31 +62,28 @@ def check_dir(i):
         os.mkdir("./{}/".format(i))
 
 
-def to_numpy(grid, agent=None, vis_mask=None):
+def to_numpy(grid, allow, agent=None, vis_mask=None):
     """
     Produce a pretty string of the environment's grid along with the agent.
     A grid cell is represented by 2-character string, the first one for
     the object and the second one for the color.
     """
-    map_img = np.zeros((grid.width, grid.height), dtype='uint8')
+
+    shape = (grid.width, grid.height)
+    grid = grid.grid
     if vis_mask is None:
-        vis_mask = np.ones((grid.width, grid.height), dtype=bool)
-    agent_dir = {
-        0: '>',
-        1: 'V',
-        2: '<',
-        3: '^'
-    }
-    for i in range(grid.width):
-        for j in range(grid.height):
-            if agent is not None and i == agent[0] and j == agent[1]:
-                map_img[i, j] = object_map[agent_dir[agent[2]]]
-            elif vis_mask[i, j]:
-                v = grid.get(i, j)
-                if v is None:
-                    map_img[i, j] = object_map['empty']
-                else:
-                    map_img[i, j] = object_map[v.type]
+        vis_mask = np.ones(len(grid), dtype=bool)
+    else:
+        vis_mask = vis_mask.flatten()
+    map_img = []
+    for i, j in zip(grid, vis_mask):
+        if i is not None and i.type in allow and j:
+            map_img.append(object_map[i.type])
+        else:
+            map_img.append(0)
+    map_img = np.array(map_img).reshape(shape)
+    if agent is not None:
+        map_img[agent[0], agent[1]] = object_map[agent_dir[agent[2]]]
     return map_img
 
 

@@ -1,8 +1,10 @@
-from gym_minigrid.minigrid import MiniGridEnv, Grid, Key, Ball
+from gym_minigrid.minigrid import MiniGridEnv, Grid, Key, Ball, Box
 from enum import IntEnum
 import random
-from utils import to_numpy, object_map, to_one_hot
+from utils import to_numpy, object_map, agent_dir, to_one_hot
 import numpy as np
+import itertools
+from gym_minigrid.window import Window
 
 
 class SearchEnv(MiniGridEnv):
@@ -32,6 +34,7 @@ class SearchEnv(MiniGridEnv):
         self.agent_start_pos = None
         self.agent_start_dir = None
         self.memory = None
+        self.view_size = agent_view_size
         super().__init__(width=width, height=height, max_steps=max_step,
                          agent_view_size=agent_view_size,
                          see_through_walls=False)
@@ -103,20 +106,33 @@ class SearchEnv(MiniGridEnv):
             loc -= 1
         return same
 
-    def state(self):
-        attitude = self.agent_dir
-        grid, vis_mask = self.gen_obs_grid()
-        agent = np.array(list(self.agent_pos) + [self.agent_dir])
-        view = to_numpy(grid, [3, 6, agent[-1]], vis_mask)[::-1]
-        view = np.flip(view[::-1], 1)
-        whole_map = to_numpy(self.grid, agent, None).T
-        whole_map = np.where(whole_map == object_map.get("ball"), 0,
-                             whole_map)
+    def get_memory(self, tf):
+        if tf:
+            attitude = self.agent_dir
+        else:
+            attitude = '*'
+        # allow = ["wall", "key", ">", "<", "^", "V", "*"]
+        allow = list(object_map.keys())
+        agent = np.array(list(self.agent_pos) + [attitude])
+        whole_map = to_numpy(self.grid, allow, agent).T
+        return whole_map
+
+    def get_view(self, tf):
+        view, vis = self.gen_obs_grid()
+        allow = list(object_map.keys())
+        if tf:
+            agent = [self.view_size - 1, int(self.view_size / 2), 3]
+            view = to_numpy(view, allow, agent, vis)
+        else:
+            view = to_numpy(view, allow, None, vis)
+        return view
+
+    def state(self, tf=True):
+
         return {
-            "agent_view": to_one_hot(view, len(object_map)),
-            "whole_map": to_one_hot(whole_map, len(object_map)),
-            "attitude": attitude,
-            "pos": self.memory,
+            "agent_view": self.get_view(tf),
+            "whole_map": self.get_memory(tf),
+            "attitude": self.agent_dir,
             "reward": self.reward()
         }
 
@@ -126,13 +142,35 @@ class SearchEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
         # Place goals square in the bottom-right corner
-        for i in range(random.randint(self.goals, self.goals * 2)):
-            _ = (random.randint(1, self.width - 2),
-                 random.randint(1, self.height - 2))
-            self.put_obj(Ball(), *_)
-            self.faults.add(tuple(_))
-        self.put_obj(Key(), *(random.randint(1, self.width - 2),
-                              random.randint(1, self.height - 2)))
+        # random
+        _width = [random.randint(1, 18) for i in
+                  range(random.randint(0, int(20 // 2)))]
+        _width = [[(i, j) for j in range(0, 20)] for i in _width]
+        _height = [random.randint(1, 18 - 1) for i in
+                   range(random.randint(0, int(20 // 2)))]
+        _height = [[(j, i) for j in range(1, 18)] for i in _height]
+        _points = []
+        for i in _width:
+            start = random.randint(1, 18)
+            if random.randint(0, 1) > 0:
+                end = random.randint(start, 18)
+            else:
+                end = 18
+            _points.append(i[start:end])
+        for i in _height:
+            start = random.randint(1, 18)
+            if random.randint(0, 1) > 0:
+                end = random.randint(start, 18)
+            else:
+                end = 18
+            _points.append(i[start:end])
+        _points = list(itertools.chain.from_iterable(_points))
+        for i in _points:
+            if random.randint(0, 10) > 8:
+                self.put_obj(Box(color="green"), *i)
+                self.faults.add(tuple(i))
+            else:
+                self.put_obj(Ball(color="blue"), *i)
 
         # Place the agent
         if self.agent_start_pos is not None:
@@ -140,5 +178,43 @@ class SearchEnv(MiniGridEnv):
             self.agent_dir = self.agent_start_dir
         else:
             self.place_agent()
+        self.put_obj(Key(), *self.agent_pos)
         self.faults_count = len(self.faults)
         self.mission = "go to ball as much as possible"
+
+
+if __name__ == '__main__':
+    env = SearchEnv(20, 20, max_step=200, goals=50, agent_view_size=7)
+    env.reset()
+    env.render('human')
+
+
+    def key_handler(self, event):
+        if event.key == 'left':
+            self.step(0)
+            return
+        if event.key == 'right':
+            self.step(1)
+            return
+        if event.key == 'up':
+            self.step(2)
+            return
+
+
+    window = Window('GYM_MiniGrid')
+    window.reg_key_handler(key_handler)
+    window.show(True)
+    env.step(3)
+    env.step(3)
+    env.step(3)
+    env.step(3)
+    env.step(3)
+    env.render('human')
+    env.step(1)
+    env.render('human')
+    env.step(3)
+    env.step(3)
+    env.step(3)
+    env.render('human')
+    _map = env.get_memory(True)
+    memory = env.memory
