@@ -22,24 +22,17 @@ class SimpleStack(nn.Block):
             self.map_decode.add(nn.Dense(64, activation="tanh"))
             self.map_decode.add(nn.Dense(32, activation="tanh"))
             self.map_decode.add(nn.Dense(16, activation="tanh"))
-            self.memory = nn.Sequential()
-            self.memory.add(nn.Dense(512, activation="tanh"))
-            self.memory.add(nn.Dense(256, activation="tanh"))
-            self.memory.add(nn.Dense(128, activation="tanh"))
-            self.memory.add(nn.Dense(64, activation="tanh"))
-            self.memory.add(nn.Dense(32, activation="tanh"))
-            self.memory.add(nn.Dense(16, activation="tanh"))
             self.decision_making = nn.Sequential()
+            self.decision_making.add(nn.Dense(8, activation="tanh"))
             self.decision_making.add(nn.Dense(4, activation="sigmoid"))
         self.agent_view = agent_view
         self.whole_map = whole_map
 
     def forward(self, income, *args):
-        view, whole_map, pos, attitude = income
+        view, whole_map, attitude = income
         view = self.view_decode(view).flatten()
         whole_map = self.map_decode(whole_map).flatten()
-        memory = self.memory(pos).flatten()
         # relative angle, distance to goal, distance sensor result
-        all_features = [view, whole_map, memory.flatten(), attitude]
+        all_features = [view, whole_map, attitude]
         all_features = nd.concat(*all_features)
         return self.decision_making(all_features)

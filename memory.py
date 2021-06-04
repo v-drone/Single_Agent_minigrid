@@ -28,7 +28,6 @@ class Memory(object):
         self.position = (self.position + 1) % self.memory_length
 
     def next_batch(self, bz):
-
         index = np.random.choice(len(self.memory), bz)
         memory = [self.memory[i] for i in index]
         state = [translate_state(i.get("state")) for i in memory]

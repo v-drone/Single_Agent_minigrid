@@ -1,7 +1,7 @@
 from gym_minigrid.minigrid import MiniGridEnv, Grid, Key, Ball, Box
 from enum import IntEnum
 import random
-from utils import to_numpy, object_map, to_one_hot
+from utils import to_numpy, object_map, agent_dir, to_one_hot
 import numpy as np
 import itertools
 
@@ -21,7 +21,8 @@ class SearchEnv(MiniGridEnv):
         forward = 3
 
     def __init__(self, width=100, height=100, agent_view_size=5, goals=20,
-                 max_step=None):
+                 max_step=None, max_road_rate=0.5):
+        self.max_road_rate = max_road_rate
         self.width = width
         self.height = height
         self.goals = goals
@@ -129,11 +130,10 @@ class SearchEnv(MiniGridEnv):
         return to_one_hot(view, len(object_map))
 
     def state(self, tf=True):
-
         return {
             "agent_view": self.get_view(tf),
             "whole_map": self.get_memory(tf),
-            "attitude": self.agent_dir,
+            "attitude": to_one_hot(np.array(self.agent_dir), len(agent_dir)),
             "reward": self.reward()
         }
 
@@ -143,41 +143,38 @@ class SearchEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
         # Place goals square in the bottom-right corner
-        # random
-        _width = [random.randint(1, 18) for i in
-                  range(random.randint(0, int(20 // 2)))]
-        _width = [[(i, j) for j in range(0, 20)] for i in _width]
-        _height = [random.randint(1, 18 - 1) for i in
-                   range(random.randint(0, int(20 // 2)))]
-        _height = [[(j, i) for j in range(1, 18)] for i in _height]
+        # random create road
+        _width = [random.randint(1, width - 2) for i in
+                  range(random.randint(1, int(width * self.max_road_rate)))]
+        _height = [random.randint(1, height - 2) for i in
+                   range(random.randint(1, int(height * self.max_road_rate)))]
         _points = []
+
+        def get_start_end(max_length):
+            start_end = np.random.randint(1, max_length - 1, 2)
+            _start = min(start_end)
+            _end = max(start_end)
+            if _start == _end:
+                _end = _start + 1
+            return _start, _end
+
         for i in _width:
-            start = random.randint(1, 18)
-            if random.randint(0, 1) > 0:
-                end = random.randint(start, 18)
-            else:
-                end = 18
-            _points.append(i[start:end])
+            start, end = get_start_end(width)
+            _points.extend([(i, j) for j in range(start, end)])
         for i in _height:
-            start = random.randint(1, 18)
-            if random.randint(0, 1) > 0:
-                end = random.randint(start, 18)
-            else:
-                end = 18
-            _points.append(i[start:end])
-        _points = list(itertools.chain.from_iterable(_points))
+            start, end = get_start_end(height)
+            _points.extend([(j, i) for j in range(start, end)])
+
+        np.random.shuffle(_points)
+        pos = 100
         for i in _points:
-            if random.randint(0, 10) > 8:
+            if pos >= 50:
                 self.put_obj(Box(color="green"), *i)
                 self.faults.add(tuple(i))
+                pos -= 50
             else:
                 self.put_obj(Ball(color="blue"), *i)
-        if len(self.faults) == 0:
-            if random.randint(0, 10) > 8:
-                point = _points[random.randint(0, len(_points))]
-                self.put_obj(Box(color="green"), *point)
-                self.faults.add(tuple(point))
-
+                pos += random.randint(5, 10)
         # Place the agent
         if self.agent_start_pos is not None:
             self.agent_pos = self.agent_start_pos
@@ -187,23 +184,3 @@ class SearchEnv(MiniGridEnv):
         self.put_obj(Key(), *self.agent_pos)
         self.faults_count = len(self.faults)
         self.mission = "go to ball as much as possible"
-
-
-if __name__ == '__main__':
-    env = SearchEnv(20, 20, max_step=200, goals=50, agent_view_size=7)
-    env.reset()
-    env.render('human')
-    env.step(3)
-    env.step(3)
-    env.step(3)
-    env.step(3)
-    env.step(3)
-    env.render('human')
-    env.step(1)
-    env.render('human')
-    env.step(3)
-    env.step(3)
-    env.step(3)
-    env.render('human')
-    _map = env.get_memory(True)
-    _memory = env.memory.T

@@ -8,7 +8,7 @@ class SimpleEnv(object):
     def __init__(self, display=True):
         super().__init__()
         self.display = display
-        self.map = SearchEnv(20, 20, max_step=200, goals=50)
+        self.map = SearchEnv(20, 20, max_step=200, agent_view_size=7)
         self.window = None
         if self.display:
             self.window = Window('GYM_MiniGrid')
