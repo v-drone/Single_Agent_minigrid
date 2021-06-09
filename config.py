@@ -4,7 +4,7 @@ order = "R0_1"
 agent_view = 7
 map_size = 10
 # action max
-action_max = 4
+action_max = 3
 # learning rate
 model_save = "./model_save/"
 lr = 0.002

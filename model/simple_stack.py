@@ -24,7 +24,7 @@ class SimpleStack(nn.Block):
             self.map_decode.add(nn.Dense(16, activation="tanh"))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(8, activation="tanh"))
-            self.decision_making.add(nn.Dense(4, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
         self.agent_view = agent_view
         self.whole_map = whole_map
 

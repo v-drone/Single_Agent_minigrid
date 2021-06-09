@@ -13,12 +13,10 @@ class SearchEnv(MiniGridEnv):
 
     # Enumeration of possible actions
     class Actions(IntEnum):
-        # Done completing task
-        done = 0
         # Turn left, turn right, move forward
+        forward = 0
         left = 1
         right = 2
-        forward = 3
 
     def __init__(self, width=100, height=100, agent_view_size=5, goals=20,
                  max_step=None, max_road_rate=0.5):
@@ -27,7 +25,7 @@ class SearchEnv(MiniGridEnv):
         self.height = height
         self.goals = goals
         if max_step is None:
-            max_step = 2 * (width + height)
+            max_step = 4 * (width + height)
         self.faults = set()
         self.faults_count = 0
         self.history = []
@@ -80,8 +78,6 @@ class SearchEnv(MiniGridEnv):
                 self.agent_pos = fwd_pos
             elif fwd_cell is not None and fwd_cell.type == 'lava':
                 done = True
-        elif action == self.actions.done:
-            done = True
         # save history pod
         self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
         self.history.append(self.agent_pos)

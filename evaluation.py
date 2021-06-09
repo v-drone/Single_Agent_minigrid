@@ -8,7 +8,7 @@ import pandas as pd
 
 
 def evaluate(model, test_round, ctx):
-    env = SimpleEnv(display=True)
+    env = SimpleEnv(display=False)
     env.reset_env()
     for epoch in range(test_round):
         env.reset_env()
