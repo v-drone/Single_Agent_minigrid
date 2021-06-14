@@ -5,7 +5,7 @@ def short_term_reward_function(old, new, same_position):
     # stay over
     same_position = - 0.005 * same_position
     # small pos for search
-    search = np.array(new["reward"]) - np.array(old["reward"])
+    search = np.array(new["reward"][1]) - np.array(old["reward"][1])
     return sum([same_position, search])
 
 

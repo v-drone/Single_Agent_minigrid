@@ -27,7 +27,7 @@ env.reset_env()
 memory_pool = Memory(memory_length, ctx=ctx)
 # workflow
 algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool,
-                action_max, temporary_model, bz=1024)
+                action_max, temporary_model, bz=512)
 annealing = 0
 total_reward = np.zeros(num_episode)
 eval_result = []
