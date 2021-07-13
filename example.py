@@ -12,7 +12,7 @@ from evaluation import evaluate
 
 if os.path.exists(summary):
     os.remove(summary)
-ctx = mx.gpu()
+ctx = mx.cpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
 # build models
@@ -38,11 +38,11 @@ for epoch in range(num_episode):
     if epoch == 100:
         print("Model Structure: ")
         print(offline_model)
+    if sum(env.step_count) > replay_start:
+        print('annealing and learning are started')
     while not finish:
         if sum(env.step_count) > replay_start:
             annealing += 1
-        if sum(env.step_count) == replay_start:
-            print('annealing and learning are started')
         eps = np.maximum(1 - sum(env.step_count) / annealing_end, epsilon_min)
         action, by = algorithm.get_action(env.map.state(), eps)
         old, new, reward_get, finish = env.step(action)

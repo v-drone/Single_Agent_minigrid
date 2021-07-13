@@ -16,7 +16,8 @@ object_map = {
     '<': 7,
     '^': 8,
     'V': 9,
-    '*': 10
+    '*': 10,
+    'goal': 11
 }
 
 agent_dir = {
@@ -24,7 +25,6 @@ agent_dir = {
     1: 'V',
     2: '<',
     3: '^',
-    4: '*'
 }
 
 
@@ -61,7 +61,7 @@ def check_dir(i):
         os.mkdir("./{}/".format(i))
 
 
-def to_numpy(grid, allow, agent=None, vis_mask=None):
+def to_numpy(grid, allow, agent, vis_mask=None, set_goal=False):
     """
     Produce a pretty string of the environment's grid along with the agent.
     A grid cell is represented by 2-character string, the first one for
@@ -75,12 +75,25 @@ def to_numpy(grid, allow, agent=None, vis_mask=None):
     else:
         vis_mask = vis_mask.flatten()
     map_img = []
+
     for i, j in zip(grid, vis_mask):
         if i is not None and i.type in allow and j:
             map_img.append(object_map[i.type])
         else:
             map_img.append(0)
     map_img = np.array(map_img).reshape(shape)
+    if set_goal:
+        _min = 999
+        _location = None
+        for i, row in enumerate(map_img):
+            for j, value in enumerate(row):
+                if value in (1, 4):
+                    _dis = sum(np.abs(np.array(agent[:2]) - np.array((i, j))))
+                    if _dis < _min:
+                        _location = (i, j)
+                        _min = _dis
+        if _location is not None:
+            map_img[_location[0], _location[1]] = object_map["goal"]
     if agent is not None:
         map_img[agent[0], agent[1]] = object_map[agent_dir[agent[2]]]
     return map_img

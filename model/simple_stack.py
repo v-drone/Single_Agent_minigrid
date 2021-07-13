@@ -10,21 +10,22 @@ class SimpleStack(nn.Block):
         super(SimpleStack, self).__init__()
         with self.name_scope():
             self.view_decode = nn.Sequential()
-            self.view_decode.add(nn.Dense(64, activation="tanh"))
-            self.view_decode.add(nn.Dense(64, activation="tanh"))
-            self.view_decode.add(nn.Dense(64, activation="tanh"))
-            self.view_decode.add(nn.Dense(32, activation="tanh"))
-            self.view_decode.add(nn.Dense(16, activation="tanh"))
+            self.view_decode.add(nn.Dense(2048))
+            self.view_decode.add(nn.Dense(64))
+            self.view_decode.add(nn.Dense(64))
+            self.view_decode.add(nn.LeakyReLU(0.1))
             self.map_decode = nn.Sequential()
-            self.map_decode.add(nn.Dense(512, activation="tanh"))
-            self.map_decode.add(nn.Dense(256, activation="tanh"))
-            self.map_decode.add(nn.Dense(128, activation="tanh"))
-            self.map_decode.add(nn.Dense(64, activation="tanh"))
-            self.map_decode.add(nn.Dense(32, activation="tanh"))
-            self.map_decode.add(nn.Dense(16, activation="tanh"))
+            self.map_decode.add(nn.Dense(10240))
+            self.map_decode.add(nn.Dense(1024))
+            self.map_decode.add(nn.Dense(128))
+            self.map_decode.add(nn.LeakyReLU(0.1))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(8, activation="tanh"))
-            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(2048))
+            self.decision_making.add(nn.Dense(512))
+            self.decision_making.add(nn.Dense(512))
+            self.decision_making.add(nn.Dense(64))
+            self.decision_making.add(nn.Dense(3, "relu"))
+
         self.agent_view = agent_view
         self.whole_map = whole_map
 
@@ -35,4 +36,5 @@ class SimpleStack(nn.Block):
         # relative angle, distance to goal, distance sensor result
         all_features = [view, whole_map, attitude]
         all_features = nd.concat(*all_features)
-        return self.decision_making(all_features)
+        result = self.decision_making(all_features)
+        return result

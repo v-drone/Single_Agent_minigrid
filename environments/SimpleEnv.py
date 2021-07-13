@@ -1,14 +1,12 @@
-from gym_minigrid.envs.search import SearchEnv
+from gym_minigrid.envs.simple2D import Simple2D
 from gym_minigrid.window import Window
-from algorithm.reward_function import short_term_reward_function
-from algorithm.reward_function import long_term_reward_function
 
 
 class SimpleEnv(object):
-    def __init__(self, display=False):
+    def __init__(self, display=False, roads=1):
         super().__init__()
         self.display = display
-        self.map = SearchEnv(20, 20, agent_view_size=7)
+        self.map = Simple2D(20, 20, agent_view=7, roads=roads)
         self.window = None
         if self.display:
             self.window = Window('GYM_MiniGrid')
@@ -21,29 +19,23 @@ class SimpleEnv(object):
         self.old = None
         self.new = None
 
-    def get_short_term_reward(self):
-        reward = short_term_reward_function(self.old, self.new,
-                                            self.map.check_history())
-        rate = self.map.step_count / self.map.max_steps
-        if rate < 0.3:
-            rate = 2
-        elif 0.3 < rate < 0.6:
-            rate = 1
+    def short_term_reward(self, old, new):
+        same_position = - 0.005 * self.map.check_history()
+        if old["red_distance"] is not None and new["red_distance"] is not None:
+            reduce_dis = old["red_distance"] - new["red_distance"]
         else:
-            rate = 0.5
-        return rate * reward
+            reduce_dis = 0
+        if self.new["reward"][-1] is True:
+            return -0.5
+        elif self.map.on_road():
+            return same_position + 0.01 + reduce_dis * 0.01
+        else:
+            return same_position + reduce_dis * 0.01
 
     def get_long_term_reward(self):
-        find_keys, travel_area = self.map.reward()
-        self.detect_rate.append(find_keys)
+        travel_area, road_detect, faults_detect = self.map.reward()
         rate = self.map.step_count / self.map.max_steps
-        if rate < 0.3:
-            rate = 2
-        elif 0.3 < rate < 0.6:
-            rate = 1
-        else:
-            rate = 0.5
-        return rate * long_term_reward_function(find_keys, travel_area)
+        return road_detect / rate
 
     def step(self, action):
         # Turn left, turn right, move forward
@@ -52,12 +44,13 @@ class SimpleEnv(object):
         # right = 2
         self.old = self.map.state()
         self.new, done = self.map.step(action)
-        reward = self.get_short_term_reward()
+        reward = self.short_term_reward(self.old, self.new)
         if self.display is True:
             self.redraw()
         if done:
+            self.detect_rate.append(self.map.reward()[1])
             self.step_count.append(self.map.step_count)
-            reward += 10 * self.get_long_term_reward()
+            reward += self.get_long_term_reward()
         return self.old, self.new, reward, done
 
     def key_handler(self, event):
