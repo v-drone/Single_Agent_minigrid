@@ -15,7 +15,6 @@ class SimpleStack(nn.Block):
             self.view_decode.add(nn.Dense(64))
             self.view_decode.add(nn.LeakyReLU(0.1))
             self.map_decode = nn.Sequential()
-            self.map_decode.add(nn.Dense(10240))
             self.map_decode.add(nn.Dense(1024))
             self.map_decode.add(nn.Dense(128))
             self.map_decode.add(nn.LeakyReLU(0.1))

@@ -1,5 +1,5 @@
 from mxnet.gluon import nn
-from .convolution import _conv2d, DetectionBlock
+from .convolution import _conv2d
 
 
 class MapView(nn.HybridBlock):
