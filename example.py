@@ -5,10 +5,10 @@ import mxnet as mx
 from model.simple_stack import SimpleStack
 from utils import check_dir
 from memory import Memory
-from algorithm.DQN import DQN
 from environments.SimpleEnv import SimpleEnv
-from utils import copy_params
+from utils import create_input, translate_state
 from evaluation import evaluate
+from mxnet import gluon, nd, autograd
 
 if os.path.exists(summary):
     os.remove(summary)
@@ -25,12 +25,11 @@ offline_model.collect_params().zero_grad()
 env = SimpleEnv(display=False)
 env.reset_env()
 memory_pool = Memory(memory_length, ctx=ctx)
-# workflow
-algorithm = DQN([online_model, offline_model], ctx, lr, gamma, memory_pool,
-                action_max, temporary_model, bz=512)
 annealing = 0
 total_reward = np.zeros(num_episode)
 eval_result = []
+loss_func = gluon.loss.L2Loss()
+trainer = gluon.Trainer(offline_model.collect_params(), 'adam', {'learning_rate': lr})
 for epoch in range(num_episode):
     env.reset_env()
     finish = 0
@@ -44,7 +43,14 @@ for epoch in range(num_episode):
         if sum(env.step_count) > replay_start:
             annealing += 1
         eps = np.maximum(1 - sum(env.step_count) / annealing_end, epsilon_min)
-        action, by = algorithm.get_action(env.map.state(), eps)
+        if np.random.random() < eps:
+            by = "Random"
+            action = np.random.randint(0, action_max)
+        else:
+            by = "Model"
+            data = create_input([translate_state(env.map.state())], ctx)
+            action = offline_model(data)
+            action = int(nd.argmax(action, axis=1).asnumpy()[0])
         old, new, reward_get, finish = env.step(action)
         memory_pool.add(old, new, action, reward_get, finish)
         if finish and epoch > 50:
@@ -60,9 +66,22 @@ for epoch in range(num_episode):
                 eval_result.extend(evaluate(offline_model, 5, ctx))
         # save model and replace online model each update_step
         if annealing > replay_start and annealing % update_step == 0:
-            copy_params(offline_model, online_model)
             offline_model.save_parameters(temporary_model)
+            online_model.load_parameters(temporary_model, ctx)
     #  train every 2 epoch
     if annealing > replay_start and epoch % 2 == 0:
-        algorithm.train()
+        # Sample random mini batch of transitions
+        if len(memory_pool.memory) > batch_size:
+            bz = batch_size
+        else:
+            bz = len(memory_pool.memory)
+        for_train = memory_pool.next_batch(bz)
+        with autograd.record(train_mode=True):
+            q_sp = nd.max(online_model(for_train["state_next"]), axis=1)
+            q_sp = q_sp * (nd.ones(bz, ctx=ctx) - for_train["finish"])
+            q_s_array = offline_model(for_train["state"])
+            q_s = nd.pick(q_s_array, for_train["action"], 1)
+            loss = nd.mean(loss_func(q_s, (for_train["reward"] + gamma * q_sp)))
+        loss.backward()
+        trainer.step(bz)
     total_reward[int(epoch) - 1] = cum_clipped_dr

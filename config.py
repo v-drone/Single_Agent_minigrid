@@ -1,5 +1,7 @@
 # training cases
 order = "TEST"
+# batch size
+batch_size = 512
 # agent view
 agent_view = 5
 map_size = 10
