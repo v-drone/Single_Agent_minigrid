@@ -1,7 +1,7 @@
 # training cases
-order = "R0_1"
+order = "TEST"
 # agent view
-agent_view = 7
+agent_view = 5
 map_size = 10
 # action max
 action_max = 3
@@ -16,7 +16,7 @@ update_step = 1000
 # gamma in q-loss calculation
 gamma = 0.99
 # memory pool size
-memory_length = 100000
+memory_length = 200000
 # file to save train log
 summary = "./{}_Reward.csv".format(order)
 eval_statistics = "./{}_CSV.csv".format(order)
