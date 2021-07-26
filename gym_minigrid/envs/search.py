@@ -1,7 +1,7 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
 import random
-from utils import to_numpy, object_map, agent_dir, to_one_hot
+from utils import to_numpy, agent_dir, to_one_hot, get_goal
 import numpy as np
 
 
@@ -128,32 +128,33 @@ class SearchEnv(MiniGridEnv):
             loc -= 1
         return same
 
-    def get_whole_map(self, tf):
-        if tf:
-            attitude = self.agent_dir
-        else:
-            attitude = '*'
-        allow = ["wall", "key", "ball", "box", ">", "<", "^", "V", "*"]
-        agent = np.array(list(self.agent_pos) + [attitude])
-        whole_map = to_numpy(self.grid, allow, agent).T
-        whole_map = np.where(whole_map == object_map["box"],
-                             object_map["ball"], whole_map)
-        whole_map = to_one_hot(whole_map, len(object_map))
-        memory = np.expand_dims(self.memory.T, -1)
-        return [whole_map, memory]
+    def get_whole_map(self):
+        allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
+        allow = {k: v + 1 for v, k in enumerate(allow)}
+        agent = np.array([self.agent_pos[1], self.agent_pos[0], self.agent_dir])
+        whole_map = to_numpy(self.grid, allow, agent)
+        whole_map = np.where(whole_map == allow["box"], allow["ball"], whole_map)
+        location = get_goal(whole_map, agent)
+        whole_map = to_one_hot(whole_map, len(allow))
+        whole_map = np.transpose(whole_map, [2, 0, 1])
+        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0), np.expand_dims(location, 0)], axis=0)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
-        allow = list(object_map.keys())
+        allow = ["wall", "key", "ball", "box", "^"]
+        allow = {k: v + 1 for v, k in enumerate(allow)}
         if tf:
             tf = [self.agent_view_size - 1, int(self.agent_view_size / 2), 3]
         else:
             tf = None
-        view = to_numpy(view, allow, tf, vis, True)
-        return to_one_hot(view, len(allow))
+        view = to_numpy(view, allow, tf, vis)
+        location = get_goal(view, tf)
+        view = to_one_hot(view, len(allow))
+        view = np.transpose(view, (2, 0, 1))
+        return np.concatenate([np.expand_dims(location, 0), view], axis=0)
 
     def state(self, tf=True):
-        whole_map, memory = self.get_whole_map(tf)
+        whole_map = self.get_whole_map()
         view = self.get_view(tf)
         goal = np.transpose(view, (2, 0, 1))[-1]
         _location = None
@@ -168,7 +169,6 @@ class SearchEnv(MiniGridEnv):
                         break
         data = {
             "whole_map": whole_map,
-            "memory": memory,
             "agent_view": view,
             "attitude": to_one_hot(np.array(self.agent_dir), len(agent_dir)),
             "reward": self.reward() + [self.hit],
