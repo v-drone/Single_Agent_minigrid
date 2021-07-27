@@ -8,6 +8,7 @@ class Simple2D(SearchEnv):
     def __init__(self, width=100, height=100, agent_view=7, roads=1,
                  max_step=None, road_rate=0.3, tf=True):
         self.roads = roads
+
         self.road_rate = int(road_rate * min([width, height]))
         super().__init__(tf, width, height, agent_view, max_step)
 
@@ -52,6 +53,14 @@ class Simple2D(SearchEnv):
                 self.roadmap[i[0]][i[1]] = 2
                 self.put_obj(Ball(color="blue"), *i)
                 pos += random.randint(5, 10)
+        # build reward_map
+        for width, _ in enumerate(self.reward_map):
+            for height, _ in enumerate(_):
+                distance_x = [abs(width - x[0]) for x in roads]
+                distance_y = [abs(height - x[1]) for x in roads]
+                distance = np.array(distance_x) + np.array(distance_y)
+                self.reward_map[width][height] = - int(min(distance))
+        self.reward_map = self.reward_map.astype(int)
         # Place the agent
         if self.agent_start_pos is not None:
             self.agent_pos = self.agent_start_pos
@@ -60,3 +69,6 @@ class Simple2D(SearchEnv):
             self.place_agent()
         self.put_obj(Key(), *self.agent_pos)
         self.mission = "go to ball as much as possible"
+
+    def set_reward_map(self):
+        pass

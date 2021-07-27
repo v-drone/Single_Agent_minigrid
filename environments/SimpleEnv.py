@@ -6,7 +6,7 @@ class SimpleEnv(object):
     def __init__(self, display=False, agent_view=7, roads=1):
         super().__init__()
         self.display = display
-        self.map = Simple2D(20, 20, agent_view=agent_view, roads=roads)
+        self.map = Simple2D(14, 14, agent_view=agent_view, roads=roads)
         self.window = None
         if self.display:
             self.window = Window('GYM_MiniGrid')
@@ -19,18 +19,9 @@ class SimpleEnv(object):
         self.old = None
         self.new = None
 
-    def short_term_reward(self, old, new):
+    def short_term_reward(self, new):
         same_position = - 0.005 * self.map.check_history()
-        if old["red_distance"] is not None and new["red_distance"] is not None:
-            reduce_dis = old["red_distance"] - new["red_distance"]
-        else:
-            reduce_dis = 0
-        if self.new["reward"][-1] is True:
-            return -0.5
-        elif self.map.on_road():
-            return same_position + 0.01 + reduce_dis * 0.01
-        else:
-            return same_position + reduce_dis * 0.01
+        return new["reward"] * 0.01 + same_position
 
     def get_long_term_reward(self):
         travel_area, road_detect, faults_detect = self.map.reward()
@@ -44,7 +35,7 @@ class SimpleEnv(object):
         # right = 2
         self.old = self.map.state()
         self.new, done = self.map.step(action)
-        reward = self.short_term_reward(self.old, self.new)
+        reward = self.short_term_reward(self.new)
         if self.display is True:
             self.redraw()
         if done:

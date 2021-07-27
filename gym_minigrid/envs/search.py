@@ -36,6 +36,7 @@ class SearchEnv(MiniGridEnv):
         self.roadmap = np.zeros([self.width, self.height])
         self.history = []
         self.view_pos = [agent_view - 1, int(agent_view / 2), 3]
+        self.reward_map = np.zeros(shape=(width, height))
         super().__init__(width=width, height=height, max_steps=max_step,
                          agent_view_size=agent_view,
                          see_through_walls=False)
@@ -79,11 +80,7 @@ class SearchEnv(MiniGridEnv):
         # Get the position in front of the agent
         fwd_pos = self.front_pos
         # Get the contents of the cell in front of the agent
-        try:
-            fwd_cell = self.grid.get(*fwd_pos)
-        except:
-            import pdb
-            pdb.set_trace()
+        fwd_cell = self.grid.get(*fwd_pos)
         # Rotate left
         if action == self.actions.left:
             self.agent_dir -= 1
@@ -131,13 +128,16 @@ class SearchEnv(MiniGridEnv):
     def get_whole_map(self):
         allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
-        agent = np.array([self.agent_pos[1], self.agent_pos[0], self.agent_dir])
+        agent = np.array(
+            [self.agent_pos[1], self.agent_pos[0], self.agent_dir])
         whole_map = to_numpy(self.grid, allow, agent)
-        whole_map = np.where(whole_map == allow["box"], allow["ball"], whole_map)
+        whole_map = np.where(whole_map == allow["box"], allow["ball"],
+                             whole_map)
         location = get_goal(whole_map, agent)
         whole_map = to_one_hot(whole_map, len(allow))
         whole_map = np.transpose(whole_map, [2, 0, 1])
-        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0), np.expand_dims(location, 0)], axis=0)
+        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0),
+                               np.expand_dims(location, 0)], axis=0)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
@@ -156,23 +156,11 @@ class SearchEnv(MiniGridEnv):
     def state(self, tf=True):
         whole_map = self.get_whole_map()
         view = self.get_view(tf)
-        goal = np.transpose(view, (2, 0, 1))[-1]
-        _location = None
-        for i, row in enumerate(goal):
-            if sum(row) != 0:
-                for j, value in enumerate(row):
-                    if value != 0:
-                        _agent = [self.agent_view_size - 1,
-                                  int(self.agent_view_size / 2)]
-                        _location = sum(
-                            np.abs(np.array(_agent) - np.array((i, j))))
-                        break
         data = {
             "whole_map": whole_map,
             "agent_view": view,
             "attitude": to_one_hot(np.array(self.agent_dir), len(agent_dir)),
-            "reward": self.reward() + [self.hit],
-            "red_distance": _location
+            "reward": self.reward_map[self.agent_pos[0]][self.agent_pos[1]],
         }
         return data
 

@@ -29,7 +29,8 @@ annealing = 0
 total_reward = np.zeros(num_episode)
 eval_result = []
 loss_func = gluon.loss.L2Loss()
-trainer = gluon.Trainer(offline_model.collect_params(), 'adam', {'learning_rate': lr})
+trainer = gluon.Trainer(offline_model.collect_params(), 'adam',
+                        {'learning_rate': lr})
 for epoch in range(num_episode):
     env.reset_env()
     finish = 0
@@ -68,8 +69,8 @@ for epoch in range(num_episode):
         if annealing > replay_start and annealing % update_step == 0:
             offline_model.save_parameters(temporary_model)
             online_model.load_parameters(temporary_model, ctx)
-    #  train every 2 epoch
-    if annealing > replay_start and epoch % 2 == 0:
+    #  train every 4 epoch
+    if annealing > replay_start and epoch % 4 == 0:
         # Sample random mini batch of transitions
         if len(memory_pool.memory) > batch_size:
             bz = batch_size
@@ -81,7 +82,8 @@ for epoch in range(num_episode):
             q_sp = q_sp * (nd.ones(bz, ctx=ctx) - for_train["finish"])
             q_s_array = offline_model(for_train["state"])
             q_s = nd.pick(q_s_array, for_train["action"], 1)
-            loss = nd.mean(loss_func(q_s, (for_train["reward"] + gamma * q_sp)))
+            loss = nd.mean(
+                loss_func(q_s, (for_train["reward"] + gamma * q_sp)))
         loss.backward()
         trainer.step(bz)
     total_reward[int(epoch) - 1] = cum_clipped_dr

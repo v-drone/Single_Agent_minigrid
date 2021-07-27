@@ -4,22 +4,6 @@ from mpu.ml import indices2one_hot
 import numpy as np
 from mxnet import nd
 
-# Map of object types to numbers
-object_map = {
-    'empty': 0,
-    'box': 1,
-    'wall': 2,
-    'lava': 3,
-    'ball': 4,
-    'key': 5,
-    '>': 6,
-    '<': 7,
-    '^': 8,
-    'V': 9,
-    '*': 10,
-    'goal': 11
-}
-
 agent_dir = {
     0: '>',
     1: 'V',
