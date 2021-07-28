@@ -117,12 +117,12 @@ class SearchEnv(MiniGridEnv):
 
     def check_history(self):
         cur = self.history[-1]
-        loc = -2
         same = 0
-        while len(self.history) > 1 and ~loc < len(self.history) and np.equal(
-                self.history[loc], cur).all:
-            same += 1
-            loc -= 1
+        for i in reversed(self.history[:-1]):
+            if np.equal(cur, i).all():
+                same += 1
+            else:
+                break
         return same
 
     def get_whole_map(self):
