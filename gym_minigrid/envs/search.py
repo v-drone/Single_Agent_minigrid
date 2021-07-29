@@ -159,7 +159,7 @@ class SearchEnv(MiniGridEnv):
         data = {
             "whole_map": whole_map,
             "agent_view": view,
-            "attitude": to_one_hot(np.array(self.agent_dir), len(agent_dir)),
+            "attitude": self. agent_battery,
             "reward": self.reward_map[self.agent_pos[0]][self.agent_pos[1]],
         }
         return data
