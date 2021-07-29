@@ -19,13 +19,19 @@ class SimpleEnv(object):
         self.old = None
         self.new = None
 
-    def short_term_reward(self, new):
+    def short_term_reward(self, old, new):
         same_position = - 0.005 * self.map.check_history()
-        return new["reward"] * 0.01 + same_position
+        if new["reward"] > old["reward"]:
+            return new["reward"] * - 0.001 + same_position
+        else:
+            return new["reward"] * 0.001 + same_position
 
     def get_long_term_reward(self):
         travel_area, road_detect, faults_detect = self.map.reward()
-        rate = self.map.step_count / self.map.max_steps
+        if self.map.agent_battery <= 0:
+            rate = 5
+        else:
+            rate = self.map.step_count / self.map.max_steps
         return road_detect / rate
 
     def step(self, action):
@@ -35,7 +41,7 @@ class SimpleEnv(object):
         # right = 2
         self.old = self.map.state()
         self.new, done = self.map.step(action)
-        reward = self.short_term_reward(self.new)
+        reward = self.short_term_reward(self.old, self.new)
         if self.display is True:
             self.redraw()
         if done:

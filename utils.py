@@ -19,7 +19,7 @@ def to_one_hot(array, classes):
 
 
 def translate_state(state):
-    return state["agent_view"], state["whole_map"], state["attitude"]
+    return state["agent_view"], state["whole_map"], state["battery"]
 
 
 def copy_params(offline, online):
@@ -31,12 +31,6 @@ def copy_params(offline, online):
             i.data())
         _2 = online.collect_params().get(
             "_".join(i.name.split("_")[1:])).data().asnumpy()
-
-
-def replace_self(grid, attitude):
-    on_off = (grid == 6).astype(int)
-    on_off *= attitude
-    return grid + on_off
 
 
 def check_dir(i):

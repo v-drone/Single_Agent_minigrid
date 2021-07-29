@@ -25,13 +25,13 @@ def evaluate(ctx, model, agent_view=7, test_round=5, display=False):
 
 if __name__ == '__main__':
     # build models
-    _ctx = mx.gpu()
+    _ctx = mx.cpu()
     # training cases
     order = "TEST"
     # batch size
     batch_size = 512
     # agent view
-    agent_view = 5
+    agent_view = 7
     map_size = 10
     # action max
     action_max = 3

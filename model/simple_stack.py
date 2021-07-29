@@ -12,23 +12,25 @@ class ConvBlock(nn.Sequential):
 
 
 class SimpleStack(nn.Block):
-    def __init__(self, agent_view, whole_map, channels=256):
+    def __init__(self, agent_view, whole_map):
         """
         MLP in mxnet with input by Lidar and Distance sensor
         """
         super(SimpleStack, self).__init__()
         with self.name_scope():
             self.view_decode = nn.Sequential()
-            self.view_decode.add(ConvBlock(128, 1))
-            self.view_decode.add(ConvBlock(128, 2))
-            self.view_decode.add(ConvBlock(512, 1))
+            self.view_decode.add(nn.Conv2D(512, kernel_size=1, strides=1, use_bias=False, layout="NCHW"))
+            self.view_decode.add(nn.Conv2D(256, kernel_size=2, strides=1, use_bias=False, layout="NCHW"))
+            self.view_decode.add(nn.Conv2D(256, kernel_size=2, strides=1, use_bias=False, layout="NCHW"))
             self.map_decode = nn.Sequential()
-            self.map_decode.add(ConvBlock(512, 1))
-            self.map_decode.add(ConvBlock(256, 3))
-            self.map_decode.add(ConvBlock(256, 3))
-            self.map_decode.add(ConvBlock(256, 3))
+            self.map_decode.add(nn.Conv2D(512, kernel_size=1, strides=1, use_bias=False, layout="NCHW"))
+            self.map_decode.add(nn.Conv2D(256, kernel_size=3, strides=1, use_bias=False, layout="NCHW"))
+            self.map_decode.add(nn.Conv2D(256, kernel_size=3, strides=1, use_bias=False, layout="NCHW"))
+            self.map_decode.add(nn.Conv2D(256, kernel_size=3, strides=1, use_bias=False, layout="NCHW"))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(3, "tanh"))
+            self.decision_making.add(nn.Dense(1024, "sigmoid"))
+            self.decision_making.add(nn.Dense(64, "sigmoid"))
+            self.decision_making.add(nn.Dense(3, "sigmoid"))
         self.agent_view = agent_view
         self.whole_map = whole_map
 
