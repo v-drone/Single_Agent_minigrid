@@ -22,7 +22,7 @@ online.collect_params().initialize(mx.init.MSRAPrelu(), ctx=ctx)
 offline.collect_params().initialize(mx.init.MSRAPrelu(), ctx=ctx)
 offline.collect_params().zero_grad()
 # create env
-env = SimpleEnv(display=False, agent_view=agent_view)
+env = SimpleEnv(display=False, agent_view=agent_view, map_size=map_size)
 env.reset_env()
 memory_pool = Memory(memory_length, ctx=ctx)
 annealing = 0
@@ -67,7 +67,7 @@ for epoch in range(num_episode):
                 with open(summary, "a") as f:
                     f.writelines(text + "\n")
             if epoch % 100 == 0 and annealing > replay_start:
-                eval_result.extend(evaluate(ctx, offline, agent_view, 5))
+                eval_result.extend(evaluate(ctx, offline, env, 1))
             # save model and replace online model each update_step
             if annealing % update_step == 0 and annealing > replay_start:
                 if dr_50 >= last_dr_50:
