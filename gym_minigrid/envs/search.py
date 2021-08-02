@@ -137,8 +137,8 @@ class SearchEnv(MiniGridEnv):
         # whole_map = to_one_hot(whole_map, len(allow))
         # whole_map = np.transpose(whole_map, [2, 0, 1])
         whole_map = np.expand_dims(whole_map, 0)
-        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0),
-                               np.expand_dims(goal, 0)], axis=0)
+        # return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0)], axis=0)
+        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0), np.expand_dims(goal, 0)], axis=0)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
@@ -153,7 +153,7 @@ class SearchEnv(MiniGridEnv):
         # view = to_one_hot(view, len(allow))
         # view = np.transpose(view, (2, 0, 1))
         view = np.expand_dims(view, 0)
-        return np.concatenate([np.expand_dims(goal, 0), view], axis=0)
+        return np.concatenate([view, np.expand_dims(goal, 0)], axis=0)
 
     def state(self, tf=True):
         whole_map = self.get_whole_map()
@@ -161,7 +161,7 @@ class SearchEnv(MiniGridEnv):
         data = {
             "whole_map": whole_map,
             "agent_view": view,
-            "battery": self. agent_battery,
+            "battery": self.agent_battery,
             "reward": self.reward_map[self.agent_pos[0]][self.agent_pos[1]],
         }
         return data

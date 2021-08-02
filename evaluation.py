@@ -1,9 +1,12 @@
+import time
+
 from utils import create_input, translate_state
 from environments.SimpleEnv import SimpleEnv
 from model.simple_stack import SimpleStack
 from mxnet import nd
 import mxnet as mx
 import pandas as pd
+import time
 
 
 def evaluate(ctx, model, agent_view=7, test_round=5, display=False):
@@ -17,9 +20,6 @@ def evaluate(ctx, model, agent_view=7, test_round=5, display=False):
             action = model(data)
             action = int(nd.argmax(action, axis=1).asnumpy()[0])
             old, new, reward, done = env.step(action)
-            # if reward <= -0.1:
-            #     import pdb
-            #     pdb.set_trace()
     return env.detect_rate
 
 
@@ -28,8 +28,6 @@ if __name__ == '__main__':
     _ctx = mx.cpu()
     # training cases
     order = "TEST"
-    # batch size
-    batch_size = 512
     # agent view
     agent_view = 7
     map_size = 10
