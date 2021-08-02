@@ -5,39 +5,44 @@ from mxnet import nd
 class ConvBlock(nn.Sequential):
     def __init__(self, channels=256, kernel_size=1):
         super().__init__()
-        self.add(nn.Conv2D(channels, kernel_size=kernel_size, strides=1,
+        self.add(nn.Conv2D(channels, kernel_size=kernel_size,
                            use_bias=False, layout="NCHW"))
         self.add(nn.BatchNorm())
         self.add(nn.Activation('softrelu'))
 
 
 class SimpleStack(nn.Block):
-    def __init__(self, agent_view, whole_map):
+    def __init__(self):
         """
         MLP in mxnet with input by Lidar and Distance sensor
         """
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            self.view_decode = nn.Sequential()
-            self.view_decode.add(nn.Conv2D(512, kernel_size=1, strides=1, use_bias=False, layout="NCHW"))
-            self.view_decode.add(nn.Conv2D(256, kernel_size=2, strides=1, use_bias=False, layout="NCHW"))
-            self.view_decode.add(nn.Conv2D(256, kernel_size=2, strides=1, use_bias=False, layout="NCHW"))
-            self.map_decode = nn.Sequential()
-            self.map_decode.add(nn.Conv2D(512, kernel_size=1, strides=1, use_bias=False, layout="NCHW"))
-            self.map_decode.add(nn.Conv2D(256, kernel_size=3, strides=1, use_bias=False, layout="NCHW"))
-            self.map_decode.add(nn.Conv2D(256, kernel_size=3, strides=1, use_bias=False, layout="NCHW"))
-            self.map_decode.add(nn.Conv2D(256, kernel_size=3, strides=1, use_bias=False, layout="NCHW"))
+            self.view = nn.Sequential()
+            self.view.add(
+                nn.Conv2D(512, kernel_size=1, use_bias=False, layout="NCHW"))
+            self.view.add(
+                nn.Conv2D(256, kernel_size=2, use_bias=False, layout="NCHW"))
+            self.view.add(
+                nn.Conv2D(256, kernel_size=2, use_bias=False, layout="NCHW"))
+            self.map = nn.Sequential()
+            self.map.add(
+                nn.Conv2D(512, kernel_size=1, use_bias=False, layout="NCHW"))
+            self.map.add(
+                nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
+            self.map.add(
+                nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
+            self.map.add(
+                nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(1024, "sigmoid"))
-            self.decision_making.add(nn.Dense(64, "sigmoid"))
-            self.decision_making.add(nn.Dense(3, "sigmoid"))
-        self.agent_view = agent_view
-        self.whole_map = whole_map
+            self.decision_making.add(nn.Dense(1024, "tanh"))
+            self.decision_making.add(nn.Dense(64, "tanh"))
+            self.decision_making.add(nn.Dense(3, "tanh"))
 
     def forward(self, income, *args):
         view, whole_map, attitude = income
-        view = self.view_decode(view).flatten()
-        whole_map = self.map_decode(whole_map).flatten()
+        view = self.view(view).flatten()
+        whole_map = self.map(whole_map).flatten()
         # relative angle, distance to goal, distance sensor result
         all_features = [view, whole_map, attitude]
         all_features = nd.concat(*all_features)

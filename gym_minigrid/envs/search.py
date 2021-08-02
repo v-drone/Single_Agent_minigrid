@@ -137,8 +137,8 @@ class SearchEnv(MiniGridEnv):
         # whole_map = to_one_hot(whole_map, len(allow))
         # whole_map = np.transpose(whole_map, [2, 0, 1])
         whole_map = np.expand_dims(whole_map, 0)
-        # return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0)], axis=0)
-        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0), np.expand_dims(goal, 0)], axis=0)
+        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0),
+                               np.expand_dims(goal, 0)], axis=0)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
