@@ -35,9 +35,9 @@ class SimpleStack(nn.Block):
             self.map.add(
                 nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(1024, "tanh"))
-            self.decision_making.add(nn.Dense(64, "tanh"))
-            self.decision_making.add(nn.Dense(3, "tanh"))
+            self.decision_making.add(nn.Dense(1024, "sigmoid"))
+            self.decision_making.add(nn.Dense(64, "sigmoid"))
+            self.decision_making.add(nn.Dense(3, "sigmoid"))
 
     def forward(self, income, *args):
         view, whole_map, attitude = income
