@@ -43,8 +43,8 @@ class SearchEnv(MiniGridEnv):
         # Action enumeration for this environment
         self.reset()
         self.actions = self.Actions
-        self.hit = False
         self.to_goal = 999
+        self.render()
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2),
@@ -55,27 +55,23 @@ class SearchEnv(MiniGridEnv):
         super(SearchEnv, self).reset()
 
     def reward(self):
-        memory = self.memory.flatten()
-        roadmap = self.roadmap.flatten()
-        n_road = np.greater_equal(roadmap, 1).sum()
-        n_faults = np.equal(roadmap, 1).sum()
-        d_road = 0
-        d_faults = 0
-        for i, j in zip(memory, roadmap):
-            if i == 1 and j == 1:
-                d_faults += 1
-                d_road += 1
-            elif i == 1 and j == 2:
-                d_road += 1
+        road = np.greater_equal(self.roadmap.T, 1).astype(int).flatten()
+        faults = np.equal(self.roadmap.T, 1).astype(int).flatten().flatten()
+        memory = np.greater_equal(self.memory.T, 1).astype(int).flatten()
+        n_f = 0
+        n_r = 0
+        for x, y, z in zip(memory, road, faults):
+            if x == 1 and y == 1:
+                n_r += 1
+            if x == 1 and z == 1:
+                n_f += 1
         # cover rate, road cover rate, faults cover rate
-        return [memory.sum() / len(memory), d_road / n_road,
-                d_faults / n_faults]
+        return n_r / road.sum(), n_f / faults.sum()
 
     def step(self, action, battery_cost=1):
-        self.hit = False
         self.step_count += 1
-        self.agent_battery -= battery_cost
         done = False
+        self.agent_battery -= battery_cost
         # # # Move
         # Get the position in front of the agent
         fwd_pos = self.front_pos
@@ -93,13 +89,10 @@ class SearchEnv(MiniGridEnv):
         elif action == self.actions.forward:
             if fwd_cell is None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
-            elif fwd_cell is not None and fwd_cell.type in ('lava', "wall"):
-                self.hit = True
         # save history pod
         if self.grid.get(*self.agent_pos) is not None and self.grid.get(
                 *self.agent_pos).type == 'box':
-            if self.memory[self.agent_pos[0]][self.agent_pos[1]] < 5:
-                self.memory[self.agent_pos[0]][self.agent_pos[1]] += 1
+            self.memory[self.agent_pos[0]][self.agent_pos[1]] += 1
         else:
             self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
         self.history.append(self.agent_pos)
@@ -148,7 +141,7 @@ class SearchEnv(MiniGridEnv):
             tf = [self.agent_view_size - 1, int(self.agent_view_size / 2), 3]
         else:
             tf = None
-        view = to_numpy(view, allow, tf, vis)
+        view = to_numpy(view, allow, tf, None)
         goal = get_goal(view, tf)
         # view = to_one_hot(view, len(allow))
         # view = np.transpose(view, (2, 0, 1))

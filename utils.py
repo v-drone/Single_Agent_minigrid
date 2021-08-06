@@ -59,7 +59,6 @@ def to_numpy(grid, allow, agent, vis_mask=None):
     A grid cell is represented by 2-character string, the first one for
     the object and the second one for the color.
     """
-
     shape = (grid.width, grid.height)
     grid = grid.grid
     if vis_mask is None:
