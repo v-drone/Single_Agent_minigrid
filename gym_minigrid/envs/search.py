@@ -44,7 +44,6 @@ class SearchEnv(MiniGridEnv):
         self.reset()
         self.actions = self.Actions
         self.to_goal = 999
-        self.render()
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2),
@@ -130,8 +129,7 @@ class SearchEnv(MiniGridEnv):
         # whole_map = to_one_hot(whole_map, len(allow))
         # whole_map = np.transpose(whole_map, [2, 0, 1])
         whole_map = np.expand_dims(whole_map, 0)
-        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0),
-                               np.expand_dims(goal, 0)], axis=0)
+        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0), np.expand_dims(goal, 0)], axis=0)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
@@ -141,7 +139,7 @@ class SearchEnv(MiniGridEnv):
             tf = [self.agent_view_size - 1, int(self.agent_view_size / 2), 3]
         else:
             tf = None
-        view = to_numpy(view, allow, tf, None)
+        view = to_numpy(view, allow, tf, vis)
         goal = get_goal(view, tf)
         # view = to_one_hot(view, len(allow))
         # view = np.transpose(view, (2, 0, 1))

@@ -20,20 +20,24 @@ class SimpleStack(nn.Block):
         with self.name_scope():
             self.view = nn.Sequential()
             self.view.add(
-                nn.Conv2D(512, kernel_size=1, use_bias=False, layout="NCHW"))
+                nn.Conv2D(256, kernel_size=1, use_bias=False, layout="NCHW"))
             self.view.add(
-                nn.Conv2D(256, kernel_size=2, use_bias=False, layout="NCHW"))
+                nn.Conv2D(128, kernel_size=2, use_bias=False, layout="NCHW"))
             self.view.add(
-                nn.Conv2D(256, kernel_size=2, use_bias=False, layout="NCHW"))
+                nn.Conv2D(128, kernel_size=2, use_bias=False, layout="NCHW"))
             self.map = nn.Sequential()
             self.map.add(
-                nn.Conv2D(512, kernel_size=1, use_bias=False, layout="NCHW"))
+                nn.Conv2D(256, kernel_size=1, use_bias=False, layout="NCHW"))
             self.map.add(
                 nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
             self.map.add(
-                nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
+                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
             self.map.add(
-                nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
+                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
+            self.map.add(
+                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
+            self.map.add(
+                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(1024, "sigmoid"))
             self.decision_making.add(nn.Dense(64, "sigmoid"))
