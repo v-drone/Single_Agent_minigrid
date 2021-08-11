@@ -28,11 +28,11 @@ class SimpleEnv(object):
 
     def get_long_term_reward(self):
         road_detect, faults_detect = self.map.reward()
-        if self.map.agent_battery <= 0:
+        if self.map.battery <= 0:
             rate = 0.2
         else:
             rate = 1 - (self.map.step_count / self.map.max_steps)
-        if self.map.agent_battery > 0:
+        if self.map.battery > 0:
             rate += 1
         return road_detect * rate
 

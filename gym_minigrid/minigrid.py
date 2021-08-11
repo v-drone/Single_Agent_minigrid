@@ -677,7 +677,7 @@ class MiniGridEnv(gym.Env):
             see_through_walls=False,
             seed=1337,
             agent_view_size=7,
-            agent_battery=100
+            battery=100
     ):
         # Can't set both grid_size and width/height
         self.np_random, _ = seeding.np_random(seed)
@@ -696,8 +696,8 @@ class MiniGridEnv(gym.Env):
         assert agent_view_size % 2 == 1
         assert agent_view_size >= 3
         self.agent_view_size = agent_view_size
-        self.agent_battery = agent_battery
-        self.full_agent_battery = agent_battery
+        self.battery = battery
+        self.full_battery = battery
         # Observations are dictionaries containing an
         # encoding of the grid and a textual 'mission' string
         self.observation_space = spaces.Box(
@@ -763,7 +763,7 @@ class MiniGridEnv(gym.Env):
         self.step_count = 0
 
         # battery level
-        self.agent_battery = self.full_agent_battery
+        self.battery = self.full_battery
         # Return first observation
         obs = self.gen_obs()
         return obs

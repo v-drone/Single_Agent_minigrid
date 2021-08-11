@@ -67,10 +67,20 @@ class SearchEnv(MiniGridEnv):
         # cover rate, road cover rate, faults cover rate
         return n_r / road.sum(), n_f / faults.sum()
 
+    def done(self):
+        if np.sum(np.greater(self.roadmap, 0).astype(int) - np.greater(
+                self.memory, 0).astype(int)) <= 0:
+            return True, 1
+        elif self.step_count >= self.max_steps:
+            return True, -1
+        elif self.battery == 0:
+            return True, -2
+        else:
+            return False, 0
+
     def step(self, action, battery_cost=1):
         self.step_count += 1
-        done = False
-        self.agent_battery -= battery_cost
+        self.battery -= battery_cost
         # # # Move
         # Get the position in front of the agent
         fwd_pos = self.front_pos
@@ -95,10 +105,7 @@ class SearchEnv(MiniGridEnv):
         else:
             self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
         self.history.append(self.agent_pos)
-        # check done
-        if self.step_count >= self.max_steps or self.agent_battery == 0:
-            done = True
-        return self.state(tf=self.tf), done
+        return self.state(tf=self.tf), self.done()[0]
 
     def on_road(self):
         if self.grid.get(*self.agent_pos) is not None and self.grid.get(
@@ -129,7 +136,8 @@ class SearchEnv(MiniGridEnv):
         # whole_map = to_one_hot(whole_map, len(allow))
         # whole_map = np.transpose(whole_map, [2, 0, 1])
         whole_map = np.expand_dims(whole_map, 0)
-        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0), np.expand_dims(goal, 0)], axis=0)
+        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0),
+                               np.expand_dims(goal, 0)], axis=0)
 
     def get_view(self, tf):
         view, vis = self.gen_obs_grid()
@@ -152,7 +160,7 @@ class SearchEnv(MiniGridEnv):
         data = {
             "whole_map": whole_map,
             "agent_view": view,
-            "battery": self.agent_battery,
+            "battery": self.battery,
             "reward": self.reward_map[self.agent_pos[0]][self.agent_pos[1]],
         }
         return data
