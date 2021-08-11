@@ -5,7 +5,7 @@ from utils import create_input, translate_state
 
 
 class Memory(object):
-    def __init__(self, memory_length=2048, memory=None, ctx=mxnet.cpu()):
+    def __init__(self, memory_length=2048, memory=None):
         """
         dataset in mxnet case
         :param memory_length: int
@@ -17,7 +17,6 @@ class Memory(object):
         self.memory_length = memory_length
         self.memory = memory
         self.position = 0
-        self.ctx = ctx
 
     def add(self, old, new, action, reward, finish):
         _ = {"state": old, "state_next": new, "action": action,
@@ -36,10 +35,10 @@ class Memory(object):
         finish = [i.get("finish") for i in memory]
         reward = [i.get("reward") for i in memory]
         result = {
-            "state": create_input(state, self.ctx),
-            "state_next": create_input(state_next, self.ctx),
-            "action": mxnet.nd.array(action, self.ctx),
-            "finish": mxnet.nd.array(finish, self.ctx),
-            "reward": mxnet.nd.array(reward, self.ctx)
+            "state": create_input(state),
+            "state_next": create_input(state_next),
+            "action": action,
+            "finish": finish,
+            "reward": reward
         }
         return result

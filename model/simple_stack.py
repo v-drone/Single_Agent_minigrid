@@ -13,31 +13,18 @@ class ConvBlock(nn.Sequential):
 
 class SimpleStack(nn.Block):
     def __init__(self):
-        """
-        MLP in mxnet with input by Lidar and Distance sensor
-        """
         super(SimpleStack, self).__init__()
         with self.name_scope():
             self.view = nn.Sequential()
-            self.view.add(
-                nn.Conv2D(256, kernel_size=1, use_bias=False, layout="NCHW"))
-            self.view.add(
-                nn.Conv2D(128, kernel_size=2, use_bias=False, layout="NCHW"))
-            self.view.add(
-                nn.Conv2D(128, kernel_size=2, use_bias=False, layout="NCHW"))
+            c = [256, 128, 128]
+            k = [1, 2, 2]
+            for i in range(len(k)):
+                self.view.add(nn.Conv2D(c[i], k[i], use_bias=False))
+            c = [256, 256, 128, 128, 128, 128]
+            k = [1, 3, 3, 3, 3, 3]
             self.map = nn.Sequential()
-            self.map.add(
-                nn.Conv2D(256, kernel_size=1, use_bias=False, layout="NCHW"))
-            self.map.add(
-                nn.Conv2D(256, kernel_size=3, use_bias=False, layout="NCHW"))
-            self.map.add(
-                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
-            self.map.add(
-                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
-            self.map.add(
-                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
-            self.map.add(
-                nn.Conv2D(128, kernel_size=3, use_bias=False, layout="NCHW"))
+            for i in range(len(k)):
+                self.map.add(nn.Conv2D(c[i], k[i], use_bias=False))
             self.decision_making = nn.Sequential()
             self.decision_making.add(nn.Dense(1024, "sigmoid"))
             self.decision_making.add(nn.Dense(64, "sigmoid"))

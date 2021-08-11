@@ -2,7 +2,6 @@ import os
 from mpu.ml import indices2one_hot
 
 import numpy as np
-from mxnet import nd
 
 agent_dir = {
     0: '>',
@@ -77,7 +76,7 @@ def to_numpy(grid, allow, agent, vis_mask=None):
     return map_img
 
 
-def create_input(data, ctx):
+def create_input(data):
     target = []
     for i in range(len(data[0])):
         target.append([])
@@ -87,4 +86,4 @@ def create_input(data, ctx):
         for i, each in enumerate(_):
             target[i].append(each)
     target = [np.array(i) for i in target]
-    return [nd.array(i, ctx=ctx) for i in target]
+    return target

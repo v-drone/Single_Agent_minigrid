@@ -1,5 +1,5 @@
 from utils import create_input, translate_state
-from mxnet import nd
+import torch
 
 
 def evaluate(ctx, model, env, rounds=5):
@@ -9,8 +9,8 @@ def evaluate(ctx, model, env, rounds=5):
         done = 0
         while not done:
             data = create_input([translate_state(env.map.state())])
-            data = [nd.array(i, ctx=ctx) for i in data]
-            action = model(data)
-            action = int(nd.argmax(action, axis=1).asnumpy()[0])
+            data = [torch.FloatTensor(i).to(ctx) for i in data]
+            action = model.forward(data)
+            action = int(torch.argmax(action).cpu().numpy())
             old, new, reward_get, done = env.step(action)
     return env.detect_rate

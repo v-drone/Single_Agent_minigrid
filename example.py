@@ -24,7 +24,7 @@ offline.collect_params().zero_grad()
 # create env
 env = SimpleEnv(display=False, agent_view=agent_view, map_size=map_size)
 env.reset_env()
-memory_pool = Memory(memory_length, ctx=ctx)
+memory_pool = Memory(memory_length)
 annealing = 0
 total_reward = np.zeros(num_episode)
 eval_result = []
