@@ -5,7 +5,7 @@ from torch import nn
 class ConvBlock(nn.Sequential):
     def __init__(self, in_c, out_c, ks=1):
         super().__init__()
-        self.add_module("conv", nn.Conv2d(in_c, out_c, ks, bias=False))
+        self.add_module("conv", nn.Conv2d(in_c, out_c, ks))
         self.add_module("norm", nn.BatchNorm2d(out_c))
         self.add_module("RReLU", nn.RReLU())
 
@@ -15,15 +15,15 @@ class SimpleStack(nn.Module):
         super(SimpleStack, self).__init__()
         c = [256, 128, 128]
         k = [1, 2, 2]
-        views = [nn.Conv2d(2, c[0], k[0], bias=False)]
+        views = [nn.Conv2d(2, c[0], k[0])]
         for i in range(1, len(k)):
-            views.append(nn.Conv2d(c[i - 1], c[i], k[i], bias=False))
+            views.append(nn.Conv2d(c[i - 1], c[i], k[i]))
         self.view = nn.Sequential(*views)
         c = [256, 256, 128, 128, 128, 128]
         k = [1, 3, 3, 3, 3, 3]
-        maps = [nn.Conv2d(3, c[0], k[0], bias=False)]
+        maps = [nn.Conv2d(3, c[0], k[0])]
         for i in range(1, len(k)):
-            maps.append(nn.Conv2d(c[i - 1], c[i], k[i], bias=False))
+            maps.append(nn.Conv2d(c[i - 1], c[i], k[i]))
         self.map = nn.Sequential(*maps)
         dm = [13953, 1024, 64, 3]
         decision_making = [nn.Linear(dm[0], dm[1]), nn.Sigmoid()]

@@ -52,7 +52,7 @@ for epoch in range(num_episode):
             action = np.random.randint(0, action_max)
         else:
             by = "Model"
-            data = create_input([translate_state(env.map.state())], ctx)
+            data = create_input([translate_state(env.map.state())])
             action = offline(data)
             action = int(nd.argmax(action, axis=1).asnumpy()[0])
         old, new, reward_get, finish = env.step(action)
