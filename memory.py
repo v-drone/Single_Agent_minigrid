@@ -32,7 +32,7 @@ class Memory(object):
         state = [translate_state(i.get("state")) for i in memory]
         state_next = [translate_state(i.get("state_next")) for i in memory]
         action = [i.get("action") for i in memory]
-        finish = [i.get("finish") for i in memory]
+        finish = [int(i.get("finish")) for i in memory]
         reward = [i.get("reward") for i in memory]
         result = {
             "state": create_input(state),
