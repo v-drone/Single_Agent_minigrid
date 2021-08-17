@@ -1,10 +1,10 @@
 # training cases
-order = "TEST"
+order = "Torch"
 # batch size
-batch_size = 512
+batch_size = 128
 # agent view
-agent_view = 7
-map_size = 10
+agent_view = 5
+map_size = 20
 # action max
 action_max = 3
 # learning rate
