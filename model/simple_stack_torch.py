@@ -13,19 +13,19 @@ class ConvBlock(nn.Sequential):
 class SimpleStack(nn.Module):
     def __init__(self):
         super(SimpleStack, self).__init__()
-        c = [512, 256, 256]
+        c = [256, 128, 128]
         k = [1, 2, 2]
         views = [nn.Conv2d(2, c[0], k[0])]
         for i in range(1, len(k)):
             views.append(nn.Conv2d(c[i - 1], c[i], k[i]))
         self.view = nn.Sequential(*views)
-        c = [512, 256, 256, 256]
-        k = [1, 3, 3, 3]
+        c = [256, 256, 128, 128, 128, 128]
+        k = [1, 3, 3, 3, 3, 3]
         maps = [nn.Conv2d(3, c[0], k[0])]
         for i in range(1, len(k)):
             maps.append(nn.Conv2d(c[i - 1], c[i], k[i]))
         self.map = nn.Sequential(*maps)
-        dm = [52481, 1024, 64, 3]
+        dm = [13953, 1024, 64, 3]
         decision_making = [nn.Linear(dm[0], dm[1]), nn.Sigmoid()]
         for i in range(1, len(dm) - 1):
             decision_making.append(nn.Linear(dm[i], dm[i + 1]))
