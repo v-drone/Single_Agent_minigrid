@@ -25,7 +25,7 @@ class SimpleStack(nn.Module):
         for i in range(1, len(k)):
             maps.append(nn.Conv2d(c[i - 1], c[i], k[i]))
         self.map = nn.Sequential(*maps)
-        dm = [13953, 1024, 64, 3]
+        dm = [16001, 1024, 64, 3]
         decision_making = [nn.Linear(dm[0], dm[1]), nn.Sigmoid()]
         for i in range(1, len(dm) - 1):
             decision_making.append(nn.Linear(dm[i], dm[i + 1]))
@@ -34,7 +34,7 @@ class SimpleStack(nn.Module):
         self._init_weight()
 
     def forward(self, income):
-        view, whole_map, attitude = income
+        view, whole_map, attitude, _ = income
         view = self.view(view).flatten(start_dim=1)
         whole_map = self.map(whole_map).flatten(start_dim=1)
         # relative angle, distance to goal, distance sensor result

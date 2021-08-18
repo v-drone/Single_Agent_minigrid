@@ -7,7 +7,7 @@ from utils import check_dir
 from memory import Memory
 from environments.SimpleEnv import SimpleEnv
 from utils import create_input, translate_state
-from evaluation import evaluate
+from evaluation_mxnet import evaluate
 from mxnet import gluon, nd, autograd
 
 if os.path.exists(summary):

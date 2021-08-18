@@ -51,6 +51,7 @@ class SearchEnv(MiniGridEnv):
         self.agent_start_dir = random.randint(0, 3)
         self.memory = np.zeros([self.width, self.height])
         self.roadmap = np.zeros([self.width, self.height])
+        self.history = []
         super(SearchEnv, self).reset()
 
     def reward(self):
@@ -147,6 +148,13 @@ class SearchEnv(MiniGridEnv):
         view = np.expand_dims(view, 0)
         return np.concatenate([view, np.expand_dims(goal, 0)], axis=0)
 
+    def get_history(self):
+        history = np.zeros(shape=(self.max_steps, 2))
+        for i, j in enumerate(history):
+            if len(self.history) > i:
+                history[i] = self.history[i]
+        return history
+
     def state(self, tf=True):
         whole_map = self.get_whole_map()
         view = self.get_view(tf)
@@ -155,6 +163,7 @@ class SearchEnv(MiniGridEnv):
             "agent_view": view,
             "battery": self.battery,
             "reward": self.reward_map[self.agent_pos[0]][self.agent_pos[1]],
+            "history": self.get_history(),
         }
         return data
 
