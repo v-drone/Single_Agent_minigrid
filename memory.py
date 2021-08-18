@@ -1,6 +1,4 @@
 import numpy as np
-import mxnet
-
 from utils import create_input, translate_state
 
 
