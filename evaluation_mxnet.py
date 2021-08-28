@@ -3,31 +3,39 @@ from mxnet import nd
 import mxnet as mx
 from environments.SimpleEnv import SimpleEnv
 from model.simple_stack import SimpleStack
+from PIL import Image
 
 
-def evaluate(ctx, model, env, rounds=5, print_action=False):
+def evaluate(ctx, model, env, rounds=5, print_action=False, save=None):
     env.reset_env()
     for epoch in range(rounds):
         env.reset_env()
         done = 0
+        step = 0
         while not done:
+            step += 1
             data = create_input([translate_state(env.map.state())])
             data = [nd.array(i, ctx=ctx) for i in data]
-            _action = model(data)
-            action = int(nd.argmax(_action, axis=1).asnumpy()[0])
-            old, new, reward_get, done = env.step(action)
+            pred = model(data)
+            action = int(nd.argmax(pred, axis=1).asnumpy()[0])
+            old, new, reward, done = env.step(action)
             if print_action:
-                print(_action, reward_get, env.map.battery)
-                import pdb
-                pdb.set_trace()
+                print(pred, reward, env.map.battery)
+            if save is not None:
+                img = Image.fromarray(env.map.render(), 'RGB')
+                pred = [str(x)[0:5] for x in pred.asnumpy().tolist()[0]]
+                filename = str(epoch) + "-" + str(step) + "-" + str(
+                    reward) + "-" + "_".join(pred) + ".jpg"
+                img.save(save + "/" + filename)
     return env.detect_rate
 
 
 if __name__ == '__main__':
     _agent_view = 7
     _map_size = 20
-    _env = SimpleEnv(display=True, agent_view=_agent_view, map_size=_map_size)
+    _env = SimpleEnv(display=False, agent_view=_agent_view, map_size=_map_size)
     _ctx = mx.cpu()
     _model = SimpleStack()
     _model.load_parameters("./model_save/MXNET.params", _ctx)
-    evaluate(_ctx, _model, _env, print_action=False)
+    evaluate(_ctx, _model, _env, rounds=10, print_action=False,
+             save="./eval_check/")

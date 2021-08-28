@@ -25,20 +25,20 @@ class SimpleStack(nn.Module):
         for i in range(1, len(k)):
             maps.append(nn.Conv2d(c[i - 1], c[i], k[i]))
         self.map = nn.Sequential(*maps)
-        dm = [16001, 1024, 64, 3]
-        decision_making = [nn.Linear(dm[0], dm[1]), nn.Sigmoid()]
+        dm = [13953, 1024, 64, 3]
+        decision_making = [nn.Linear(dm[0], dm[1]), nn.LeakyReLU()]
         for i in range(1, len(dm) - 1):
             decision_making.append(nn.Linear(dm[i], dm[i + 1]))
-            decision_making.append(nn.Sigmoid())
+            decision_making.append(nn.ReLU())
         self.decision_making = nn.Sequential(*decision_making)
         self._init_weight()
 
     def forward(self, income):
-        view, whole_map, attitude, _ = income
+        view, whole_map, power = income
         view = self.view(view).flatten(start_dim=1)
         whole_map = self.map(whole_map).flatten(start_dim=1)
         # relative angle, distance to goal, distance sensor result
-        all_features = [view, whole_map, attitude]
+        all_features = [view, whole_map, power]
         all_features = torch.cat(all_features, dim=1)
         return self.decision_making(all_features)
 
