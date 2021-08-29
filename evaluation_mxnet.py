@@ -31,11 +31,10 @@ def evaluate(ctx, model, env, rounds=5, print_action=False, save=None):
 
 
 if __name__ == '__main__':
-    _agent_view = 7
+    _agent_view = 5
     _map_size = 20
-    _env = SimpleEnv(display=False, agent_view=_agent_view, map_size=_map_size)
+    _env = SimpleEnv(display=True, agent_view=_agent_view, map_size=_map_size)
     _ctx = mx.cpu()
     _model = SimpleStack()
     _model.load_parameters("./model_save/MXNET.params", _ctx)
-    evaluate(_ctx, _model, _env, rounds=10, print_action=False,
-             save="./eval_check/")
+    evaluate(_ctx, _model, _env, rounds=10, print_action=True, save="./data_save/")
