@@ -3,7 +3,7 @@ from gym_minigrid.window import Window
 
 
 class SimpleEnv(object):
-    def __init__(self, display=False, agent_view=7, map_size=20, roads=1):
+    def __init__(self, display=False, agent_view=5, map_size=20, roads=1):
         super().__init__()
         self.display = display
         self.map = Simple2D(map_size, map_size, agent_view=agent_view,

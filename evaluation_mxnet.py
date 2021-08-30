@@ -37,4 +37,5 @@ if __name__ == '__main__':
     _ctx = mx.cpu()
     _model = SimpleStack()
     _model.load_parameters("./model_save/MXNET.params", _ctx)
-    evaluate(_ctx, _model, _env, rounds=10, print_action=True, save="./data_save/")
+    evaluate(_ctx, _model, _env, rounds=100, print_action=True,
+             save="./data_save/")
