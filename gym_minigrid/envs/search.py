@@ -142,11 +142,10 @@ class SearchEnv(MiniGridEnv):
         else:
             tf = None
         view = to_numpy(view, allow, tf, vis)
-        goal = get_goal(view, tf)
         # view = to_one_hot(view, len(allow))
         # view = np.transpose(view, (2, 0, 1))
         view = np.expand_dims(view, 0)
-        return np.concatenate([view, np.expand_dims(goal, 0)], axis=0)
+        return view
 
     def get_history(self):
         history = np.zeros(shape=(self.max_steps, 2))
