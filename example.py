@@ -16,15 +16,15 @@ ctx = mx.cpu()
 for i in ["model_save", "data_save"]:
     check_dir(i)
 # build models
-online_model = SimpleStack(agent_view, map_size)
-offline_model = SimpleStack(agent_view, map_size)
+online_model = SimpleStack()
+offline_model = SimpleStack()
 online_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().initialize(mx.init.Normal(0.02), ctx=ctx)
 offline_model.collect_params().zero_grad()
 # create env
 env = SimpleEnv(display=False)
 env.reset_env()
-memory_pool = Memory(memory_length, ctx=ctx)
+memory_pool = Memory(memory_length)
 annealing = 0
 total_reward = np.zeros(num_episode)
 eval_result = []

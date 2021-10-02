@@ -1,4 +1,4 @@
-from gym_minigrid.envs.simple2D import Simple2D
+from gym_minigrid.envs.simple2Dv2 import Simple2Dv2 as Simple2D
 from gym_minigrid.window import Window
 
 

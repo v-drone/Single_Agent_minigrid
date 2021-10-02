@@ -1,7 +1,7 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
 import random
-from utils import to_numpy, agent_dir, to_one_hot, get_goal
+from utils import to_numpy, get_goal
 import numpy as np
 
 

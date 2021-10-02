@@ -8,11 +8,14 @@ class Simple2D(SearchEnv):
     def __init__(self, width=100, height=100, agent_view=7, roads=1,
                  max_step=None, road_rate=0.3, tf=True):
         self.roads = roads
-
         self.road_rate = int(road_rate * min([width, height]))
+        self.mission = "go to ball as much as possible"
         super().__init__(tf, width, height, agent_view, max_step)
 
     def _gen_grid(self, width, height):
+        _ = self.gent_basic_grid(width, height)
+
+    def gent_basic_grid(self, width, height):
         # Create an empty grid
         self.grid = Grid(width, height)
         # Generate the surrounding walls
@@ -39,20 +42,6 @@ class Simple2D(SearchEnv):
                 _he = random.randint(2, height - 2)
                 for j in range(height - start - 1, 0, -1):
                     roads.append((j, _he))
-        # add faults
-        np.random.shuffle(roads)
-        pos = 100
-        faults = set()
-        for i in roads:
-            if pos >= 50:
-                self.roadmap[i[0]][i[1]] = 1
-                self.put_obj(Box(color="green"), *i)
-                faults.add(tuple(i))
-                pos -= 50
-            else:
-                self.roadmap[i[0]][i[1]] = 2
-                self.put_obj(Ball(color="blue"), *i)
-                pos += random.randint(5, 10)
         # build reward_map
         for width, _ in enumerate(self.reward_map):
             for height, _ in enumerate(_):
@@ -68,7 +57,7 @@ class Simple2D(SearchEnv):
         else:
             self.place_agent()
         self.put_obj(Key(), *self.agent_pos)
-        self.mission = "go to ball as much as possible"
+        return roads
 
     def set_reward_map(self):
         pass
