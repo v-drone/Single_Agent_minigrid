@@ -50,6 +50,7 @@ for epoch in range(num_episode):
         else:
             by = "Model"
             data = create_input([translate_state(env.map.state())])
+            data = [nd.array(i, ctx=ctx) for i in data]
             action = offline_model(data)
             action = int(nd.argmax(action, axis=1).asnumpy()[0])
         old, new, reward_get, finish = env.step(action)

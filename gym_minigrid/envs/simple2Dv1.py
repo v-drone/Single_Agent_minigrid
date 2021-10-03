@@ -8,9 +8,9 @@ class Simple2Dv1(Simple2D):
     def __init__(self, width=100, height=100, agent_view=7, roads=1,
                  max_step=None, road_rate=0.3, tf=True):
         self.roads = roads
-
         self.road_rate = int(road_rate * min([width, height]))
-        super().__init__(tf, width, height, agent_view, max_step)
+        super().__init__(width, height, agent_view, roads, max_step, road_rate,
+                         tf)
 
     def _gen_grid(self, width, height):
         roads = self.gent_basic_grid(width, height)

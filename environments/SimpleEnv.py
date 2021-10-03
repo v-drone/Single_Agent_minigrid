@@ -1,4 +1,4 @@
-from gym_minigrid.envs.simple2Dv2 import Simple2Dv2 as Simple2D
+from gym_minigrid.envs.simple2D import Simple2D
 from gym_minigrid.window import Window
 
 
@@ -7,7 +7,7 @@ class SimpleEnv(object):
         super().__init__()
         self.display = display
         self.map = Simple2D(map_size, map_size, agent_view=agent_view,
-                            roads=roads)
+                            roads=roads, max_step=200)
         self.window = None
         if self.display:
             self.window = Window('GYM_MiniGrid')
