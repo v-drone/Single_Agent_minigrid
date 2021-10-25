@@ -6,9 +6,9 @@ import numpy as np
 
 class Simple2D(SearchEnv):
     def __init__(self, width=100, height=100, agent_view=7, roads=1,
-                 max_step=None, road_rate=0.3, tf=True):
+                 max_step=None, fault_rate=0.3, tf=True):
         self.roads = roads
-        self.road_rate = int(road_rate * min([width, height]))
+        self.fault_rate = int(fault_rate * min([width, height]))
         self.mission = "go to ball as much as possible"
         super().__init__(tf, width, height, agent_view, max_step)
 
@@ -24,7 +24,7 @@ class Simple2D(SearchEnv):
         roads = []
         for i in range(self.roads):
             choice = random.randint(0, 4)
-            start = random.randint(1, self.road_rate)
+            start = random.randint(1, self.fault_rate)
             if choice == 0:
                 #
                 _width = random.randint(2, width - 2)
@@ -42,6 +42,9 @@ class Simple2D(SearchEnv):
                 _he = random.randint(2, height - 2)
                 for j in range(height - start - 1, 0, -1):
                     roads.append((j, _he))
+        for i in roads:
+            self.roadmap[i[0]][i[1]] = 2
+            self.put_obj(Ball(color="blue"), *i)
         # build reward_map
         for width, _ in enumerate(self.reward_map):
             for height, _ in enumerate(_):
