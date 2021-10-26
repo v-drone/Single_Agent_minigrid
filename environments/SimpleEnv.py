@@ -21,19 +21,14 @@ class SimpleEnv(object):
 
     def short_term_reward(self, old, new):
         same_position = - 0.005 * self.map.check_history()
-        if new["reward"] > old["reward"]:
-            return new["reward"] * - 0.001 + same_position
-        else:
-            return new["reward"] * 0.001 + same_position
+        return same_position
 
     def get_long_term_reward(self):
-        road_detect, faults_detect = self.map.reward()
+        road_detect = self.map.reward()[0]
         if self.map.battery <= 0:
-            rate = 0.2
+            rate = 0.1
         else:
-            rate = 1 - (self.map.step_count / self.map.max_steps)
-        if self.map.battery > 0:
-            rate += 1
+            rate = 2 - (self.map.step_count / self.map.max_steps)
         return road_detect * rate
 
     def step(self, action):

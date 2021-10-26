@@ -56,17 +56,17 @@ class SearchEnv(MiniGridEnv):
 
     def reward(self):
         road = np.greater_equal(self.roadmap.T, 1).astype(int).flatten()
-        faults = np.equal(self.roadmap.T, 1).astype(int).flatten().flatten()
+        walkway = np.equal(self.roadmap.T, 1).astype(int).flatten().flatten()
         memory = np.greater_equal(self.memory.T, 1).astype(int).flatten()
-        n_f = 0
+        n_w = 0
         n_r = 0
-        for x, y, z in zip(memory, road, faults):
+        for x, y, z in zip(memory, road, walkway):
             if x == 1 and y == 1:
                 n_r += 1
             if x == 1 and z == 1:
-                n_f += 1
-        # cover rate, road cover rate, faults cover rate
-        return n_r / road.sum(), n_f / faults.sum()
+                n_w += 1
+        # cover rate, road cover rate, walkway cover rate
+        return n_r / road.sum(), n_w / walkway.sum()
 
     def step(self, action, battery_cost=1):
         self.step_count += 1
