@@ -7,9 +7,7 @@ from utils import check_dir
 from memory import Memory
 from environments.SimpleEnv import SimpleEnv
 from utils import create_input, translate_state
-from evaluation_mxnet import evaluate
-from mxnet import gluon, nd, autograd
-
+from mxnet import gluon, nd
 if os.path.exists(summary):
     os.remove(summary)
 ctx = mx.cpu()
@@ -17,7 +15,8 @@ for i in ["model_save", "data_save"]:
     check_dir(i)
 # build models
 model = SimpleStack()
-model.load_parameters("./model_save/MXNET_view_only.params")
+print(model)
+model.load_parameters("./model_save/MXNET_view_only.params.best")
 # create env
 env = SimpleEnv(display=True)
 env.reset_env()
