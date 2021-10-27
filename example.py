@@ -8,6 +8,7 @@ from memory import Memory
 from environments.SimpleEnv import SimpleEnv
 from utils import create_input, translate_state
 from mxnet import gluon, nd
+
 if os.path.exists(summary):
     os.remove(summary)
 ctx = mx.cpu()
@@ -16,7 +17,7 @@ for i in ["model_save", "data_save"]:
 # build models
 model = SimpleStack()
 print(model)
-model.load_parameters("./model_save/MXNET_view_only.params.best")
+model.load_parameters("./model_save/MXNET_map_only.params.best")
 # create env
 env = SimpleEnv(display=True)
 env.reset_env()
@@ -36,7 +37,9 @@ for epoch in range(num_episode):
         by = "Model"
         data = create_input([translate_state(env.map.state())])
         data = [nd.array(i, ctx=ctx) for i in data]
-        action = int(nd.argmax(model(data), axis=1).asnumpy()[0])
+        action = model(data)
+        print(action)
+        action = int(nd.argmax(action, axis=1).asnumpy()[0])
         old, new, reward_get, finish = env.step(action)
         memory_pool.add(old, new, action, reward_get, finish)
         if finish and epoch > 50:

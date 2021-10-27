@@ -21,7 +21,10 @@ class SimpleEnv(object):
 
     def short_term_reward(self, old, new):
         same_position = - 0.005 * self.map.check_history()
-        return same_position
+        if new["reward"] > old["reward"]:
+            return new["reward"] * - 0.001 + same_position
+        else:
+            return new["reward"] * 0.001 + same_position
 
     def get_long_term_reward(self):
         road_detect = self.map.reward()[0]

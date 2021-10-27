@@ -15,30 +15,28 @@ class SimpleStack(nn.Block):
     def __init__(self):
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            self.view = nn.Sequential()
-            c = [256, 128, 128]
-            k = [1, 2, 2]
-            for i in range(len(k)):
-                self.view.add(nn.Conv2D(c[i], k[i], use_bias=False,  layout="NCHW"))
-            c = [256, 128, 128]
+            # self.view = nn.Sequential()
+            # c = [256, 128, 128]
+            # k = [1, 2, 2]
+            # for i in range(len(k)):
+            #     self.view.add(nn.Conv2D(c[i], k[i], use_bias=False,  layout="NCHW"))
+            c = [16, 32, 32]
             k = [1, 2, 2]
             self.map = nn.Sequential()
             for i in range(len(k)):
-                self.map.add(nn.Conv2D(c[i], k[i], use_bias=False,layout="NCHW"))
+                self.map.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
             self.decision_making = nn.Sequential()
-            self.decision_making.add(nn.Dense(1024, "sigmoid"))
-            self.decision_making.add(nn.Dense(64, "sigmoid"))
             self.decision_making.add(nn.Dense(3, "sigmoid"))
         self.agent_view = None
         self.whole_map = None
 
     def forward(self, income, *args):
         view, whole_map, attitude = income
-        view = self.view(view).flatten()
+        # view = self.view(view).flatten()
         whole_map = self.map(whole_map).flatten()
         # relative angle, distance to goal, distance sensor result
         # all_features = [view, whole_map, attitude]
-        all_features = [view, attitude]
-        all_features = nd.concat(*all_features)
-        result = self.decision_making(all_features)
+        all_features = [whole_map, attitude]
+        # all_features = nd.concat(*all_features)
+        result = self.decision_making(whole_map)
         return result
