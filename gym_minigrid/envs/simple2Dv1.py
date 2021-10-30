@@ -11,19 +11,27 @@ class Simple2Dv1(Simple2D):
                          fault_rate, tf)
 
     def _gen_grid(self, width, height):
-        roads = self.gent_basic_grid(width, height)
+        roads = self._gent_basic_grid(width, height)
         # add faults
         np.random.shuffle(roads)
         pos = 100
         faults = set()
         for i in roads:
             if pos >= 50:
-                self.roadmap[i[0]][i[1]] = 1
                 self.put_obj(Box(color="green"), *i)
                 faults.add(tuple(i))
                 pos -= 50
             else:
                 pos += random.randint(5, 10)
 
-    def set_reward_map(self):
-        pass
+    def _reward(self):
+        raise NotImplementedError
+
+    def _l_reward(self):
+        raise NotImplementedError
+
+    def _check_finish(self):
+        raise NotImplementedError
+
+    def _build_rewards(self):
+        raise NotImplementedError
