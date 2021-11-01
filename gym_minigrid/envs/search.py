@@ -1,8 +1,8 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
-import random
-from utils import to_numpy
+from utils import to_numpy, agent_dir
 import numpy as np
+import random
 
 
 class SearchEnv(MiniGridEnv):
@@ -101,7 +101,6 @@ class SearchEnv(MiniGridEnv):
         allow = ["wall", "key", "ball", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
         whole_map = to_numpy(self.grid, allow, None)
-        whole_map = np.where(whole_map == allow["box"], allow["ball"], whole_map)
         memory = self.memory.T
         memory = np.where(memory > 0, 1, memory)
         memory[self.agent_pos[1]][self.agent_pos[0]] = self.agent_dir + 2
@@ -110,15 +109,16 @@ class SearchEnv(MiniGridEnv):
         return np.concatenate([whole_map, memory], axis=0)
 
     def _get_view(self, tf):
-        view, vis = self.gen_obs_grid()
         allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
-        if tf:
-            agent = [self.agent_view_size - 1, int(self.agent_view_size / 2), 3]
-        else:
-            agent = None
-        view = to_numpy(view, allow, agent, vis)
+        view, vis = self.gen_obs_grid()
+        view = to_numpy(view, allow, None, vis)
         view = np.expand_dims(view, 0)
+        if tf:
+            agent = np.zeros_like(view[0])
+            agent[self.agent_view_size - 1][int(self.agent_view_size / 2)] = allow[agent_dir[3]]
+            agent = np.expand_dims(agent, 0)
+            view = np.concatenate([view, agent], axis=0)
         return view
 
     def _get_history(self):

@@ -51,7 +51,7 @@ class Simple2Dv2(Simple2D):
         for i in walkways:
             if self.memory[i[0]][i[1]] > 0:
                 walkway_arrival += 1
-        return roads_arrival / len(roads), walkway_arrival, len(walkways)
+        return roads_arrival / len(roads), walkway_arrival / len(walkways)
 
     def _check_finish(self):
         if self.step_count >= self.max_steps or self.battery == 0:
@@ -68,24 +68,26 @@ class Simple2Dv2(Simple2D):
             self.put_obj(Ball(color="blue"), *i)
         # add roads not in the map
         walkway = []
-        boundary = random.randint(0, 4)
         start = random.randint(1, self.fault_rate)
-        if boundary == 0:
-            _width = random.randint(3, width - 3)
-            for j in range(start, width - 1):
-                walkway.append((_width, j))
-        elif boundary == 1:
-            _width = random.randint(3, width - 3)
-            for j in range(width - start - 1, 0, -1):
-                walkway.append((_width, j))
-        elif boundary == 2:
-            _he = random.randint(3, height - 3)
-            for j in range(start, height - 1):
-                walkway.append((j, _he))
+        boundary = random.random()
+        if list(roads)[0][0] != list(roads)[1][0]:
+            if boundary >= 0.5:
+                _width = random.randint(3, width - 3)
+                for j in range(start, width - 1):
+                    walkway.append((_width, j))
+            else:
+                _width = random.randint(3, width - 3)
+                for j in range(width - start - 1, 0, -1):
+                    walkway.append((_width, j))
         else:
-            _he = random.randint(3, height - 3)
-            for j in range(height - start - 1, 0, -1):
-                walkway.append((j, _he))
+            if boundary >= 0.5:
+                _height = random.randint(3, height - 3)
+                for j in range(start, height - 1):
+                    walkway.append((j, _height))
+            else:
+                _height = random.randint(3, height - 3)
+                for j in range(height - start - 1, 0, -1):
+                    walkway.append((j, _height))
         for i in walkway:
             if i not in roads:
                 self.put_obj(Box(color="green"), *i)

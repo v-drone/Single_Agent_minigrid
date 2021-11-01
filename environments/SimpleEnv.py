@@ -42,7 +42,7 @@ class SimpleEnv(object):
         if done:
             self.detect_rate.append(self.new["l_reward"])
             self.step_count.append(self.map.step_count)
-            reward += self.get_long_term_reward()
+            reward += self.long_term_reward()
         return self.old, self.new, reward, done
 
     def key_handler(self, event):
