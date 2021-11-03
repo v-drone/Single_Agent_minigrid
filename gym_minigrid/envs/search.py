@@ -1,14 +1,8 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
-import random
-from utils import to_numpy, get_goal
+from utils import to_numpy, agent_dir
 import numpy as np
-
-
-# Detect
-class Detect(Exception):
-    def __init__(self):
-        pass
+import random
 
 
 class SearchEnv(MiniGridEnv):
@@ -33,12 +27,8 @@ class SearchEnv(MiniGridEnv):
         self.agent_start_pos = None
         self.agent_start_dir = None
         self.memory = np.zeros([self.width, self.height])
-        self.roadmap = np.zeros([self.width, self.height])
         self.history = []
-        self.view_pos = [agent_view - 1, int(agent_view / 2), 3]
-        self.reward_map = np.zeros(shape=(width, height))
-        super().__init__(width=width, height=height, max_steps=max_step,
-                         agent_view_size=agent_view,
+        super().__init__(width=width, height=height, max_steps=max_step, agent_view_size=agent_view,
                          see_through_walls=False)
         # Action enumeration for this environment
         self.reset()
@@ -46,27 +36,27 @@ class SearchEnv(MiniGridEnv):
         self.to_goal = 999
 
     def reset(self):
-        self.agent_start_pos = np.array([random.randint(1, self.width - 2),
-                                         random.randint(1, self.height - 2)])
+        self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])
         self.agent_start_dir = random.randint(0, 3)
         self.memory = np.zeros([self.width, self.height])
-        self.roadmap = np.zeros([self.width, self.height])
         self.history = []
         super(SearchEnv, self).reset()
 
-    def reward(self):
-        road = np.greater_equal(self.roadmap.T, 1).astype(int).flatten()
-        walkway = np.equal(self.roadmap.T, 1).astype(int).flatten().flatten()
-        memory = np.greater_equal(self.memory.T, 1).astype(int).flatten()
-        n_w = 0
-        n_r = 0
-        for x, y, z in zip(memory, road, walkway):
-            if x == 1 and y == 1:
-                n_r += 1
-            if x == 1 and z == 1:
-                n_w += 1
-        # cover rate, road cover rate, walkway cover rate
-        return n_r / road.sum(), n_w / walkway.sum()
+    def state(self, tf=True):
+        finish = self._check_finish()
+        data = {
+            "whole_map": self._get_whole_map(),
+            "agent_view": self._get_view(tf),
+            "battery": self.battery,
+            "reward": self._reward(),
+            "history": self._get_history(),
+            "finish": finish
+        }
+        if finish:
+            data["l_reward"] = self._l_reward()
+        else:
+            data["l_reward"] = None
+        return data
 
     def step(self, action, battery_cost=1):
         self.step_count += 1
@@ -89,27 +79,15 @@ class SearchEnv(MiniGridEnv):
         elif action == self.actions.forward:
             if fwd_cell is None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
-        # save history pod
-        if self.grid.get(*self.agent_pos) is not None and self.grid.get(
-                *self.agent_pos).type == 'box':
-            self.memory[self.agent_pos[0]][self.agent_pos[1]] += 1
-        else:
-            self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
+        # save history
+        self.memory[self.agent_pos[0]][self.agent_pos[1]] += 1
         self.history.append(self.agent_pos)
         # check done
-        if self.step_count >= self.max_steps or self.battery == 0 or \
-                self.reward()[0] == 1:
+        if self._check_finish():
             done = True
         return self.state(tf=self.tf), done
 
-    def on_road(self):
-        if self.grid.get(*self.agent_pos) is not None and self.grid.get(
-                *self.agent_pos).type in ("box", "ball"):
-            return True
-        else:
-            return False
-
-    def check_history(self):
+    def _check_history(self):
         cur = self.history[-1]
         same = 0
         for i in reversed(self.history[:-1]):
@@ -119,51 +97,45 @@ class SearchEnv(MiniGridEnv):
                 break
         return same
 
-    def get_whole_map(self):
-        allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
+    def _get_whole_map(self):
+        allow = ["wall", "key", "ball", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
-        agent = np.array(
-            [self.agent_pos[1], self.agent_pos[0], self.agent_dir])
-        whole_map = to_numpy(self.grid, allow, agent)
-        whole_map = np.where(whole_map == allow["box"], allow["ball"],
-                             whole_map)
-        # whole_map = to_one_hot(whole_map, len(allow))
-        # whole_map = np.transpose(whole_map, [2, 0, 1])
+        whole_map = to_numpy(self.grid, allow, None)
+        memory = self.memory.T
+        memory = np.where(memory > 0, 1, memory)
+        memory[self.agent_pos[1]][self.agent_pos[0]] = self.agent_dir + 2
         whole_map = np.expand_dims(whole_map, 0)
-        return np.concatenate([whole_map, np.expand_dims(self.memory.T, 0)], axis=0)
+        memory = np.expand_dims(memory, 0)
+        return np.concatenate([whole_map, memory], axis=0)
 
-    def get_view(self, tf):
-        view, vis = self.gen_obs_grid()
+    def _get_view(self, tf):
         allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
-        if tf:
-            agent = [self.agent_view_size - 1, int(self.agent_view_size / 2), 3]
-        else:
-            agent = None
-        view = to_numpy(view, allow, agent, vis)
-        # view = to_one_hot(view, len(allow))
-        # view = np.transpose(view, (2, 0, 1))
+        view, vis = self.gen_obs_grid()
+        view = to_numpy(view, allow, None, vis)
         view = np.expand_dims(view, 0)
+        if tf:
+            agent = np.zeros_like(view[0])
+            agent[self.agent_view_size - 1][int(self.agent_view_size / 2)] = allow[agent_dir[3]]
+            agent = np.expand_dims(agent, 0)
+            view = np.concatenate([view, agent], axis=0)
         return view
 
-    def get_history(self):
+    def _get_history(self):
         history = np.zeros(shape=(self.max_steps, 2))
         for i, j in enumerate(history):
             if len(self.history) > i:
                 history[i] = self.history[i]
         return history
 
-    def state(self, tf=True):
-        whole_map = self.get_whole_map()
-        view = self.get_view(tf)
-        data = {
-            "whole_map": whole_map,
-            "agent_view": view,
-            "battery": self.battery,
-            "reward": self.reward_map[self.agent_pos[0]][self.agent_pos[1]],
-            "history": self.get_history(),
-        }
-        return data
-
     def _gen_grid(self, width, height):
+        raise NotImplementedError
+
+    def _reward(self):
+        raise NotImplementedError
+
+    def _l_reward(self):
+        raise NotImplementedError
+
+    def _check_finish(self):
         raise NotImplementedError

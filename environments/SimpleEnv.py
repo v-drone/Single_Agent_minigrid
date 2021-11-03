@@ -3,11 +3,10 @@ from gym_minigrid.window import Window
 
 
 class SimpleEnv(object):
-    def __init__(self, display=False, agent_view=5, map_size=20, roads=1):
+    def __init__(self, display=False, agent_view=5, map_size=20, roads=1, max_step=100):
         super().__init__()
         self.display = display
-        self.map = Simple2Dv2(map_size, map_size, agent_view=agent_view,
-                              roads=roads, max_step=200)
+        self.map = Simple2Dv2(map_size, map_size, agent_view=agent_view, roads=roads, max_step=max_step)
         self.window = None
         if self.display:
             self.window = Window('GYM_MiniGrid')
@@ -19,15 +18,11 @@ class SimpleEnv(object):
         self.old = None
         self.new = None
 
-    def short_term_reward(self, old, new):
-        same_position = - 0.005 * self.map.check_history()
-        if new["reward"] > old["reward"]:
-            return new["reward"] * - 0.001 + same_position
-        else:
-            return new["reward"] * 0.001 + same_position
+    def short_term_reward(self):
+        return self.new["reward"]
 
-    def get_long_term_reward(self):
-        road_detect = self.map.reward()[0]
+    def long_term_reward(self):
+        road_detect = self.new["l_reward"]
         if self.map.battery <= 0:
             rate = 0.1
         else:
@@ -41,13 +36,13 @@ class SimpleEnv(object):
         # right = 2
         self.old = self.map.state()
         self.new, done = self.map.step(action)
-        reward = self.short_term_reward(self.old, self.new)
+        reward = self.short_term_reward()
         if self.display is True:
             self.redraw()
         if done:
-            self.detect_rate.append(self.map.reward()[0])
+            self.detect_rate.append(self.new["l_reward"])
             self.step_count.append(self.map.step_count)
-            reward += self.get_long_term_reward()
+            reward += self.long_term_reward()
         return self.old, self.new, reward, done
 
     def key_handler(self, event):

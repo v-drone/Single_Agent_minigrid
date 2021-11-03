@@ -15,11 +15,11 @@ class SimpleStack(nn.Block):
     def __init__(self):
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            # self.view = nn.Sequential()
-            # c = [256, 128, 128]
-            # k = [1, 2, 2]
-            # for i in range(len(k)):
-            #     self.view.add(nn.Conv2D(c[i], k[i], use_bias=False,  layout="NCHW"))
+            self.view = nn.Sequential()
+            c = [256, 128, 128]
+            k = [1, 2, 2]
+            for i in range(len(k)):
+                self.view.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
             c = [16, 32, 32]
             k = [1, 2, 2]
             self.map = nn.Sequential()

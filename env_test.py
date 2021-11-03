@@ -32,5 +32,3 @@ trainer = gluon.Trainer(offline_model.collect_params(), 'adam',
 env.reset_env()
 finish = 0
 cum_clipped_dr = 0
-import pdb
-pdb.set_trace()
