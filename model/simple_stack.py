@@ -1,5 +1,4 @@
 from mxnet.gluon import nn
-from mxnet import nd
 
 
 class ConvBlock(nn.Sequential):
