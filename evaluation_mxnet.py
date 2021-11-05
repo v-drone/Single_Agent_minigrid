@@ -24,8 +24,7 @@ def evaluate(ctx, model, env, rounds=5, print_action=False, save=None):
             if save is not None:
                 img = Image.fromarray(env.map.render(), 'RGB')
                 pred = [str(x)[0:5] for x in pred.asnumpy().tolist()[0]]
-                filename = str(epoch) + "-" + str(step) + "-" + str(
-                    reward) + "-" + "_".join(pred) + ".jpg"
+                filename = str(epoch) + "-" + str(step) + "-" + str(reward) + "-" + "_".join(pred) + ".jpg"
                 img.save(save + "/" + filename)
     return env.detect_rate
 
@@ -36,6 +35,5 @@ if __name__ == '__main__':
     _env = SimpleEnv(display=False, agent_view=_agent_view, map_size=_map_size)
     _ctx = mx.cpu()
     _model = SimpleStack()
-    _model.load_parameters("./model_save/MXNET_view_only_without_goal_best.params", _ctx)
-    evaluate(_ctx, _model, _env, rounds=100, print_action=True,
-             save="./data_save/")
+    _model.load_parameters("./model_save/model_test.params.best", _ctx)
+    evaluate(_ctx, _model, _env, rounds=100, print_action=False, save="./data_save/")

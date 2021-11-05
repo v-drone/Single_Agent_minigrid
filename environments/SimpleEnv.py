@@ -12,17 +12,17 @@ class SimpleEnv(object):
             self.window = Window('GYM_MiniGrid')
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
-        self.same_position = 0
         self.detect_rate = []
         self.step_count = []
         self.old = None
         self.new = None
 
     def short_term_reward(self):
-        return self.new["reward"]
+        return self.new["reward"] + -0.02 * self.map.check_history()
 
     def long_term_reward(self):
         road_detect = self.new["l_reward"]
+        road_detect = sum(road_detect) / len(road_detect)
         if self.map.battery <= 0:
             rate = 0.1
         else:

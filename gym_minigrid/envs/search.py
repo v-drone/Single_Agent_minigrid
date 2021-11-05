@@ -87,7 +87,7 @@ class SearchEnv(MiniGridEnv):
             done = True
         return self.state(tf=self.tf), done
 
-    def _check_history(self):
+    def check_history(self):
         cur = self.history[-1]
         same = 0
         for i in reversed(self.history[:-1]):
