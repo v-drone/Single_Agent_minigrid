@@ -13,12 +13,14 @@ class SimpleEnv(object):
             self.window.reg_key_handler(self.key_handler)
             self.window.show(True)
         self.detect_rate = []
+        self.rewards = []
+        self.long_term_rewards = []
         self.step_count = []
         self.old = None
         self.new = None
 
     def short_term_reward(self):
-        return self.new["reward"] + -0.02 * self.map.check_history()
+        return self.new["reward"] * 0.1 + -0.05 * self.map.check_history()
 
     def long_term_reward(self):
         road_detect = self.new["l_reward"]
@@ -43,6 +45,8 @@ class SimpleEnv(object):
             self.detect_rate.append(self.new["l_reward"])
             self.step_count.append(self.map.step_count)
             reward += self.long_term_reward()
+            self.long_term_rewards.append(self.long_term_reward())
+        self.rewards[-1].append(reward)
         return self.old, self.new, reward, done
 
     def key_handler(self, event):
@@ -67,5 +71,6 @@ class SimpleEnv(object):
         :return:
         """
         self.map.reset()
+        self.rewards.append([])
         if self.display:
             self.redraw()

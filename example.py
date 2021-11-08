@@ -17,7 +17,7 @@ for i in ["model_save", "data_save"]:
 # build models
 model = SimpleStack()
 print(model)
-model.load_parameters("./model_save/MXNET_map_only.params.best")
+model.load_parameters("./model_save/model_test.params.best")
 # create env
 env = SimpleEnv(display=True)
 env.reset_env()

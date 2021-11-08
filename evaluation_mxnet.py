@@ -7,7 +7,6 @@ from PIL import Image
 
 
 def evaluate(ctx, model, env, rounds=5, print_action=False, save=None):
-    env.reset_env()
     for epoch in range(rounds):
         env.reset_env()
         done = 0
@@ -22,7 +21,7 @@ def evaluate(ctx, model, env, rounds=5, print_action=False, save=None):
             if print_action:
                 print(pred, reward, env.map.battery)
             if save is not None:
-                img = Image.fromarray(env.map.render(), 'RGB')
+                img = Image.fromarray(env.map.grid.render(20, env.map.agent_pos, env.map.agent_dir), 'RGB')
                 pred = [str(x)[0:5] for x in pred.asnumpy().tolist()[0]]
                 filename = str(epoch) + "-" + str(step) + "-" + str(reward) + "-" + "_".join(pred) + ".jpg"
                 img.save(save + "/" + filename)
@@ -36,4 +35,4 @@ if __name__ == '__main__':
     _ctx = mx.cpu()
     _model = SimpleStack()
     _model.load_parameters("./model_save/model_test.params.best", _ctx)
-    evaluate(_ctx, _model, _env, rounds=100, print_action=False, save="./data_save/")
+    evaluate(_ctx, _model, _env, rounds=5, print_action=False, save="./data_save/")
