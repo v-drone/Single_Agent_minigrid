@@ -1,6 +1,8 @@
 from gym_minigrid.envs.search import SearchEnv
 from gym_minigrid.minigrid import Grid, Key, Ball
 import random
+import itertools
+import numpy as np
 
 
 class Simple2D(SearchEnv):
@@ -54,13 +56,37 @@ class Simple2D(SearchEnv):
         return roads
 
     def _reward(self):
-        raise NotImplementedError
+        return self._build_rewards()[self.agent_pos[0]][self.agent_pos[1]]
 
     def _l_reward(self):
         raise NotImplementedError
 
     def _check_finish(self):
-        raise NotImplementedError
+        if self.step_count >= self.max_steps or self.battery == 0:
+            return -1
+        elif self._l_reward()[0] == 1:
+            return 1
+        else:
+            return 0
 
     def _build_rewards(self):
-        raise NotImplementedError
+        rewards = []
+        roads = set()
+        for i in self.grid.grid:
+            if i is not None and i.type == "ball":
+                rewards.append(0)
+                roads.add(i.cur_pos)
+            elif i is not None and i.type == "box" and self.memory[i.cur_pos[0]][i.cur_pos[1]] > 0:
+                rewards.append(0)
+                roads.add(i.cur_pos)
+            else:
+                rewards.append(-1)
+        for i in self.gen_obs_grid()[0].grid:
+            if i is not None and i.type == "box":
+                roads.add(i.cur_pos)
+        rewards = np.array(rewards).reshape(20, 20).T
+        for i in list(itertools.product(*[list(range(self.width)), list(range(self.height))])):
+            rewards[i[0]][i[1]] = - min([abs(j[0] - i[0]) + abs(j[1] - i[1]) for j in roads]) + rewards[i[0]][i[1]]
+        for i in roads:
+            rewards[i[0]][i[1]] = 0
+        return rewards

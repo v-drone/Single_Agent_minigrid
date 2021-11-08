@@ -24,14 +24,5 @@ class Simple2Dv1(Simple2D):
             else:
                 pos += random.randint(5, 10)
 
-    def _reward(self):
-        raise NotImplementedError
-
     def _l_reward(self):
-        raise NotImplementedError
-
-    def _check_finish(self):
-        raise NotImplementedError
-
-    def _build_rewards(self):
         raise NotImplementedError
