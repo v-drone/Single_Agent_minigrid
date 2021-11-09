@@ -54,7 +54,8 @@ class SimpleStack(nn.Block):
             self.decision_making = nn.Sequential()
             for i in [64]:
                 self.decision_making.add(nn.Dense(i))
-            self.decision_making.add(nn.Dense(3, activation="sigmoid"))
+            self.decision_making.add(nn.Dense(3))
+            self.decision_making.add(nn.LeakyReLU(0.1))
 
     def forward(self, income, *args):
         _view, _map, battery = income
