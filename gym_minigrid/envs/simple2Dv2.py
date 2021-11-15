@@ -17,12 +17,13 @@ class Simple2Dv2(Simple2D):
             elif i is not None and i.type == "box":
                 walkways.add(i.cur_pos)
         roads_arrival = 0
+        history = set(self.history)
         for i in roads:
-            if self.memory[i[0]][i[1]] > 0:
+            if i in history:
                 roads_arrival += 1
         walkway_arrival = 0
         for i in walkways:
-            if self.memory[i[0]][i[1]] > 0:
+            if i in history:
                 walkway_arrival += 1
         return roads_arrival / len(roads), walkway_arrival / len(walkways)
 

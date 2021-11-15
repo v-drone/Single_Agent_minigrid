@@ -58,6 +58,10 @@ class SearchEnv(MiniGridEnv):
             data["l_reward"] = None
         return data
 
+    def build_memory(self):
+        self.memory += 1
+        self.memory[self.agent_pos[0]][self.agent_pos[1]] = 0
+
     def step(self, action, battery_cost=1):
         self.step_count += 1
         done = False
@@ -80,8 +84,8 @@ class SearchEnv(MiniGridEnv):
             if fwd_cell is None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
         # save history
-        self.memory[self.agent_pos[0]][self.agent_pos[1]] += 1
-        self.history.append(self.agent_pos)
+        self.build_memory()
+        self.history.append(tuple([self.agent_pos[0], self.agent_pos[1]]))
         # check done
         if self._check_finish():
             done = True

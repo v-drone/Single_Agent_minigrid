@@ -26,7 +26,7 @@ class SimpleEnv(object):
     def long_term_reward(self):
         road_detect = self.new["l_reward"]
         road_detect = sum(road_detect) / len(road_detect)
-        rate = 1 - (self.map.step_count / self.map.max_steps)
+        rate = 10
         return road_detect * rate
 
     def step(self, action):
