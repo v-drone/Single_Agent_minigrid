@@ -26,8 +26,8 @@ class MapBlock(nn.Sequential):
         with self.name_scope():
             self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
             self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128, 128]
-            k = [3, 3, 2, 2]
+            c = [64, 128, 128]
+            k = [2, 2, 2]
             for i in range(len(k)):
                 self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
 
@@ -38,8 +38,8 @@ class MemoryBlock(nn.Sequential):
         with self.name_scope():
             self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
             self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128, 128]
-            k = [3, 3, 2, 2]
+            c = [64, 128, 128]
+            k = [2, 2, 2]
             for i in range(len(k)):
                 self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
 

@@ -1,6 +1,6 @@
 from gym_minigrid.envs.simple2Dv2 import Simple2Dv2
 from gym_minigrid.window import Window
-
+import numpy as np
 
 class SimpleEnv(object):
     def __init__(self, display=False, agent_view=5, map_size=20, roads=1, max_step=100):
@@ -14,10 +14,10 @@ class SimpleEnv(object):
             self.window.show(True)
         self.detect_rate = []
         self.rewards = []
-        self.long_term_rewards = []
         self.step_count = []
         self.old = None
         self.new = None
+        self._rewards = []
 
     def short_term_reward(self):
         # self.map.battery
@@ -43,8 +43,11 @@ class SimpleEnv(object):
             self.detect_rate.append(self.new["l_reward"])
             self.step_count.append(self.map.step_count)
             reward += self.long_term_reward()
-            self.long_term_rewards.append(self.long_term_reward())
-        self.rewards[-1].append(reward)
+            self._rewards.append(reward)
+            self.rewards.append(np.mean(self._rewards))
+        else:
+            self._rewards.append(reward)
+
         return self.old, self.new, reward, done
 
     def key_handler(self, event):
@@ -69,6 +72,6 @@ class SimpleEnv(object):
         :return:
         """
         self.map.reset()
-        self.rewards.append([])
+        self._rewards = []
         if self.display:
             self.redraw()
