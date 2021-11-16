@@ -14,6 +14,9 @@ class Simple2D(SearchEnv):
         self.mission = "go to ball as much as possible"
         super().__init__(tf, width, height, agent_view, max_step)
 
+    def extrinsic_reward(self):
+        raise NotImplementedError
+
     def _gen_grid(self, width, height):
         _ = self._gent_basic_grid(width, height)
 
@@ -58,13 +61,10 @@ class Simple2D(SearchEnv):
     def _reward(self):
         return self._build_rewards()[self.agent_pos[0]][self.agent_pos[1]]
 
-    def _l_reward(self):
-        raise NotImplementedError
-
     def _check_finish(self):
         if self.step_count >= self.max_steps or self.battery == 0:
             return -1
-        elif self._l_reward()[0] == 1:
+        elif self.extrinsic_reward()[0] == 1:
             return 1
         else:
             return 0

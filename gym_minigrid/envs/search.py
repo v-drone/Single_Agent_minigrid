@@ -53,7 +53,7 @@ class SearchEnv(MiniGridEnv):
             "finish": finish
         }
         if finish:
-            data["l_reward"] = self._l_reward()
+            data["l_reward"] = self.extrinsic_reward()
         else:
             data["l_reward"] = None
         return data
@@ -132,14 +132,16 @@ class SearchEnv(MiniGridEnv):
                 history[i] = self.history[i]
         return history
 
+    def extrinsic_reward(self):
+        raise NotImplementedError
+
     def _gen_grid(self, width, height):
         raise NotImplementedError
 
     def _reward(self):
         raise NotImplementedError
 
-    def _l_reward(self):
-        raise NotImplementedError
+
 
     def _check_finish(self):
         raise NotImplementedError

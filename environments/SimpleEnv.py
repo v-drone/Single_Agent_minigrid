@@ -2,6 +2,7 @@ from gym_minigrid.envs.simple2Dv2 import Simple2Dv2
 from gym_minigrid.window import Window
 import numpy as np
 
+
 class SimpleEnv(object):
     def __init__(self, display=False, agent_view=5, map_size=20, roads=1, max_step=100):
         super().__init__()
@@ -20,14 +21,13 @@ class SimpleEnv(object):
         self._rewards = []
 
     def short_term_reward(self):
-        # self.map.battery
-        return self.new["reward"] * 0.1 - 0.05 * self.map.check_history()
+        # (- manhattan distance / 100) + ( - stay time / 100)
+        return self.new["reward"] * 0.01 - 0.01 * self.map.check_history()
 
     def long_term_reward(self):
-        road_detect = self.new["l_reward"]
-        road_detect = sum(road_detect) / len(road_detect)
-        rate = 10
-        return road_detect * rate
+        extrinsic_reward = self.new["l_reward"]
+        extrinsic_reward = sum(extrinsic_reward) / len(extrinsic_reward)
+        return extrinsic_reward
 
     def step(self, action):
         # Turn left, turn right, move forward
