@@ -21,8 +21,8 @@ class SimpleEnv(object):
         self._rewards = []
 
     def short_term_reward(self):
-        # (- manhattan distance / 100) + ( - stay time / 100)
-        return self.new["reward"] * 0.01 - 0.01 * self.map.check_history()
+        # (- manhattan distance / 1000) + ( - stay time / 1000)
+        return self.new["reward"] / 1000 - self.map.check_history() / 1000
 
     def long_term_reward(self):
         extrinsic_reward = self.new["l_reward"]
@@ -39,7 +39,7 @@ class SimpleEnv(object):
         reward = self.short_term_reward()
         if self.display is True:
             self.redraw()
-        if done:
+        if done != 0:
             self.detect_rate.append(self.new["l_reward"])
             self.step_count.append(self.map.step_count)
             reward += self.long_term_reward()

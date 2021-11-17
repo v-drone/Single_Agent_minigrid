@@ -141,7 +141,5 @@ class SearchEnv(MiniGridEnv):
     def _reward(self):
         raise NotImplementedError
 
-
-
     def _check_finish(self):
         raise NotImplementedError
