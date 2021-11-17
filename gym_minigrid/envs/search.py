@@ -106,8 +106,6 @@ class SearchEnv(MiniGridEnv):
         allow = {k: v + 1 for v, k in enumerate(allow)}
         whole_map = to_numpy(self.grid, allow, None)
         memory = self.memory.T
-        memory = np.where(memory > 0, 1, memory)
-        memory[self.agent_pos[1]][self.agent_pos[0]] = self.agent_dir + 2
         whole_map = np.expand_dims(whole_map, 0)
         memory = np.expand_dims(memory, 0)
         return np.concatenate([whole_map, memory], axis=0)
