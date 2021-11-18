@@ -25,9 +25,9 @@ class SimpleEnv(object):
         return self.new["reward"] / 100 - self.map.check_history() / 100
 
     def long_term_reward(self):
-        extrinsic_reward = self.new["l_reward"]
-        extrinsic_reward = sum(extrinsic_reward) / len(extrinsic_reward)
-        return extrinsic_reward
+        _extrinsic_reward = self.new["l_reward"]
+        _extrinsic_reward = sum(_extrinsic_reward) / len(_extrinsic_reward)
+        return _extrinsic_reward
 
     def step(self, action):
         # Turn left, turn right, move forward

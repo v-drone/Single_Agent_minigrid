@@ -24,5 +24,5 @@ class Simple2Dv1(Simple2D):
             else:
                 pos += random.randint(5, 10)
 
-    def extrinsic_reward(self):
+    def _extrinsic_reward(self):
         raise NotImplementedError

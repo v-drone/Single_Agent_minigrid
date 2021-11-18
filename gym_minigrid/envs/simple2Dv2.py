@@ -8,7 +8,7 @@ class Simple2Dv2(Simple2D):
     def __init__(self, width=100, height=100, agent_view=5, roads=1, max_step=None, fault_rate=0.3, tf=True):
         super().__init__(width, height, agent_view, roads, max_step, fault_rate, tf)
 
-    def extrinsic_reward(self):
+    def _extrinsic_reward(self):
         roads = set()
         walkways = set()
         for i in self.grid.grid:

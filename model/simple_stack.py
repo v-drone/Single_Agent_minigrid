@@ -7,7 +7,7 @@ class ConvBlock(nn.Sequential):
         super().__init__()
         self.add(nn.Conv2D(channels, kernel_size=kernel_size, use_bias=False, layout="NCHW"))
         self.add(nn.BatchNorm())
-        self.add(nn.Activation('softrelu'))
+        self.add(nn.Activation('tanh'))
 
 
 class ViewBlock(nn.Sequential):
@@ -17,7 +17,7 @@ class ViewBlock(nn.Sequential):
             c = [64, 128, 128]
             k = [1, 2, 2]
             for i in range(len(k)):
-                self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
+                self.add(ConvBlock(c[i], k[i]))
             for i in [128]:
                 self.add(nn.Dense(i, "tanh"))
 
@@ -26,13 +26,13 @@ class MapBlock(nn.Sequential):
     def __init__(self):
         super(MapBlock, self).__init__()
         with self.name_scope():
-            self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
+            self.add(nn.Conv2D(32, 1, use_bias=False, layout="NCHW"))
             self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128]
-            k = [2, 2, 2]
+            c = [64, 128, 128, 128]
+            k = [2, 2, 2, 2]
             for i in range(len(k)):
-                self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
-            for i in [256]:
+                self.add(ConvBlock(c[i], k[i]))
+            for i in [128]:
                 self.add(nn.Dense(i, "tanh"))
 
 
@@ -40,13 +40,13 @@ class MemoryBlock(nn.Sequential):
     def __init__(self):
         super(MemoryBlock, self).__init__()
         with self.name_scope():
-            self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
+            self.add(nn.Conv2D(32, 1, use_bias=False, layout="NCHW"))
             self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128]
-            k = [2, 2, 2]
+            c = [64, 128, 128, 128]
+            k = [2, 2, 2, 2]
             for i in range(len(k)):
-                self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
-            for i in [256]:
+                self.add(ConvBlock(c[i], k[i]))
+            for i in [128]:
                 self.add(nn.Dense(i, "tanh"))
 
 
@@ -68,7 +68,8 @@ class SimpleStack(nn.Block):
         _view = self.view(_view)
         _map = nd.transpose(_map, [1, 0, 2, 3])
         _map, _memory = _map
-        _map = nd.expand_dims(_map, axis=1)
+        _map = nd.one_hot(_map, 7).transpose([0, 3, 1, 2])
+        # _map = nd.expand_dims(_map, axis=1)
         _memory = nd.expand_dims(_memory, axis=1)
         _map = self.map(_map)
         _memory = self.memory(_memory)
