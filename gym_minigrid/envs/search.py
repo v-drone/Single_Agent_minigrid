@@ -3,7 +3,7 @@ from enum import IntEnum
 from utils import to_numpy, agent_dir
 import numpy as np
 import random
-
+from PIL import Image
 
 class SearchEnv(MiniGridEnv):
     """
@@ -106,16 +106,14 @@ class SearchEnv(MiniGridEnv):
         return set([i.cur_pos if i is not None else None for i in agent_obs.grid])
 
     def _get_whole_map(self):
-        allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
-        allow = {k: v + 1 for v, k in enumerate(allow)}
         agent_obs = self.get_agent_obs_locations()
         _ = self.grid.copy()
         _.grid = [None if i is not None and i.type == "box" and i.cur_pos not in agent_obs else i for i in _.grid]
-        whole_map = to_numpy(_, allow, [self.agent_pos[1], self.agent_pos[0], self.agent_dir], None)
-        memory = self.memory.T
-        whole_map = np.expand_dims(whole_map, 0)
+        whole_map = _.render(1, self.agent_pos, self.agent_dir).transpose(2, 0, 1)
+        memory = self.memory.T / self.max_steps
         memory = np.expand_dims(memory, 0) / self.max_steps
-        return np.concatenate([whole_map, memory], axis=0)
+        whole_map = np.concatenate([whole_map, memory], axis=0)
+        return whole_map
 
     def _get_view(self, tf):
         allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
