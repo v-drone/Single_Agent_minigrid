@@ -101,10 +101,17 @@ class SearchEnv(MiniGridEnv):
                 break
         return same
 
+    def get_agent_obs_locations(self):
+        agent_obs = self.gen_obs_grid()[0]
+        return set([i.cur_pos if i is not None else None for i in agent_obs.grid])
+
     def _get_whole_map(self):
-        allow = ["wall", "key", "ball", ">", "<", "^", "V"]
+        allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
-        whole_map = to_numpy(self.grid, allow, None)
+        agent_obs = self.get_agent_obs_locations()
+        _ = self.grid.copy()
+        _.grid = [None if i is not None and i.type == "box" and i.cur_pos not in agent_obs else i for i in _.grid]
+        whole_map = to_numpy(_, allow, [self.agent_pos[1], self.agent_pos[0], self.agent_dir], None)
         memory = self.memory.T
         whole_map = np.expand_dims(whole_map, 0)
         memory = np.expand_dims(memory, 0) / self.max_steps
