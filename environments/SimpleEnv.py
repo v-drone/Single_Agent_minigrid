@@ -21,8 +21,8 @@ class SimpleEnv(object):
         self._rewards = []
 
     def short_term_reward(self):
-        # (- manhattan distance / 100) + ( - stay time / 100) - 0.005
-        return self.new["reward"] / 100 - self.map.check_history() / 100 - 0.005
+        # (- manhattan distance / 100) + ( - stay time / 100)
+        return self.new["reward"] / 100 - self.map.check_history() / 100
 
     def long_term_reward(self):
         extrinsic_reward = self.new["l_reward"]

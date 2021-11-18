@@ -18,6 +18,8 @@ class ViewBlock(nn.Sequential):
             k = [1, 2, 2]
             for i in range(len(k)):
                 self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
+            for i in [128]:
+                self.add(nn.Dense(i, "tanh"))
 
 
 class MapBlock(nn.Sequential):
@@ -30,6 +32,8 @@ class MapBlock(nn.Sequential):
             k = [2, 2, 2]
             for i in range(len(k)):
                 self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
+            for i in [256]:
+                self.add(nn.Dense(i, "tanh"))
 
 
 class MemoryBlock(nn.Sequential):
@@ -42,6 +46,8 @@ class MemoryBlock(nn.Sequential):
             k = [2, 2, 2]
             for i in range(len(k)):
                 self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
+            for i in [256]:
+                self.add(nn.Dense(i, "tanh"))
 
 
 class SimpleStack(nn.Block):
@@ -52,13 +58,13 @@ class SimpleStack(nn.Block):
             self.map = MapBlock()
             self.memory = MemoryBlock()
             self.decision_making = nn.Sequential()
-            for i in [64]:
+            for i in [32]:
                 self.decision_making.add(nn.Dense(i))
-            self.decision_making.add(nn.Dense(3))
-            self.decision_making.add(nn.LeakyReLU(0.1))
+            self.decision_making.add(nn.Dense(3, "tanh"))
 
     def forward(self, income, *args):
-        _view, _map, battery = income
+        _view, _map, _battery = income
+        _battery = nd.expand_dims(_battery, axis=1)
         _view = self.view(_view)
         _map = nd.transpose(_map, [1, 0, 2, 3])
         _map, _memory = _map
@@ -66,7 +72,7 @@ class SimpleStack(nn.Block):
         _memory = nd.expand_dims(_memory, axis=1)
         _map = self.map(_map)
         _memory = self.memory(_memory)
-        _features = [_view.flatten(), _map.flatten(), _memory.flatten(), battery]
+        _features = [_view.flatten(), _map.flatten(), _memory.flatten(), _battery]
         _features = nd.concat(*_features)
         result = self.decision_making(_features)
         return result
