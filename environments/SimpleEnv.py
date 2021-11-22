@@ -6,6 +6,8 @@ import numpy as np
 class SimpleEnv(object):
     def __init__(self, display=False, agent_view=5, map_size=20, roads=1, max_step=100):
         super().__init__()
+        self.sr = ""
+        self.lr = ""
         self.display = display
         self.map = Simple2Dv2(map_size, map_size, agent_view=agent_view, roads=roads, max_step=max_step)
         self.window = None
@@ -21,12 +23,15 @@ class SimpleEnv(object):
         self._rewards = []
 
     def short_term_reward(self):
-        # (- manhattan distance / 100) + ( - stay time / 100)
-        return self.new["reward"] / 100 - self.map.check_history() / 100
+        # - manhattan distance / 200
+        # self.new["reward"] / 200
+        self.sr = "ir = - stay time / 200"
+        return - self.map.check_history() / 200
 
     def long_term_reward(self):
         _extrinsic_reward = self.new["l_reward"]
         _extrinsic_reward = sum(_extrinsic_reward) / len(_extrinsic_reward)
+        self.lr = "er = detect rate (0~1)"
         return _extrinsic_reward
 
     def step(self, action):

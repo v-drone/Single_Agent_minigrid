@@ -114,7 +114,7 @@ class SearchEnv(MiniGridEnv):
         whole_map = to_numpy(_, allow, [self.agent_pos[1], self.agent_pos[0], self.agent_dir], None)
         memory = self.memory.T
         whole_map = np.expand_dims(whole_map, 0)
-        memory = np.expand_dims(memory, 0) / self.max_steps
+        memory = np.expand_dims(memory, 0)
         return np.concatenate([whole_map, memory], axis=0)
 
     def _get_view(self, tf):

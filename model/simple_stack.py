@@ -14,10 +14,10 @@ class ViewBlock(nn.Sequential):
     def __init__(self):
         super(ViewBlock, self).__init__()
         with self.name_scope():
-            c = [64, 128, 128]
+            c = [32, 64, 128]
             k = [1, 2, 2]
             for i in range(len(k)):
-                self.add(ConvBlock(c[i], k[i]))
+                self.add(nn.Conv2D(c[i], k[i], use_bias=False, layout="NCHW"))
             for i in [128]:
                 self.add(nn.Dense(i, "sigmoid"))
 
@@ -26,28 +26,24 @@ class MapBlock(nn.Sequential):
     def __init__(self):
         super(MapBlock, self).__init__()
         with self.name_scope():
-            self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
-            self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128, 128]
-            k = [2, 2, 2, 2]
-            for i in range(len(k)):
-                self.add(ConvBlock(c[i], k[i]))
-            for i in [128]:
-                self.add(nn.Dense(i, "sigmoid"))
+            c = [32, 128]
+            k = [1, 2]
+            for i, j in zip(c[:-1], k[:-1]):
+                self.add(nn.Conv2D(i, j, use_bias=False, layout="NCHW"))
+                self.add(nn.AvgPool2D())
+            self.add(nn.Conv2D(c[-1], k[-1], use_bias=False, layout="NCHW"))
 
 
 class MemoryBlock(nn.Sequential):
     def __init__(self):
         super(MemoryBlock, self).__init__()
         with self.name_scope():
-            self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
-            self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128, 128]
-            k = [2, 2, 2, 2]
-            for i in range(len(k)):
-                self.add(ConvBlock(c[i], k[i]))
-            for i in [128]:
-                self.add(nn.Dense(i, "sigmoid"))
+            c = [32, 128]
+            k = [1, 2]
+            for i, j in zip(c[:-1], k[:-1]):
+                self.add(nn.Conv2D(i, j, use_bias=False, layout="NCHW"))
+                self.add(nn.AvgPool2D())
+            self.add(nn.Conv2D(c[-1], k[-1], use_bias=False, layout="NCHW"))
 
 
 class SimpleStack(nn.Block):
@@ -58,9 +54,7 @@ class SimpleStack(nn.Block):
             self.map = MapBlock()
             self.memory = MemoryBlock()
             self.decision_making = nn.Sequential()
-            for i in [32]:
-                self.decision_making.add(nn.Dense(i))
-            self.decision_making.add(nn.Dense(3, "tanh"))
+            self.decision_making.add(nn.Dense(3, "sigmoid"))
 
     def forward(self, income, *args):
         _view, _map, _battery = income
@@ -68,12 +62,12 @@ class SimpleStack(nn.Block):
         # _view = self.view(_view)
         _map = nd.transpose(_map, [1, 0, 2, 3])
         _map, _memory = _map
-        _map = nd.one_hot(_map, 8).transpose([0, 3, 1, 2])
-        # _map = nd.expand_dims(_map, axis=1)
+        _memory = 1 - _memory
+        _map = nd.one_hot(_map, 9, 1).transpose([0, 3, 1, 2])
         _memory = nd.expand_dims(_memory, axis=1)
         _map = self.map(_map)
         _memory = self.memory(_memory)
-        _features = [_map.flatten(), _memory.flatten(), _battery]
+        _features = [_map.flatten(), _memory.flatten()]
         _features = nd.concat(*_features)
         result = self.decision_making(_features)
         return result
