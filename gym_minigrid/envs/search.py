@@ -44,8 +44,10 @@ class SearchEnv(MiniGridEnv):
 
     def state(self, tf=True):
         finish = self._check_finish()
+        grids = self._get_whole_map()
         data = {
-            "whole_map": self._get_whole_map(),
+            "whole_map": grids[0],
+            "memory_grid": grids[1],
             "agent_view": self._get_view(tf),
             "battery": self.battery / self.full_battery,
             "reward": self._reward(),
@@ -115,7 +117,7 @@ class SearchEnv(MiniGridEnv):
         memory = self.memory.T
         whole_map = np.expand_dims(whole_map, 0)
         memory = np.expand_dims(memory, 0)
-        return np.concatenate([whole_map, memory], axis=0)
+        return whole_map, memory
 
     def _get_view(self, tf):
         allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
