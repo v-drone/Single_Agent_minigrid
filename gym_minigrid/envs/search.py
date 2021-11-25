@@ -1,6 +1,6 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
-from utils import to_numpy, agent_dir
+from utils import to_numpy
 import numpy as np
 import random
 
@@ -42,13 +42,13 @@ class SearchEnv(MiniGridEnv):
         self.history = []
         super(SearchEnv, self).reset()
 
-    def state(self, tf=True):
+    def state(self):
         finish = self._check_finish()
         grids = self._get_whole_map()
         data = {
             "whole_map": grids[0],
             "memory_grid": grids[1],
-            "agent_view": self._get_view(tf),
+            "agent_view": self._get_view(),
             "battery": self.battery / self.full_battery,
             "reward": self._reward(),
             "history": self._get_history(),
@@ -61,8 +61,9 @@ class SearchEnv(MiniGridEnv):
         return data
 
     def build_memory(self):
-        self.memory += 1
-        self.memory[self.agent_pos[0]][self.agent_pos[1]] = 0
+        # self.memory += 1
+        # self.memory[self.agent_pos[0]][self.agent_pos[1]] = 0
+        self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
 
     def step(self, action, battery_cost=1):
         self.step_count += 1
@@ -91,7 +92,7 @@ class SearchEnv(MiniGridEnv):
         # check done
         if self._check_finish():
             done = True
-        return self.state(tf=self.tf), done
+        return self.state(), done
 
     def check_history(self):
         cur = self.history[-1]
@@ -113,23 +114,17 @@ class SearchEnv(MiniGridEnv):
         agent_obs = self.get_agent_obs_locations()
         _ = self.grid.copy()
         _.grid = [None if i is not None and i.type == "box" and i.cur_pos not in agent_obs else i for i in _.grid]
-        whole_map = to_numpy(_, allow, [self.agent_pos[1], self.agent_pos[0], self.agent_dir], None)
-        memory = self.memory.T
-        whole_map = np.expand_dims(whole_map, 0)
-        memory = np.expand_dims(memory, 0)
+        whole_map = to_numpy(_, allow)
+        memory = np.expand_dims(self.memory.T, 0)
         return whole_map, memory
 
-    def _get_view(self, tf):
+    def _get_view(self):
         allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
         allow = {k: v + 1 for v, k in enumerate(allow)}
-        view, vis = self.gen_obs_grid()
-        view = to_numpy(view, allow, None, vis)
-        view = np.expand_dims(view, 0)
-        if tf:
-            agent = np.zeros_like(view[0])
-            agent[self.agent_view_size - 1][int(self.agent_view_size / 2)] = allow[agent_dir[3]]
-            agent = np.expand_dims(agent, 0)
-            view = np.concatenate([view, agent], axis=0)
+        agent_obs = self.get_agent_obs_locations()
+        _ = self.grid.copy()
+        _.grid = [None if i is not None and i.cur_pos not in agent_obs else i for i in _.grid]
+        view = to_numpy(_, allow)
         return view
 
     def _get_history(self):
