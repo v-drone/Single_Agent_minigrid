@@ -34,8 +34,8 @@ class SimpleStack(nn.Block):
     def __init__(self):
         self.memory_size = 10
         self.map_size = 20
-        self.c = [32, 128, 128, 128, 128, 128, 128]
-        self.k = [3, 3, 3, 3, 3, 3, 3]
+        self.c = [32, 128, 128, 128, 128, 128]
+        self.k = [3, 3, 3, 3, 3, 3]
         _hidden = (((self.memory_size - (self.k[0] - 1)) // 2) - sum([i - 1 for i in self.k[:-1]]))
         _hidden = _hidden * _hidden * self.c[-1]
         super(SimpleStack, self).__init__()
@@ -45,13 +45,10 @@ class SimpleStack(nn.Block):
             self.memory = MapBlock(self.c, self.k)
             # self.LSTM = rnn.LSTM(_hidden, self.memory_size)
             self.embedding = nn.Sequential()
-            self.embedding.add(nn.Dense(1024))
-            self.embedding.add(nn.ELU())
-            self.embedding.add(nn.Dense(64))
-            self.embedding.add(nn.ELU())
+            self.embedding.add(nn.Dense(1024, activation="tanh"))
+            self.embedding.add(nn.Dense(64, activation="tanh"))
             self.out = nn.Sequential()
             self.out.add(nn.Dense(3))
-            self.out.add(nn.ELU())
 
     def forward(self, view, grid_data, grid_memory, battery, hidden=None, *args):
         battery = nd.expand_dims(battery, axis=1)

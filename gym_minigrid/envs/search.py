@@ -115,7 +115,7 @@ class SearchEnv(MiniGridEnv):
         _ = self.grid.copy()
         _.grid = [None if i is not None and i.type == "box" and i.cur_pos not in agent_obs else i for i in _.grid]
         whole_map = to_numpy(_, allow)
-        memory = np.expand_dims(self.memory.T, 0)
+        memory = whole_map * self.memory.T
         return whole_map, memory
 
     def _get_view(self):
