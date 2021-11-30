@@ -1,4 +1,4 @@
-from gym_minigrid.envs.simple2Dv2 import Simple2Dv2
+from gym_minigrid.envs.simple2Dv1 import Simple2Dv1 as Environment
 from gym_minigrid.window import Window
 import numpy as np
 
@@ -9,7 +9,7 @@ class SimpleEnv(object):
         self.sr = ""
         self.lr = ""
         self.display = display
-        self.map = Simple2Dv2(map_size, map_size, agent_view=agent_view, roads=roads, max_step=max_step)
+        self.map = Environment(map_size, map_size, agent_view=agent_view, roads=roads, max_step=max_step)
         self.window = None
         if self.display:
             self.window = Window('GYM_MiniGrid')

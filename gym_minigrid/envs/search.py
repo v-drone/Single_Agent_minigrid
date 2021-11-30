@@ -61,8 +61,6 @@ class SearchEnv(MiniGridEnv):
         return data
 
     def build_memory(self):
-        # self.memory += 1
-        # self.memory[self.agent_pos[0]][self.agent_pos[1]] = 0
         self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
 
     def step(self, action, battery_cost=1):
