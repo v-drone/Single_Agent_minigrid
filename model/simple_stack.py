@@ -60,16 +60,17 @@ class SimpleStack(nn.Block):
             self.decision_making = nn.Sequential()
             for i in [32]:
                 self.decision_making.add(nn.Dense(i))
-            self.decision_making.add(nn.Dense(3, "sigmoid"))
+            self.decision_making.add(nn.Dense(3, "tanh"))
 
     def forward(self, income, *args):
         _view, _map, _battery = income
         _battery = nd.expand_dims(_battery, axis=1)
         # _view = self.view(_view)
         _map = nd.transpose(_map, [1, 0, 2, 3])
-        _map, _memory = _map[:-1], _map[-1:]
-        _map = nd.transpose(_map, [1, 0, 2, 3])
-        _memory = nd.transpose(_memory, [1, 0, 2, 3])
+        _map, _memory = _map
+        _map = nd.one_hot(_map, 8).transpose([0, 3, 1, 2])
+        # _map = nd.expand_dims(_map, axis=1)
+        _memory = nd.expand_dims(_memory, axis=1)
         _map = self.map(_map)
         _memory = self.memory(_memory)
         _features = [_map.flatten(), _memory.flatten(), _battery]

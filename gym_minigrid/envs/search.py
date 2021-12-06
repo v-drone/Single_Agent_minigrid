@@ -5,6 +5,7 @@ import numpy as np
 import random
 from PIL import Image
 
+
 class SearchEnv(MiniGridEnv):
     """
     Distributional shift environment.
@@ -49,7 +50,6 @@ class SearchEnv(MiniGridEnv):
             "agent_view": self._get_view(tf),
             "battery": self.battery / self.full_battery,
             "reward": self._reward(),
-            "history": self._get_history(),
             "finish": finish
         }
         if finish:
@@ -109,10 +109,9 @@ class SearchEnv(MiniGridEnv):
         agent_obs = self.get_agent_obs_locations()
         _ = self.grid.copy()
         _.grid = [None if i is not None and i.type == "box" and i.cur_pos not in agent_obs else i for i in _.grid]
-        whole_map = _.render(1, self.agent_pos, self.agent_dir).transpose(2, 0, 1)
+        whole_map = _.render(1, self.agent_pos, self.agent_dir)
         memory = self.memory.T / self.max_steps
         memory = np.expand_dims(memory, 0) / self.max_steps
-        whole_map = np.concatenate([whole_map, memory], axis=0)
         return whole_map
 
     def _get_view(self, tf):
