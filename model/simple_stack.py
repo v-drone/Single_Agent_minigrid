@@ -52,7 +52,7 @@ class SimpleStack(nn.Block):
             self.map = mobilenet_v3_small(name_prefix="map").features[0:14]
             self.memory = mobilenet_v3_small(name_prefix="memory").features[0:14]
             # self.LSTM = rnn.LSTM(_hidden, self.memory_size)
-            self.embedding = mobilenet_v3_small(name_prefix="embedding").features[14:]
+            self.embedding = mobilenet_v3_small(name_prefix="embedding").features[14:18]
             self.out = nn.Sequential()
             self.out.add(nn.Dense(64, activation="relu"))
             self.out.add(nn.Dense(3, activation="relu"))

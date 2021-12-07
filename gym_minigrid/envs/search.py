@@ -35,7 +35,7 @@ class SearchEnv(MiniGridEnv):
         self.reset()
         self.actions = self.Actions
         self.to_goal = 999
-        self.render_size = 10
+        self.render_size = 5
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])
