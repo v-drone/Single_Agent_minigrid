@@ -1,79 +1,66 @@
 from mxnet.gluon import nn
 from mxnet import nd
+from gluoncv.model_zoo.mobilenetv3 import mobilenet_v3_small
 
 
 class ConvBlock(nn.Sequential):
-    def __init__(self, channels=256, kernel_size=1):
-        super().__init__()
-        self.add(nn.Conv2D(channels, kernel_size=kernel_size, use_bias=False, layout="NCHW"))
-        self.add(nn.BatchNorm())
-        self.add(nn.Activation('sigmoid'))
-
-
-class ViewBlock(nn.Sequential):
-    def __init__(self):
-        super(ViewBlock, self).__init__()
+    def __init__(self, c, k):
+        super(ConvBlock, self).__init__()
         with self.name_scope():
-            c = [64, 128, 128]
-            k = [1, 2, 2]
-            for i in range(len(k)):
-                self.add(ConvBlock(c[i], k[i]))
-            for i in [128]:
-                self.add(nn.Dense(i, "sigmoid"))
+            self.add(nn.Conv2D(c, k, use_bias=False, layout="NCHW"))
+            self.add(nn.BatchNorm())
+
+
+class LBBlock(nn.Sequential):
+    def __init__(self, c, k, t):
+        super(LBBlock, self).__init__()
+        with self.name_scope():
+            self.add(nn.Conv2D(c * t, 1, use_bias=False, layout="NCHW"))
+            self.add(nn.BatchNorm())
+            self.add(nn.Activation("relu"))
+            self.add(nn.Conv2D(c * t, k, use_bias=False, layout="NCHW"))
+            self.add(nn.BatchNorm())
+            self.add(nn.Activation("relu"))
+            self.add(nn.Conv2D(c, 1, use_bias=False, layout="NCHW"))
+            self.add(nn.BatchNorm())
 
 
 class MapBlock(nn.Sequential):
     def __init__(self):
+        t = 3
         super(MapBlock, self).__init__()
+        c = [24, 32, 32, 64, 64, 128, 128]
+        k = [3, 3, 3, 3, 3, 3, 3]
         with self.name_scope():
-            self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
-            self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128, 128]
-            k = [2, 2, 2, 2]
-            for i in range(len(k)):
-                self.add(ConvBlock(c[i], k[i]))
-            for i in [128]:
-                self.add(nn.Dense(i, "sigmoid"))
-
-
-class MemoryBlock(nn.Sequential):
-    def __init__(self):
-        super(MemoryBlock, self).__init__()
-        with self.name_scope():
-            self.add(nn.Conv2D(64, 1, use_bias=False, layout="NCHW"))
-            self.add(nn.AvgPool2D(2, 2))
-            c = [64, 128, 128, 128]
-            k = [2, 2, 2, 2]
-            for i in range(len(k)):
-                self.add(ConvBlock(c[i], k[i]))
-            for i in [128]:
-                self.add(nn.Dense(i, "sigmoid"))
+            self.add(nn.Conv2D(32, 3, use_bias=False, layout="NCHW"))
+            self.add(nn.BatchNorm())
+            self.add(nn.Activation("relu"))
+            self.add(nn.Conv2D(1, 1, use_bias=False, layout="NCHW"))
+            self.add(nn.BatchNorm())
+            for i, j in zip(c, k):
+                self.add(LBBlock(i, j, t))
 
 
 class SimpleStack(nn.Block):
     def __init__(self):
+        self.memory_size = 10
+        self.map_size = 20
+        # _hidden = (((self.memory_size - (self.k[0] - 1)) // 2) - sum([i - 1 for i in self.k[:-1]]))
+        # _hidden = _hidden * _hidden * self.c[-1]
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            # self.view = ViewBlock()
-            self.map = MapBlock()
-            self.memory = MemoryBlock()
-            self.decision_making = nn.Sequential()
-            for i in [32]:
-                self.decision_making.add(nn.Dense(i))
-            self.decision_making.add(nn.Dense(3, "tanh"))
+            self.map = mobilenet_v3_small(name_prefix="map").features[0:14]
+            self.memory = mobilenet_v3_small(name_prefix="memory").features[0:14]
+            # self.LSTM = rnn.LSTM(_hidden, self.memory_size)
+            self.embedding = mobilenet_v3_small(name_prefix="embedding").features[14:]
+            self.out = nn.Sequential()
+            self.out.add(nn.Dense(64, activation="relu"))
+            self.out.add(nn.Dense(3, activation="relu"))
 
     def forward(self, income, *args):
-        _view, _map, _battery = income
+        _view, _map, _memory, _battery = income
         _battery = nd.expand_dims(_battery, axis=1)
-        # _view = self.view(_view)
-        _map = nd.transpose(_map, [1, 0, 2, 3])
-        _map, _memory = _map
-        _map = nd.one_hot(_map, 8).transpose([0, 3, 1, 2])
-        # _map = nd.expand_dims(_map, axis=1)
-        _memory = nd.expand_dims(_memory, axis=1)
-        _map = self.map(_map)
-        _memory = self.memory(_memory)
-        _features = [_map.flatten(), _memory.flatten(), _battery]
-        _features = nd.concat(*_features)
-        result = self.decision_making(_features)
-        return result
+        _map = self.map(nd.transpose(_map, [0, 3, 1, 2]))
+        _memory = self.memory(nd.transpose(_memory, [0, 3, 1, 2]))
+        embedding = self.embedding(nd.concat(_map, _memory, dim=1))
+        return self.out(nd.concat(*[embedding.flatten(), _battery.flatten()]))

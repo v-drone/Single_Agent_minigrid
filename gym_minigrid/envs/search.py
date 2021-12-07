@@ -35,21 +35,25 @@ class SearchEnv(MiniGridEnv):
         self.reset()
         self.actions = self.Actions
         self.to_goal = 999
+        self.render_size = 10
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])
         self.agent_start_dir = random.randint(0, 3)
         self.memory = np.zeros([self.width, self.height])
         self.history = []
+        self.history.append(tuple([self.agent_start_pos[0], self.agent_start_pos[1]]))
         super(SearchEnv, self).reset()
 
-    def state(self, tf=True):
+    def state(self):
         finish = self._check_finish()
         data = {
             "whole_map": self._get_whole_map(),
-            "agent_view": self._get_view(tf),
-            "battery": self.battery / self.full_battery,
+            "agent_view": self._get_view(),
+            "memory": self._get_memory(),
+            "battery": self.battery,
             "reward": self._reward(),
+            "history": self._get_history(),
             "finish": finish
         }
         if finish:
@@ -59,8 +63,7 @@ class SearchEnv(MiniGridEnv):
         return data
 
     def build_memory(self):
-        self.memory += 1
-        self.memory[self.agent_pos[0]][self.agent_pos[1]] = 0
+        self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
 
     def step(self, action, battery_cost=1):
         self.step_count += 1
@@ -89,7 +92,7 @@ class SearchEnv(MiniGridEnv):
         # check done
         if self._check_finish():
             done = True
-        return self.state(tf=self.tf), done
+        return self.state(), done
 
     def check_history(self):
         cur = self.history[-1]
@@ -109,23 +112,13 @@ class SearchEnv(MiniGridEnv):
         agent_obs = self.get_agent_obs_locations()
         _ = self.grid.copy()
         _.grid = [None if i is not None and i.type == "box" and i.cur_pos not in agent_obs else i for i in _.grid]
-        whole_map = _.render(1, self.agent_pos, self.agent_dir)
-        memory = self.memory.T / self.max_steps
-        memory = np.expand_dims(memory, 0) / self.max_steps
-        return whole_map
+        return _.render(self.render_size, self.agent_pos, self.agent_dir)
 
-    def _get_view(self, tf):
-        allow = ["wall", "key", "ball", "box", ">", "<", "^", "V"]
-        allow = {k: v + 1 for v, k in enumerate(allow)}
-        view, vis = self.gen_obs_grid()
-        view = to_numpy(view, allow, None, vis)
-        view = np.expand_dims(view, 0)
-        if tf:
-            agent = np.zeros_like(view[0])
-            agent[self.agent_view_size - 1][int(self.agent_view_size / 2)] = allow[agent_dir[3]]
-            agent = np.expand_dims(agent, 0)
-            view = np.concatenate([view, agent], axis=0)
-        return view
+    def _get_view(self):
+        agent_obs = self.get_agent_obs_locations()
+        _ = self.grid.copy()
+        _.grid = [i if i is not None and (i.type == "wall" or i.cur_pos in agent_obs) else None for i in _.grid]
+        return _.render(self.render_size, self.agent_pos, self.agent_dir)
 
     def _get_history(self):
         history = np.zeros(shape=(self.max_steps, 2))
@@ -133,6 +126,11 @@ class SearchEnv(MiniGridEnv):
             if len(self.history) > i:
                 history[i] = self.history[i]
         return history
+
+    def _get_memory(self):
+        _ = self.grid.copy()
+        _.grid = [i if i is not None and (i.type == "wall" or i.cur_pos in set(self.history)) else None for i in _.grid]
+        return _.render(self.render_size, self.agent_pos, self.agent_dir)
 
     def _extrinsic_reward(self):
         raise NotImplementedError

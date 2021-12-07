@@ -25,7 +25,8 @@ class Simple2Dv2(Simple2D):
         for i in walkways:
             if i in history:
                 walkway_arrival += 1
-        return roads_arrival / len(roads), walkway_arrival / len(walkways)
+        # walkway_arrival / len(walkways)
+        return roads_arrival / len(roads), roads_arrival / len(roads)
 
     def _gen_grid(self, width, height):
         roads = self._gent_basic_grid(width, height)
@@ -33,27 +34,27 @@ class Simple2Dv2(Simple2D):
         for i in roads:
             self.put_obj(Ball(color="blue"), *i)
         # add roads not in the map
-        walkway = []
-        start = random.randint(1, self.fault_rate)
-        boundary = random.random()
-        if list(roads)[0][0] != list(roads)[1][0]:
-            if boundary >= 0.5:
-                _width = random.randint(3, width - 3)
-                for j in range(start, width - 1):
-                    walkway.append((_width, j))
-            else:
-                _width = random.randint(3, width - 3)
-                for j in range(width - start - 1, 0, -1):
-                    walkway.append((_width, j))
-        else:
-            if boundary >= 0.5:
-                _height = random.randint(3, height - 3)
-                for j in range(start, height - 1):
-                    walkway.append((j, _height))
-            else:
-                _height = random.randint(3, height - 3)
-                for j in range(height - start - 1, 0, -1):
-                    walkway.append((j, _height))
-        for i in walkway:
-            if i not in roads:
-                self.put_obj(Box(color="green"), *i)
+        # walkway = []
+        # start = random.randint(1, self.fault_rate)
+        # boundary = random.random()
+        # if list(roads)[0][0] != list(roads)[1][0]:
+        #     if boundary >= 0.5:
+        #         _width = random.randint(3, width - 3)
+        #         for j in range(start, width - 1):
+        #             walkway.append((_width, j))
+        #     else:
+        #         _width = random.randint(3, width - 3)
+        #         for j in range(width - start - 1, 0, -1):
+        #             walkway.append((_width, j))
+        # else:
+        #     if boundary >= 0.5:
+        #         _height = random.randint(3, height - 3)
+        #         for j in range(start, height - 1):
+        #             walkway.append((j, _height))
+        #     else:
+        #         _height = random.randint(3, height - 3)
+        #         for j in range(height - start - 1, 0, -1):
+        #             walkway.append((j, _height))
+        # for i in walkway:
+        #     if i not in roads:
+        #         self.put_obj(Box(color="green"), *i)

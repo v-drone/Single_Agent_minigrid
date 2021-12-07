@@ -18,7 +18,7 @@ def to_one_hot(array, classes):
 
 
 def translate_state(state):
-    return state["agent_view"], state["whole_map"], state["battery"]
+    return state["agent_view"], state["whole_map"], state["memory"], state["battery"]
 
 
 def copy_params(offline, online):
@@ -52,28 +52,25 @@ def get_goal(array, agent):
     return _location
 
 
-def to_numpy(grid, allow, agent, vis_mask=None):
+def to_numpy(grid, allow):
     """
     Produce a pretty string of the environment's grid along with the agent.
     A grid cell is represented by 2-character string, the first one for
     the object and the second one for the color.
     """
-    shape = (grid.width, grid.height)
-    grid = grid.grid
-    if vis_mask is None:
-        vis_mask = np.ones(len(grid), dtype=bool)
-    else:
-        vis_mask = vis_mask.flatten()
-    map_img = []
-    for i, j in zip(grid, vis_mask):
-        if i is not None and i.type in allow.keys() and j:
-            map_img.append(allow[i.type])
+    map_img = [[] for i in range(len(allow)+1)]
+    for i in grid.grid:
+        map_img[0].append(0)
+        if i is not None and i.type in allow.keys():
+            map_img[allow[i.type]].append(1)
+            _allow = set(allow.values())
+            _allow.remove(allow[i.type])
+            for j in _allow:
+                map_img[j].append(0)
         else:
-            map_img.append(0)
-    map_img = np.array(map_img).reshape(shape)
-    if agent is not None:
-        map_img[agent[0], agent[1]] = allow[agent_dir[agent[2]]]
-    return map_img
+            for j in set(allow.values()):
+                map_img[j].append(0)
+    return np.array(map_img).reshape((-1, grid.width, grid.height))
 
 
 def create_input(data):
@@ -81,8 +78,7 @@ def create_input(data):
     for i in range(len(data[0])):
         target.append([])
     for arg in data:
-        _ = [np.array([i]) if type(i) is int else np.array(i)
-             for i in arg]
+        _ = [np.array([i]) if type(i) is int else np.array(i) for i in arg]
         for i, each in enumerate(_):
             target[i].append(each)
     target = [np.array(i) for i in target]
