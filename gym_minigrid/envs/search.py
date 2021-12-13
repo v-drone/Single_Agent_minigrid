@@ -27,34 +27,37 @@ class SearchEnv(MiniGridEnv):
             max_step = 4 * (width + height)
         self.agent_start_pos = None
         self.agent_start_dir = None
-        self.memory = np.zeros([self.width, self.height])
+        self.memory = []
         self.history = []
-        super().__init__(width=width, height=height, max_steps=max_step, agent_view_size=agent_view,
-                         see_through_walls=False)
+        self.battery_history = []
         # Action enumeration for this environment
-        self.reset()
         self.actions = self.Actions
         self.to_goal = 999
         self.render_size = 5
 
+        super().__init__(width=width, height=height, max_steps=max_step, agent_view_size=agent_view,
+                         see_through_walls=False)
+
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])
         self.agent_start_dir = random.randint(0, 3)
-        self.memory = np.zeros([self.width, self.height])
+        super(SearchEnv, self).reset()
+        self.memory = [self._get_whole_map()] * 10
+        self.battery_history = [self.full_battery] * 10
         self.history = []
         self.history.append(tuple([self.agent_start_pos[0], self.agent_start_pos[1]]))
-        super(SearchEnv, self).reset()
 
     def state(self):
         finish = self._check_finish()
         data = {
-            "whole_map": self._get_whole_map(),
-            "agent_view": self._get_view(),
+            # "whole_map": self._get_whole_map(),
+            # "agent_view": self._get_view(),
             "memory": self._get_memory(),
-            "battery": self.battery,
+            "battery": self._get_battery(),
             "reward": self._reward(),
             "history": self._get_history(),
-            "finish": finish
+            "finish": finish,
+            "hidden": None
         }
         if finish:
             data["l_reward"] = self._extrinsic_reward()
@@ -63,7 +66,10 @@ class SearchEnv(MiniGridEnv):
         return data
 
     def build_memory(self):
-        self.memory[self.agent_pos[0]][self.agent_pos[1]] = 1
+        self.memory.append(self._get_whole_map())
+        self.memory = self.memory[-10:]
+        self.battery_history.append(self.battery)
+        self.battery_history = self.battery_history[-10:]
 
     def step(self, action, battery_cost=1):
         self.step_count += 1
@@ -128,9 +134,10 @@ class SearchEnv(MiniGridEnv):
         return history
 
     def _get_memory(self):
-        _ = self.grid.copy()
-        _.grid = [i if i is not None and (i.type == "wall" or i.cur_pos in set(self.history)) else None for i in _.grid]
-        return _.render(self.render_size, self.agent_pos, self.agent_dir)
+        return np.concatenate([np.expand_dims(i, 0) for i in self.memory])
+
+    def _get_battery(self):
+        return np.concatenate([np.expand_dims(i, 0) for i in self.battery_history[-10:]])
 
     def _extrinsic_reward(self):
         raise NotImplementedError

@@ -18,7 +18,8 @@ def to_one_hot(array, classes):
 
 
 def translate_state(state):
-    return state["agent_view"], state["whole_map"], state["memory"], state["battery"]
+    return state["memory"], state["battery"]
+    # return state["agent_view"], state["whole_map"], state["memory"], state["battery"]
 
 
 def copy_params(offline, online):

@@ -1,4 +1,4 @@
-from mxnet.gluon import nn
+from mxnet.gluon import nn, rnn
 from mxnet import nd
 from gluoncv.model_zoo.mobilenetv3 import mobilenet_v3_small
 
@@ -45,22 +45,32 @@ class SimpleStack(nn.Block):
     def __init__(self):
         self.memory_size = 10
         self.map_size = 20
-        # _hidden = (((self.memory_size - (self.k[0] - 1)) // 2) - sum([i - 1 for i in self.k[:-1]]))
-        # _hidden = _hidden * _hidden * self.c[-1]
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            self.map = mobilenet_v3_small(name_prefix="map").features[0:14]
-            self.memory = mobilenet_v3_small(name_prefix="memory").features[0:14]
-            # self.LSTM = rnn.LSTM(_hidden, self.memory_size)
-            self.embedding = mobilenet_v3_small(name_prefix="embedding").features[14:18]
+            self.map = mobilenet_v3_small(name_prefix="map").features[0:18]
+            self.LSTM = rnn.LSTM(577, self.memory_size, bidirectional=False)
+            # self.embedding = mobilenet_v3_small(name_prefix="embedding").features[14:18]
             self.out = nn.Sequential()
-            self.out.add(nn.Dense(64, activation="relu"))
-            self.out.add(nn.Dense(3, activation="relu"))
+            self.out.add(nn.Dense(3))
+            self.out.add(nn.BatchNorm())
+            self.out.add(nn.PReLU())
 
-    def forward(self, income, *args):
-        _view, _map, _memory, _battery = income
+    def begin_state(self, batch_size=1):
+        return self.LSTM.begin_state(batch_size)
+
+    def random_state(self, batch_size=1):
+        return self.LSTM.begin_state(batch_size, func=nd.random_normal)
+
+    def forward(self, income, hidden, *args):
+        # _view, _map, _memory, _battery = income
+        _memory, _battery = income
         _battery = nd.expand_dims(_battery, axis=1)
-        _map = self.map(nd.transpose(_map, [0, 3, 1, 2]))
-        _memory = self.memory(nd.transpose(_memory, [0, 3, 1, 2]))
-        embedding = self.embedding(nd.concat(_map, _memory, dim=1))
-        return self.out(nd.concat(*[embedding.flatten(), _battery.flatten()]))
+        _b, _m, _h, _w, _c = _memory.shape
+        _embedding = self.map(_memory.reshape([_b * _m, _h, _w, _c]).transpose((0, 3, 1, 2))).flatten()
+        # image part
+        _embedding = _embedding.reshape(_b, _m, -1).flatten()
+        # battery part
+        _battery = _battery.transpose([0, 2, 1]).flatten()
+        _embedding = nd.concat(_embedding, _battery).reshape(_b, _m, -1)
+        _output, _hidden = self.LSTM(_embedding.transpose([1, 0, 2]), states=hidden)
+        return self.out(_output.transpose([1, 0, 2])), _hidden
