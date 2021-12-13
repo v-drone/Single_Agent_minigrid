@@ -1,9 +1,7 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
-from utils import to_numpy, agent_dir
 import numpy as np
 import random
-from PIL import Image
 
 
 class SearchEnv(MiniGridEnv):
@@ -30,13 +28,12 @@ class SearchEnv(MiniGridEnv):
         self.memory = []
         self.history = []
         self.battery_history = []
-        # Action enumeration for this environment
-        self.actions = self.Actions
         self.to_goal = 999
         self.render_size = 5
-
         super().__init__(width=width, height=height, max_steps=max_step, agent_view_size=agent_view,
                          see_through_walls=False)
+        # Action enumeration for this environment
+        self.actions = self.Actions
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])

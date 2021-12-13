@@ -35,7 +35,6 @@ class SimpleEnv(object):
         return _extrinsic_reward
 
     def step(self, action):
-        # Turn left, turn right, move forward
         # forward = 0
         # left = 1
         # right = 2
