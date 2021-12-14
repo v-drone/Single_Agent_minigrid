@@ -46,8 +46,8 @@ class SimpleStack(nn.Block):
         self.map_size = 20
         super(SimpleStack, self).__init__()
         with self.name_scope():
-            self.map = mobilenet_v3_small(name_prefix="map").features[0:12]
-            self.LSTM = rnn.LSTM(1537, num_layers=2, bidirectional=False)
+            self.map = mobilenet_v3_small(name_prefix="map").features[0:18]
+            self.LSTM = rnn.LSTM(577, num_layers=2, bidirectional=False)
             self.out = nn.Sequential()
             self.out.add(nn.Dense(128))
             self.out.add(nn.BatchNorm())
