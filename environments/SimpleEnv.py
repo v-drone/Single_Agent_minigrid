@@ -18,41 +18,41 @@ class SimpleEnv(object):
         self.detect_rate = []
         self.rewards = []
         self.step_count = []
-        self.old = None
-        self.new = None
         self._rewards = []
+        self.bonus_rate = 0.005
 
-    def short_term_reward(self):
-        # - manhattan distance / 500
-        # self.new["reward"] / 500
-        self.sr = "ir = - stay time / 500"
-        return - self.map.check_history() / 500
+    def short_term_reward(self, old, new):
+        moving_bonus = 0
+        if set([tuple(i) for i in old["history"].tolist()]) != set([tuple(i) for i in new["history"].tolist()]):
+            moving_bonus += 10
+        return (-2 + moving_bonus) * self.bonus_rate
 
-    def long_term_reward(self):
-        _extrinsic_reward = self.new["l_reward"]
+    def long_term_reward(self, state):
+        _extrinsic_reward = state["l_reward"]
         _extrinsic_reward = sum(_extrinsic_reward) / len(_extrinsic_reward)
         self.lr = "er = detect rate (0~1)"
         return _extrinsic_reward
 
     def step(self, action):
+        # Turn left, turn right, move forward
         # forward = 0
         # left = 1
         # right = 2
-        self.old = self.map.state()
-        self.new, done = self.map.step(action)
-        reward = self.short_term_reward()
+        old = self.map.state()
+        new, done = self.map.step(action)
+        reward = self.short_term_reward(old, new)
         if self.display is True:
             self.redraw()
         if done != 0:
-            self.detect_rate.append(self.new["l_reward"])
+            self.detect_rate.append(new["l_reward"])
             self.step_count.append(self.map.step_count)
-            reward += self.long_term_reward()
+            reward += self.long_term_reward(new)
             self._rewards.append(reward)
             self.rewards.append(np.mean(self._rewards))
         else:
             self._rewards.append(reward)
 
-        return self.old, self.new, reward, done
+        return old, new, reward, done
 
     def key_handler(self, event):
         print('pressed', event.key)
