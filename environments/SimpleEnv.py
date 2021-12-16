@@ -22,10 +22,12 @@ class SimpleEnv(object):
         self.bonus_rate = 0.005
 
     def short_term_reward(self, old, new):
-        moving_bonus = 0
-        if set([tuple(i) for i in old["history"].tolist()]) != set([tuple(i) for i in new["history"].tolist()]):
-            moving_bonus += 10
-        return (-2 + moving_bonus) * self.bonus_rate
+        # moving_bonus = 0
+        # if set([tuple(i) for i in old["history"].tolist()]) != set([tuple(i) for i in new["history"].tolist()]):
+        #     moving_bonus += 10
+        # return (-2 + moving_bonus) * self.bonus_rate
+        self.sr = "ir = - stay time / 500 - 0.001"
+        return - self.map.check_history() / 500 - 0.001
 
     def long_term_reward(self, state):
         _extrinsic_reward = state["l_reward"]
