@@ -47,27 +47,20 @@ class SimpleStack(nn.Block):
         super(SimpleStack, self).__init__()
         with self.name_scope():
             self.map = mobilenet_v3_small(name_prefix="map").features[0:18]
-            self.LSTM = rnn.LSTM(577, num_layers=2, bidirectional=False)
             self.out = nn.Sequential()
-            self.out.add(nn.Dense(128))
-            self.out.add(nn.BatchNorm())
             self.out.add(nn.Dense(3))
             self.out.add(nn.BatchNorm())
             self.out.add(nn.PReLU())
 
-    def random_state(self, batch_size, ctx):
-        return self.LSTM.begin_state(batch_size, ctx=ctx, func=nd.random_normal)
-
-    def forward(self, income, hidden, *args):
+    def forward(self, income, *args):
         # _view, _map, _memory, _battery = income
         _memory, _battery = income
-        _battery = nd.expand_dims(_battery, axis=1)
         _b, _m, _h, _w, _c = _memory.shape
-        _embedding = self.map(_memory.reshape([_b * _m, _h, _w, _c]).transpose((0, 3, 1, 2))).flatten()
         # image part
-        _embedding = _embedding.reshape(_b, _m, -1).flatten()
+        _memory = _memory.reshape([_b * _m, _h, _w, _c]).transpose((0, 3, 1, 2))
+        _memory = self.map(_memory).reshape([_b, _m, -1])
         # battery part
-        _battery = _battery.transpose([0, 2, 1]).flatten()
-        _embedding = nd.concat(_embedding, _battery).reshape(_b, _m, -1)
-        _output, _hidden = self.LSTM(_embedding.transpose([1, 0, 2]), states=hidden)
-        return self.out(_output.transpose([1, 0, 2])), _hidden
+        _battery = nd.expand_dims(_battery, axis=1)
+        _battery = _battery.transpose([0, 2, 1])
+        _embedding = nd.concat(_memory, _battery, dim=2)
+        return self.out(_embedding)
