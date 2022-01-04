@@ -19,6 +19,7 @@ class SearchEnv(MiniGridEnv):
     def __init__(self, tf=True, width=100, height=100, agent_view=7,
                  max_step=None):
         self.tf = tf
+        self.history_length = 5
         self.width = width
         self.height = height
         if max_step is None:
@@ -39,8 +40,8 @@ class SearchEnv(MiniGridEnv):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])
         self.agent_start_dir = random.randint(0, 3)
         super(SearchEnv, self).reset()
-        self.memory = [self._get_whole_map()] * 10
-        self.battery_history = [self.full_battery] * 10
+        self.memory = [self._get_whole_map()] * self.history_length
+        self.battery_history = [self.full_battery] * self.history_length
         self.history = []
         self.history.append(tuple([self.agent_start_pos[0], self.agent_start_pos[1]]))
 
@@ -54,7 +55,6 @@ class SearchEnv(MiniGridEnv):
             "reward": self._reward(),
             "history": self._get_history(),
             "finish": finish,
-            "hidden": None
         }
         if finish:
             data["l_reward"] = self._extrinsic_reward()
@@ -64,9 +64,9 @@ class SearchEnv(MiniGridEnv):
 
     def build_memory(self):
         self.memory.append(self._get_whole_map())
-        self.memory = self.memory[-10:]
+        self.memory = self.memory[-self.history_length:]
         self.battery_history.append(self.battery)
-        self.battery_history = self.battery_history[-10:]
+        self.battery_history = self.battery_history[-self.history_length:]
 
     def step(self, action, battery_cost=1):
         self.step_count += 1
@@ -134,7 +134,7 @@ class SearchEnv(MiniGridEnv):
         return np.concatenate([np.expand_dims(i, 0) for i in self.memory])
 
     def _get_battery(self):
-        return np.concatenate([np.expand_dims(i, 0) for i in self.battery_history[-10:]])
+        return np.concatenate([np.expand_dims(i, 0) for i in self.battery_history[-self.history_length:]])
 
     def _extrinsic_reward(self):
         raise NotImplementedError

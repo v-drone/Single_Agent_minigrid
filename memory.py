@@ -29,8 +29,6 @@ class Memory(object):
         memory = [self.memory[i] for i in index]
         state = [translate_state(i.get("state")) for i in memory]
         state_next = [translate_state(i.get("state_next")) for i in memory]
-        hidden = [i["state"]["hidden"] for i in memory]
-        hidden_next = [i["state_next"]["hidden"] for i in memory]
         action = [i.get("action") for i in memory]
         finish = [int(i.get("finish")) for i in memory]
         reward = [i.get("reward") for i in memory]
@@ -39,8 +37,6 @@ class Memory(object):
             "state_next": create_input(state_next),
             "action": action,
             "finish": finish,
-            "reward": reward,
-            "hidden_state": hidden,
-            "hidden_state_next": hidden_next,
+            "reward": reward
         }
         return result
