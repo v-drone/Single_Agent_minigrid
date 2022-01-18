@@ -52,7 +52,7 @@ class SimpleStack(nn.Block):
 
     def forward(self, income, *args):
         # _view, _map, _memory, _battery = income
-        _memory, _battery = income
+        _memory = income
         _b, _h, _w, _c = _memory.shape
         # image part
         _memory = self.map(_memory)
