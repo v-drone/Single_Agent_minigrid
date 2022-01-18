@@ -17,8 +17,14 @@ def to_one_hot(array, classes):
     return np.array(indices2one_hot(array, nb_classes=classes + 1)).reshape(shape)
 
 
+def translate_gym(data):
+    return {"memory": [i[0] for i in data], "battery": [i[1] for i in data]}
+
+
+# return back to normal
 def translate_state(state):
-    return state["memory"], state["battery"]
+    _state = translate_gym(state)
+    return _state["memory"], _state["battery"]
     # return state["agent_view"], state["whole_map"], state["memory"], state["battery"]
 
 
@@ -59,7 +65,7 @@ def to_numpy(grid, allow):
     A grid cell is represented by 2-character string, the first one for
     the object and the second one for the color.
     """
-    map_img = [[] for i in range(len(allow)+1)]
+    map_img = [[] for i in range(len(allow) + 1)]
     for i in grid.grid:
         map_img[0].append(0)
         if i is not None and i.type in allow.keys():
