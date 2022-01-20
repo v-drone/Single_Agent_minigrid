@@ -1,5 +1,6 @@
 from gym_minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
+from gym import spaces
 import numpy as np
 import random
 
@@ -31,10 +32,13 @@ class SearchEnv(MiniGridEnv):
         self.battery_history = []
         self.to_goal = 999
         self.render_size = 5
+        self.previous_reward = 0
+        self.reward = 0
         super().__init__(width=width, height=height, max_steps=max_step, agent_view_size=agent_view,
                          see_through_walls=False)
         # Action enumeration for this environment
         self.actions = self.Actions
+        self.action_space = spaces.Discrete(len(self.actions))
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])
@@ -44,22 +48,20 @@ class SearchEnv(MiniGridEnv):
         self.battery_history = [self.full_battery] * self.history_length
         self.history = []
         self.history.append(tuple([self.agent_start_pos[0], self.agent_start_pos[1]]))
+        state = self.state()
+        return state["data"]
 
     def state(self):
         finish = self._check_finish()
         data = {
-            # "whole_map": self._get_whole_map(),
-            # "agent_view": self._get_view(),
-            "memory": self._get_memory(),
-            "battery": self._get_battery(),
-            "reward": self._reward(),
-            "history": self._get_history(),
+            "data": self._get_whole_map(),
+            "battery": self._get_battery()[-1],
             "finish": finish,
         }
         if finish:
-            data["l_reward"] = self._extrinsic_reward()
+            data["reward"] = self._reward() + sum(self._extrinsic_reward())
         else:
-            data["l_reward"] = None
+            data["reward"] = self._reward()
         return data
 
     def build_memory(self):
@@ -69,8 +71,8 @@ class SearchEnv(MiniGridEnv):
         self.battery_history = self.battery_history[-self.history_length:]
 
     def step(self, action, battery_cost=1):
+        self.previous_reward = self.reward
         self.step_count += 1
-        done = False
         self.battery -= battery_cost
         # # # Move
         # Get the position in front of the agent
@@ -92,10 +94,9 @@ class SearchEnv(MiniGridEnv):
         # save history
         self.build_memory()
         self.history.append(tuple([self.agent_pos[0], self.agent_pos[1]]))
-        # check done
-        if self._check_finish():
-            done = True
-        return self.state(), done
+        self.reward = sum(self._extrinsic_reward())
+        state = self.state()
+        return state["data"], state["reward"], state["finish"], state["battery"]
 
     def check_history(self):
         cur = self.history[-1]

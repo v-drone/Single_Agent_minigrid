@@ -51,8 +51,7 @@ class SimpleStack(nn.Block):
             self.out.add(nn.Dense(actions, activation="relu"))
 
     def forward(self, income, *args):
-        # _view, _map, _memory, _battery = income
-        _memory = income
+        _memory, _battery = income
         _b, _h, _w, _c = _memory.shape
         # image part
         _memory = self.map(_memory)

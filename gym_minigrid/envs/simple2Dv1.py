@@ -19,10 +19,11 @@ class Simple2Dv1(Simple2D):
         for i in roads:
             if i in history:
                 roads_arrival += 1
-        return roads_arrival / len(roads), roads_arrival / len(roads)
+        return [roads_arrival / len(roads)]
 
     def _gen_grid(self, width, height):
         roads = self._gent_basic_grid(width, height)
         # add roads
         for i in roads:
             self.put_obj(Ball(color="blue"), *i)
+

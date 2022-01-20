@@ -59,7 +59,7 @@ class Simple2D(SearchEnv):
         return roads
 
     def _reward(self):
-        return self._build_rewards()[self.agent_pos[0]][self.agent_pos[1]]
+        return float(self.reward - self.previous_reward) - self.check_history() * 0.005
 
     def _check_finish(self):
         if self.step_count >= self.max_steps or self.battery == 0:
@@ -69,24 +69,24 @@ class Simple2D(SearchEnv):
         else:
             return 0
 
-    def _build_rewards(self):
-        rewards = []
-        roads = set()
-        for i in self.grid.grid:
-            if i is not None and i.type == "ball":
-                rewards.append(0)
-                roads.add(i.cur_pos)
-            elif i is not None and i.type == "box" and self.memory[i.cur_pos[0]][i.cur_pos[1]] > 0:
-                rewards.append(0)
-                roads.add(i.cur_pos)
-            else:
-                rewards.append(-1)
-        for i in self.gen_obs_grid()[0].grid:
-            if i is not None and i.type == "box":
-                roads.add(i.cur_pos)
-        rewards = np.array(rewards).reshape(20, 20).T
-        for i in list(itertools.product(*[list(range(self.width)), list(range(self.height))])):
-            rewards[i[0]][i[1]] = - min([abs(j[0] - i[0]) + abs(j[1] - i[1]) for j in roads]) + rewards[i[0]][i[1]]
-        for i in roads:
-            rewards[i[0]][i[1]] = 0
-        return rewards
+    # def _build_rewards(self):
+    #     rewards = []
+    #     roads = set()
+    #     for i in self.grid.grid:
+    #         if i is not None and i.type == "ball":
+    #             rewards.append(0)
+    #             roads.add(i.cur_pos)
+    #         elif i is not None and i.type == "box" and self.memory[i.cur_pos[0]][i.cur_pos[1]] > 0:
+    #             rewards.append(0)
+    #             roads.add(i.cur_pos)
+    #         else:
+    #             rewards.append(-1)
+    #     for i in self.gen_obs_grid()[0].grid:
+    #         if i is not None and i.type == "box":
+    #             roads.add(i.cur_pos)
+    #     rewards = np.array(rewards).reshape(20, 20).T
+    #     for i in list(itertools.product(*[list(range(self.width)), list(range(self.height))])):
+    #         rewards[i[0]][i[1]] = - min([abs(j[0] - i[0]) + abs(j[1] - i[1]) for j in roads]) + rewards[i[0]][i[1]]
+    #     for i in roads:
+    #         rewards[i[0]][i[1]] = 0
+    #     return rewards

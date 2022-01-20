@@ -25,8 +25,7 @@ class Simple2Dv2(Simple2D):
         for i in walkways:
             if i in history:
                 walkway_arrival += 1
-        # walkway_arrival / len(walkways)
-        return roads_arrival / len(roads), roads_arrival / len(roads)
+        return roads_arrival / len(roads), walkway_arrival / len(walkways)
 
     def _gen_grid(self, width, height):
         roads = self._gent_basic_grid(width, height)
