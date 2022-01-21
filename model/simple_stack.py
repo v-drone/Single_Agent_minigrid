@@ -47,8 +47,10 @@ class SimpleStack(nn.Block):
         with self.name_scope():
             self.map = MapBlock(name_prefix="map")
             self.out = nn.Sequential()
-            self.out.add(nn.Dense(512, activation="relu"))
-            self.out.add(nn.Dense(actions, activation="relu"))
+            self.out.add(nn.Dense(512))
+            self.out.add(nn.PReLU(0.1))
+            self.out.add(nn.Dense(actions))
+            self.out.add(nn.PReLU(0.1))
 
     def forward(self, income, *args):
         _memory, _battery = income
