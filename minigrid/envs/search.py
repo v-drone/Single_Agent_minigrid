@@ -1,4 +1,4 @@
-from gym_minigrid.minigrid import MiniGridEnv
+from minigrid.minigrid import MiniGridEnv
 from enum import IntEnum
 from gym import spaces
 import numpy as np
@@ -25,13 +25,13 @@ class SearchEnv(MiniGridEnv):
         self.height = height
         if max_step is None:
             max_step = 4 * (width + height)
-        self.agent_start_pos = None
-        self.agent_start_dir = None
+        self.agent_start_pos = [9,9]
+        self.agent_start_dir = 0
         self.memory = []
         self.history = []
         self.battery_history = []
         self.to_goal = 999
-        self.render_size = 5
+        self.render_size = 10
         self.previous_reward = 0
         self.reward = 0
         super().__init__(width=width, height=height, max_steps=max_step, agent_view_size=agent_view,
@@ -39,6 +39,7 @@ class SearchEnv(MiniGridEnv):
         # Action enumeration for this environment
         self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
+
 
     def reset(self):
         self.agent_start_pos = np.array([random.randint(1, self.width - 2), random.randint(1, self.height - 2)])

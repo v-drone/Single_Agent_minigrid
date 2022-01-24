@@ -1285,8 +1285,8 @@ class MiniGridEnv(gym.Env):
             return
 
         if mode == 'human' and not self.window:
-            import gym_minigrid.window
-            self.window = gym_minigrid.window.Window('gym_minigrid')
+            import minigrid.window
+            self.window = minigrid.window.Window('minigrid')
             self.window.show(block=False)
 
         # Compute which cells are visible to the agent

@@ -35,30 +35,32 @@ class MapBlock(nn.Sequential):
         with self.name_scope():
             for i, j, z in zip(c, k, s):
                 self.add(nn.Conv2D(channels=i * t, kernel_size=j, strides=z, padding=0, use_bias=False, layout="NCHW"))
-                self.add(nn.BatchNorm(axis=1, momentum=0.1, center=True))
                 self.add(nn.Activation("relu"))
+                # self.add(nn.PReLU())
             self.add(nn.Flatten())
 
 
 class SimpleStack(nn.Block):
-    def __init__(self, actions):
-        self.map_size = 20
+    def __init__(self, actions, frames, channel=3):
+        self.frames = frames
+        self.channel = channel
         super(SimpleStack, self).__init__()
         with self.name_scope():
             self.map = MapBlock(name_prefix="map")
             self.out = nn.Sequential()
             self.out.add(nn.Dense(512))
-            self.out.add(nn.PReLU(0.1))
+            self.out.add(nn.Activation("relu"))
             self.out.add(nn.Dense(actions))
-            self.out.add(nn.PReLU(0.1))
+            self.out.add(nn.Activation("relu"))
 
     def forward(self, income, *args):
         _memory, _battery = income
-        _b, _h, _w, _c = _memory.shape
+        _b, _c, _h, _w = _memory.shape
+        _memory = _memory.reshape([_b * self.frames, self.channel, _h, _w])
         # image part
-        _memory = self.map(_memory)
+        _features = self.map(_memory).reshape([_b, self.frames, -1])
         # # battery part
         # _battery = nd.expand_dims(_battery, axis=1)
         # _battery = _battery.transpose([0, 2, 1])
         # _embedding = nd.concat(_memory, _battery, dim=2)
-        return self.out(_memory)
+        return self.out(_features)

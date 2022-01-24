@@ -1,5 +1,5 @@
-from gym_minigrid.envs.simple2D import Simple2D
-from gym_minigrid.minigrid import Ball
+from minigrid.envs.simple2D import Simple2D
+from minigrid.minigrid import Ball
 
 
 class Simple2Dv1(Simple2D):

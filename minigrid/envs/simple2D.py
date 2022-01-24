@@ -1,5 +1,5 @@
-from gym_minigrid.envs.search import SearchEnv
-from gym_minigrid.minigrid import Grid, Key, Ball
+from minigrid.envs.search import SearchEnv
+from minigrid.minigrid import Grid, Key, Ball
 import random
 import itertools
 import numpy as np

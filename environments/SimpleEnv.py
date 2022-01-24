@@ -1,5 +1,5 @@
-from gym_minigrid.envs.simple2Dv2 import Simple2Dv2 as Environment
-from gym_minigrid.window import Window
+from minigrid.envs.simple2Dv2 import Simple2Dv2 as Environment
+from minigrid.window import Window
 import numpy as np
 
 

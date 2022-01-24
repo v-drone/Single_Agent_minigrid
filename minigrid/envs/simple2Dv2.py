@@ -1,6 +1,6 @@
 import random
-from gym_minigrid.envs.simple2D import Simple2D
-from gym_minigrid.minigrid import Ball, Box
+from minigrid.envs.simple2D import Simple2D
+from minigrid.minigrid import Ball, Box
 
 
 class Simple2Dv2(Simple2D):
