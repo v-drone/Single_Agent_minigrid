@@ -1,13 +1,11 @@
 from minigrid.envs.search import SearchEnv
 from minigrid.minigrid import Grid, Key, Ball
 import random
-import itertools
-import numpy as np
 
 
 class Simple2D(SearchEnv):
 
-    def __init__(self, width=100, height=100, agent_view=7, roads=1,
+    def __init__(self, width=100, height=100, agent_view=5, roads=1,
                  max_step=None, fault_rate=0.3, tf=True):
         self.roads = roads
         self.fault_rate = int(fault_rate * min([width, height]))

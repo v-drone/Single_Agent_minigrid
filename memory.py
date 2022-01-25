@@ -1,37 +1,48 @@
-import numpy as np
-from mxnet import nd
+import random
 from collections import namedtuple
 
 
 class Memory(object):
-    def __init__(self, memory_length=2048, memory=None):
+    def __init__(self, memory_length=2048, frame_len=4, memory=None):
         """
         dataset in mxnet case
         :param memory_length: int
         memory_length
-        memory_size of ('state', 'action', 'next_state', 'reward','finish'， 'battery')
+        memory_size of ('state', 'action'', 'reward','finish'， 'battery', 'initial)
         """
         if memory is None:
             memory = []
         self.memory_length = memory_length
         self.memory = memory
+        self.frame_len = frame_len
         self.position = 0
 
-    def push(self, old, action, new, reward, finish, battery):
-        _ = {"state": old, "state_next": new, "action": action, "reward": reward, "finish": finish, "battery": battery}
+    def push(self, *args):
         if len(self.memory) < self.memory_length:
             self.memory.append(None)
-        self.memory[self.position] = _
+        Transition = namedtuple('Transition', ('state', 'action', 'reward', 'finish', 'battery', 'initial'))
+        self.memory[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.memory_length
 
-    def sample(self, bz, ctx):
-        index = np.random.choice(len(self.memory), bz)
-        memory = [self.memory[i] for i in index]
-        state = nd.concat(*[nd.expand_dims(i["state"], 0) for i in memory], dim=0).as_in_context(ctx)
-        state_next = nd.concat(*[nd.expand_dims(i["state_next"], 0) for i in memory], dim=0).as_in_context(ctx)
-        action = nd.array([i.get("action") for i in memory], ctx)
-        finish = nd.array([int(i.get("finish")) for i in memory], ctx)
-        reward = nd.array([int(i.get("reward")) for i in memory], ctx)
-        battery = nd.array([int(i.get("battery")) for i in memory], ctx)
-        Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done', 'battery'))
-        return Transition(state, action, state_next, reward, finish, battery)
+    def sample(self, bz, state, state_next, reward, action, done, battery):
+        ctx = state.context
+        for i in range(bz):
+            j = random.randint(self.frame_len - 1, len(self.memory) - 2)
+            for x in range(self.frame_len):
+                _state = self.memory[j - x].state[0].as_in_context(ctx).astype('float32') / 255.
+                _state_next = self.memory[j - x + 1].state[0].as_in_context(ctx).astype('float32') / 255.
+                state[i, self.frame_len - 1 - x] = _state
+                state_next[i, self.frame_len - 1 - x] = _state_next
+                if self.memory[j - x].initial:
+                    for y in range(self.frame_len - x - 1):
+                        _state = self.memory[j - x].state[0].as_in_context(ctx).astype('float32') / 255.
+                        _state_next = self.memory[j - x].state[0].as_in_context(ctx).astype('float32') / 255.
+                        state[i, self.frame_len - 2 - y] = _state
+                        state_next[i, self.frame_len - 2 - y] = _state_next
+                    break
+            if self.memory[j].finish:
+                state_next[i, self.frame_len - 1] = state[i, self.frame_len - 1]
+            reward[i] = self.memory[j].reward
+            action[i] = self.memory[j].action
+            done[i] = self.memory[j].finish
+            battery[i] = self.memory[j].battery

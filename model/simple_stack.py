@@ -35,8 +35,8 @@ class MapBlock(nn.Sequential):
         with self.name_scope():
             for i, j, z in zip(c, k, s):
                 self.add(nn.Conv2D(channels=i * t, kernel_size=j, strides=z, padding=0, use_bias=False, layout="NCHW"))
+                self.add(nn.BatchNorm(axis=1, momentum=0.1, center=True))
                 self.add(nn.Activation("relu"))
-                # self.add(nn.PReLU())
             self.add(nn.Flatten())
 
 
