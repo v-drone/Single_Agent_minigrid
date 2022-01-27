@@ -1,4 +1,6 @@
 import os
+import mxnet as mx
+from mxnet import nd
 from mpu.ml import indices2one_hot
 
 import numpy as np
@@ -9,6 +11,32 @@ agent_dir = {
     2: '<',
     3: '^',
 }
+
+
+def rew_clipper(rew):
+    if rew > 0.:
+        return 1.
+    elif rew < 0.:
+        return -1.
+    else:
+        return 0
+
+
+def preprocess(raw_frame, image_size, channel=4, frame_len=4, current_state=None, initial_state=False):
+    raw_frame = nd.array(raw_frame, mx.cpu())
+    if channel == 1:
+        raw_frame = nd.mean(raw_frame, axis=2)
+    raw_frame = nd.reshape(raw_frame, shape=(raw_frame.shape[0], raw_frame.shape[1], channel))
+    raw_frame = mx.image.imresize(raw_frame, image_size, image_size)
+    raw_frame = nd.transpose(raw_frame, (2, 0, 1))
+    raw_frame = raw_frame.astype(np.float32) / 255
+    if initial_state:
+        state = raw_frame
+        for _ in range(frame_len - 1):
+            state = nd.concat(state, raw_frame, dim=0)
+    else:
+        state = mx.nd.concat(current_state[channel:, :, :], raw_frame, dim=0)
+    return state, raw_frame
 
 
 def to_one_hot(array, classes):
