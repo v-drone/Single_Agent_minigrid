@@ -25,7 +25,7 @@ def rew_clipper(rew):
 def preprocess(raw_frame, image_size, channel=4, frame_len=4, current_state=None, initial_state=False):
     raw_frame = nd.array(raw_frame, mx.cpu())
     if channel == 1:
-        raw_frame = nd.mean(raw_frame, axis=2)
+        raw_frame = nd.max(raw_frame, axis=2)
     raw_frame = nd.reshape(raw_frame, shape=(raw_frame.shape[0], raw_frame.shape[1], channel))
     raw_frame = mx.image.imresize(raw_frame, image_size, image_size)
     raw_frame = nd.transpose(raw_frame, (2, 0, 1))
