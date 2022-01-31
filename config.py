@@ -1,5 +1,5 @@
 # training cases
-order = "MXNET_view_only"
+order = "MXNET"
 # batch size
 batch_size = 512
 # agent view
