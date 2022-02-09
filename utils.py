@@ -30,14 +30,16 @@ def preprocess(raw_frame, image_size, channel=3, frame_len=4, current_state=None
     raw_frame = mx.image.imresize(raw_frame, image_size, image_size)
     raw_frame = nd.transpose(raw_frame, (2, 0, 1))
     raw_frame = raw_frame.astype(np.float32) / 255
-    if initial_state:
-        state = raw_frame
-        for _ in range(frame_len - 1):
-            state = nd.concat(state, raw_frame, dim=0)
+    if frame_len > 1:
+        if initial_state:
+            state = raw_frame
+            for _ in range(frame_len - 1):
+                state = nd.concat(state, raw_frame, dim=0)
+        else:
+            state = mx.nd.concat(current_state[raw_frame.shape[0]:, :, :], raw_frame, dim=0)
+        return state, raw_frame
     else:
-        state = mx.nd.concat(current_state[raw_frame.shape[0]:, :, :], raw_frame, dim=0)
-    return state, raw_frame
-
+        return raw_frame, raw_frame
 
 def to_one_hot(array, classes):
     shape = list(array.shape) + [-1]
