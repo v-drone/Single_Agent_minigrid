@@ -30,22 +30,17 @@ class SimpleStack(nn.Block):
         self.frames = frames
         self.channel = channel
         super(SimpleStack, self).__init__()
-        c = [128, 128]
-        k = [4, 3]
-        s = [2, 1]
+        c = [64, 128, 128]
+        k = [8, 4, 3]
+        s = [4, 2, 1]
         with self.name_scope():
             self.map = nn.Sequential()
             self.out = nn.Sequential()
             with self.map.name_scope():
-                self.map.add(nn.Conv2D(channels=64, kernel_size=8, strides=4, padding=0, layout="NCHW"))
-                self.map.add(nn.Activation("tanh"))
-                # self.add(nn.MaxPool2D(2, 2))
-                self.map.add(nn.BatchNorm(axis=1, momentum=0.1, center=True))
                 for i, j, z in zip(c, k, s):
                     self.map.add(nn.Conv2D(channels=i, kernel_size=j, strides=z, padding=0, layout="NCHW"))
                     self.map.add(nn.BatchNorm(axis=1, momentum=0.1, center=True))
                     self.map.add(nn.Activation("tanh"))
-                    # self.add(nn.MaxPool2D(2, 2))
                 self.map.add(nn.Flatten())
             with self.out.name_scope():
                 self.out.add(nn.Dense(512, activation="tanh"))
@@ -59,3 +54,4 @@ class SimpleStack(nn.Block):
         # _battery = nd.expand_dims(_battery, axis=1)
         # _battery = _battery.transpose([0, 2, 1])
         return self.out(_features)
+
