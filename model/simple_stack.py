@@ -1,4 +1,6 @@
-from mxnet.gluon import nn
+from mxnet.gluon import nn, rnn
+from mxnet import nd
+from gluoncv.model_zoo.mobilenetv3 import mobilenet_v3_small
 
 
 class ConvBlock(nn.Sequential):
@@ -30,14 +32,11 @@ class SimpleStack(nn.Block):
         super(SimpleStack, self).__init__()
         c = [64, 128, 128]
         k = [8, 4, 3]
-        s = [3, 2, 1]
+        s = [4, 2, 1]
         with self.name_scope():
             self.map = nn.Sequential()
             self.out = nn.Sequential()
             with self.map.name_scope():
-                self.map.add(nn.Conv2D(channels=64, kernel_size=8, strides=4, padding=0, layout="NCHW"))
-                self.map.add(nn.Activation("tanh"))
-                self.map.add(nn.BatchNorm(axis=1, momentum=0.1, center=True))
                 for i, j, z in zip(c, k, s):
                     self.map.add(nn.Conv2D(channels=i, kernel_size=j, strides=z, padding=0, layout="NCHW"))
                     self.map.add(nn.BatchNorm(axis=1, momentum=0.1, center=True))
@@ -51,4 +50,8 @@ class SimpleStack(nn.Block):
         _b, _c, _h, _w = memory.shape
         # image part
         _features = self.map(memory).reshape([_b, self.frames, -1])
+        # # battery part
+        # _battery = nd.expand_dims(_battery, axis=1)
+        # _battery = _battery.transpose([0, 2, 1])
         return self.out(_features)
+

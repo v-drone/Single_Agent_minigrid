@@ -57,7 +57,7 @@ def translate_gym(data):
     return {"memory": [i[0] for i in data], "battery": [i[1] for i in data]}
 
 
-# return back to normal
+# return to normal
 def translate_state(state):
     _state = translate_gym(state)
     return _state["memory"], _state["battery"]
