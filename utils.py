@@ -22,6 +22,11 @@ def rew_clipper(rew):
         return 0
 
 
+def create_view(env, render_size):
+    agent_obs = env.gen_obs_grid()[0]
+    return agent_obs.render(render_size, [3, 6], 3)
+
+
 def preprocess(raw_frame, image_size, channel=3, frame_len=4, current_state=None, initial_state=False):
     raw_frame = nd.array(raw_frame, mx.cpu())
     if channel == 1:
@@ -40,6 +45,7 @@ def preprocess(raw_frame, image_size, channel=3, frame_len=4, current_state=None
         return state, raw_frame
     else:
         return raw_frame, raw_frame
+
 
 def to_one_hot(array, classes):
     shape = list(array.shape) + [-1]
