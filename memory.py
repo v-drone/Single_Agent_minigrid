@@ -1,5 +1,4 @@
 import random
-from mxnet import nd
 from collections import namedtuple
 
 
@@ -9,7 +8,7 @@ class Memory(object):
         dataset in mxnet case
         :param memory_length: int
         memory_length
-        memory_size of ('state', 'action'', 'reward','finish'， 'battery', 'initial)
+        memory_size of ('state', 'state_next', 'action'', 'reward','finish'， 'battery', 'initial)
         """
         self.memory = []
         self.memory_length = memory_length
@@ -20,17 +19,9 @@ class Memory(object):
     def push(self, *args):
         if len(self.memory) < self.memory_length:
             self.memory.append(None)
-        Transition = namedtuple('Transition', ('state', 'action', 'state_next', 'reward', 'finish', 'battery'))
+        Transition = namedtuple('Transition', ('state', 'state_next', 'action', 'reward', 'finish', 'battery'))
         self.memory[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.memory_length
 
-    def sample(self, size, ctx):
-        Transition = namedtuple('Transition', ('state', 'action', 'state_next', 'reward', 'finish', 'battery'))
-        data = random.sample(self.memory, size)
-        state = nd.concat(*[nd.expand_dims(i.state, 0) for i in data], dim=0).as_in_context(ctx)
-        state_next = nd.concat(*[nd.expand_dims(i.state_next, 0) for i in data], dim=0).as_in_context(ctx)
-        finish = nd.concat(*[i.finish for i in data], dim=0).as_in_context(ctx)
-        reward = nd.concat(*[i.reward for i in data], dim=0).as_in_context(ctx)
-        action = nd.concat(*[i.action for i in data], dim=0).as_in_context(ctx)
-        battery = nd.concat(*[i.battery for i in data], dim=0).as_in_context(ctx)
-        return Transition(*[state, action, state_next, reward, finish, battery])
+    def sample(self):
+        return self.memory[random.randint(0, len(self.memory) -1)]
