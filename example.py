@@ -1,19 +1,35 @@
 from config import *
 import os
-import numpy as np
-import mxnet as mx
-from model.simple_stack import SimpleStack
-from utils import check_dir
-from memory import Memory
-from environments.SimpleEnv import SimpleEnv
-from utils import create_input, translate_state
-from mxnet import gluon, nd
+import gym
+import ray
+import tqdm
+import json
+import pickle
+import argparse
+from os import path
+from dynaconf import Dynaconf
+from algorithms.apex_ddqn import ApexDDQNWithDPBER
+from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
+from ray.tune.logger import UnifiedLogger
+from utils import check_path, convert_np_arrays
+
+ray.init(
+    num_cpus=6, num_gpus=1,
+    include_dashboard=False,
+    _system_config={"maximum_gcs_destroyed_actor_cached_count": 200},
+)
+
+# Config path
+log_path = "./logs/"
+checkpoint_path = "./checkpoints"
+setting = Dynaconf(envvar_prefix="DYNACONF", settings_files="./drone.yml")
+
+# Set hyper parameters
+hyper_parameters = setting.hyper_parameters.to_dict()
+hyper_parameters["logger_config"] = {"type": UnifiedLogger, "logdir": checkpoint_path}
 
 if os.path.exists(summary):
     os.remove(summary)
-ctx = mx.cpu()
-for i in ["model_save", "data_save"]:
-    check_dir(i)
 # build models
 model = SimpleStack()
 print(model)

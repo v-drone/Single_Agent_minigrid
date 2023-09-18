@@ -1,4 +1,4 @@
-from gym_minigrid.envs.simple2Dv2 import Simple2Dv2
+from minigrid import
 from gym_minigrid.window import Window
 import numpy as np
 
@@ -68,7 +68,7 @@ class SimpleEnv(object):
 
     def reset_env(self):
         """
-        reset environment to the start point
+        reset environment.txt to the start point
         :return:
         """
         self.map.reset()
