@@ -31,6 +31,7 @@ class RouteEnv(EmptyEnv):
         right = 2
 
     def __init__(self, size=20, max_steps=100, roads=(3, 5), battery=100, render_mode="human"):
+
         super().__init__(size=size, max_steps=max_steps, render_mode=render_mode)
         self.tile_size = 8
         self.screen_size = 300
@@ -147,7 +148,7 @@ class RouteEnv(EmptyEnv):
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
             terminated = True
 
-        return self._gen_obs(), reward, terminated, truncated, info
+        return obs, reward, terminated, truncated, info
 
     def _gen_obs(self):
         img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)

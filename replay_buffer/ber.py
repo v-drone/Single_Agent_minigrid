@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from gym.spaces import Space
+from gymnasium.spaces import Space
 from ray.rllib.utils.replay_buffers.utils import SampleBatchType
 from ray.rllib.utils.replay_buffers.replay_buffer import ReplayBuffer
 from replay_buffer.replay_node import BaseBuffer

@@ -1,14 +1,13 @@
 from abc import ABC
 from utils import get_action_dim, get_obs_shape
 from ray.rllib.policy.policy import SampleBatch
-from gym import spaces
+from gymnasium import spaces
 import numpy as np
 
 
 class BaseBuffer(ABC):
     """
     Base class that represent a buffer (rollout or replay)
-
     :param buffer_size: Max number of element in the buffer
     :param obs_space: obs space
     :param action_space: Action space to which the values will be converted

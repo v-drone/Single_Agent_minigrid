@@ -1,15 +1,8 @@
-from config import *
-import os
 import mlflow
 import ray
 from dynaconf import Dynaconf
-from environments.MutilRoadEnv import RouteEnv
-
-from algorithms.apex_ddqn import ApexDDQNWithDPBER
-from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
-
+from ray.rllib.algorithms.apex_dqn import ApexDQN
 from ray.tune.logger import UnifiedLogger
-from utils import check_path, convert_np_arrays
 import gymnasium as gym
 
 # Build env
@@ -18,9 +11,24 @@ gym.register(
     entry_point='environments.MutilRoadEnv:RouteEnv'
 )
 
-env = gym.make("MiniGrid-RandomPath-v0", render_mode="human", size=20, roads=(5, 7), max_steps=1000, battery=100)
-env.reset()
+env_config = {
+    "size": 20,
+    "roads": (5, 7),
+    "max_steps": 1000,
+    "battery":100,
+    "render_model": "rgb_array"
+}
 
+
+def _make_env():
+    return gym.make("MiniGrid-RandomPath-v0", render_mode="human", size=20, roads=(5, 7),
+                    max_steps=1000, battery=100)
+
+
+ray.tune.register_env("MiniGrid-RandomPath-v0")
+
+env = _make_env()
+env.reset()
 observation_space = env.observation_space
 action_space = env.action_space
 
@@ -50,25 +58,12 @@ run_name = "image_decoder_DPBER"
 mlflow_run = mlflow.start_run(run_name=run_name, tags={"mlflow.user": "Jo.ZHOU"})
 
 mlflow.log_params({
-    **hyper_parameters.replay_buffer_config.to_dict(),
+    **hyper_parameters.replay_buffer_config,
     "type": "MultiAgentPrioritizedBlockReplayBuffer",
     "sub_buffer_size": sub_buffer_size,
 })
 mlflow.log_params(
     {key: hyper_parameters[key] for key in hyper_parameters.keys() if key not in ["replay_buffer_config"]})
 
-# Set ER
-replay_buffer_config = {
-    **hyper_parameters.replay_buffer_config.to_dict(),
-    "type": MultiAgentPrioritizedBlockReplayBuffer,
-    "capacity": int(hyper_parameters.replay_buffer_config.capacity),
-    "obs_space": observation_space,
-    "action_space": action_space,
-    "sub_buffer_size": sub_buffer_size,
-    "worker_side_prioritization": False,
-    "replay_buffer_shards_colocated_with_driver": True,
-    "rollout_fragment_length": sub_buffer_size
-}
-hyper_parameters["replay_buffer_config"] = replay_buffer_config
 hyper_parameters["train_batch_size"] = int(hyper_parameters["train_batch_size"] / sub_buffer_size)
-algorithm = ApexDDQNWithDPBER(config=hyper_parameters, )
+algorithm = ApexDQN(config=hyper_parameters, env=env)

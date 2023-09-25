@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from gym.spaces import Space
+from gymnasium.spaces import Space
 from typing import Dict
 from ray.rllib.utils.annotations import override, DeveloperAPI
 from ray.rllib.utils.replay_buffers.utils import SampleBatchType
