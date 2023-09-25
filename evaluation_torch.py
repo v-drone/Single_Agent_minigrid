@@ -1,8 +1,8 @@
 from utils import create_input, translate_state
 import torch
 from PIL import Image
-from environments.SimpleEnv import SimpleEnv
-from model.simple_stack_torch import SimpleStack
+from environments.MutilRoadEnv import SimpleEnv
+from model.image_decoder import SimpleStack
 
 
 def evaluate(ctx, model, env, rounds=5, print_action=False, save=None):

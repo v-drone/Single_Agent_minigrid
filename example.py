@@ -1,20 +1,32 @@
 from config import *
 import os
-import gym
+import mlflow
 import ray
-import tqdm
-import json
-import pickle
-import argparse
-from os import path
 from dynaconf import Dynaconf
+from environments.MutilRoadEnv import RouteEnv
+
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
+
 from ray.tune.logger import UnifiedLogger
 from utils import check_path, convert_np_arrays
+import gymnasium as gym
 
+# Build env
+gym.register(
+    id='MiniGrid-RandomPath-v0',
+    entry_point='environments.MutilRoadEnv:RouteEnv'
+)
+
+env = gym.make("MiniGrid-RandomPath-v0", render_mode="human", size=20, roads=(5, 7), max_steps=1000, battery=100)
+env.reset()
+
+observation_space = env.observation_space
+action_space = env.action_space
+
+# Init Ray
 ray.init(
-    num_cpus=6, num_gpus=1,
+    num_cpus=10, num_gpus=1,
     include_dashboard=False,
     _system_config={"maximum_gcs_destroyed_actor_cached_count": 200},
 )
@@ -22,49 +34,41 @@ ray.init(
 # Config path
 log_path = "./logs/"
 checkpoint_path = "./checkpoints"
+sub_buffer_size = 16
 setting = Dynaconf(envvar_prefix="DYNACONF", settings_files="./drone.yml")
 
 # Set hyper parameters
 hyper_parameters = setting.hyper_parameters.to_dict()
 hyper_parameters["logger_config"] = {"type": UnifiedLogger, "logdir": checkpoint_path}
+print("log path: %s \n check_path: %s" % (log_path, checkpoint_path))
 
-if os.path.exists(summary):
-    os.remove(summary)
-# build models
-model = SimpleStack()
-print(model)
-model.load_parameters("./model_save/model_test.params.best")
-# create env
-env = SimpleEnv(display=True)
-env.reset_env()
-memory_pool = Memory(memory_length)
-annealing = 0
-total_reward = np.zeros(num_episode)
-eval_result = []
-loss_func = gluon.loss.L2Loss()
-for epoch in range(num_episode):
-    env.reset_env()
-    finish = 0
-    cum_clipped_dr = 0
-    while not finish:
-        if sum(env.step_count) > replay_start:
-            annealing += 1
-        eps = np.maximum(1 - sum(env.step_count) / annealing_end, epsilon_min)
-        by = "Model"
-        data = create_input([translate_state(env.map.state())])
-        data = [nd.array(i, ctx=ctx) for i in data]
-        action = model(data)
-        print(action)
-        action = int(nd.argmax(action, axis=1).asnumpy()[0])
-        old, new, reward_get, finish = env.step(action)
-        memory_pool.add(old, new, action, reward_get, finish)
-        if finish and epoch > 50:
-            cum_clipped_dr += env.detect_rate[-1]
-            dr_50 = float(np.mean(env.detect_rate[-50:]))
-            dr_all = float(np.mean(env.detect_rate))
-            if epoch % 50 == 0:
-                text = "DR: %f(50), %f(all), eps: %f" % (dr_50, dr_all, eps)
-                print(text)
-                with open(summary, "a") as f:
-                    f.writelines(text + "\n")
-    total_reward[int(epoch) - 1] = cum_clipped_dr
+# Set MLflow & log parameters
+mlflow.set_tracking_uri("http://127.0.0.1:9999")
+mlflow.set_experiment(experiment_name="mutil_road")
+mlflow_client = mlflow.tracking.MlflowClient()
+run_name = "image_decoder_DPBER"
+mlflow_run = mlflow.start_run(run_name=run_name, tags={"mlflow.user": "Jo.ZHOU"})
+
+mlflow.log_params({
+    **hyper_parameters.replay_buffer_config.to_dict(),
+    "type": "MultiAgentPrioritizedBlockReplayBuffer",
+    "sub_buffer_size": sub_buffer_size,
+})
+mlflow.log_params(
+    {key: hyper_parameters[key] for key in hyper_parameters.keys() if key not in ["replay_buffer_config"]})
+
+# Set ER
+replay_buffer_config = {
+    **hyper_parameters.replay_buffer_config.to_dict(),
+    "type": MultiAgentPrioritizedBlockReplayBuffer,
+    "capacity": int(hyper_parameters.replay_buffer_config.capacity),
+    "obs_space": observation_space,
+    "action_space": action_space,
+    "sub_buffer_size": sub_buffer_size,
+    "worker_side_prioritization": False,
+    "replay_buffer_shards_colocated_with_driver": True,
+    "rollout_fragment_length": sub_buffer_size
+}
+hyper_parameters["replay_buffer_config"] = replay_buffer_config
+hyper_parameters["train_batch_size"] = int(hyper_parameters["train_batch_size"] / sub_buffer_size)
+algorithm = ApexDDQNWithDPBER(config=hyper_parameters, )

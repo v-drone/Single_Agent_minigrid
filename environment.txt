@@ -80,5 +80,10 @@ uvicorn==0.16.0
 virtualenv==20.19.0
 webcolors==1.11.1
 widgetsnbextension==4.0.5
+tqdm
 gpustat
 opencv-python
+dynaconf
+minigrid
+gym
+ray[all]
