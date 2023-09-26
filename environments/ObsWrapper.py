@@ -21,12 +21,10 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
         ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])  # Red color
         if self.agent_pov:
             ENERGY_BAR_HEIGHT = self.tile_size
-            cut_off = int(self.tile_size / 2)
-            cut_off = (cut_off, self.tile_size - cut_off)
         else:
             ENERGY_BAR_HEIGHT = int(0.2 * self.tile_size)
-            cut_off = int(ENERGY_BAR_HEIGHT / 2)
-            cut_off = (cut_off, self.ENERGY_BAR_HEIGHT - cut_off)
+        cut_off = int(ENERGY_BAR_HEIGHT / 2)
+        cut_off = (cut_off, ENERGY_BAR_HEIGHT - cut_off)
         # Calculate the width of the energy bar based on the remaining steps
         energy_fraction = self.battery / self.full_battery
         energy_bar_width = int(energy_fraction * img.shape[1])
