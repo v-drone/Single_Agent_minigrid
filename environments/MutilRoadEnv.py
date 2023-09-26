@@ -41,17 +41,12 @@ class RouteEnv(EmptyEnv):
         self.unvisited_tiles = set()
         self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
-        self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3),
-                                     np.uint8)
+        # self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3),
+        #                              np.uint8)
         self.full_battery = battery
         self.battery = battery
         self.prev_pos = None
         self.agent_pov = False
-
-    # def reset(self, *, seed: int = None, options: dict[str, Any] = None) -> tuple[ObsType, dict[str, Any]]:
-    #     super().reset()
-    #     return self._gen_obs(), {}
-
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
         super()._gen_grid(width, height)
@@ -164,30 +159,8 @@ class RouteEnv(EmptyEnv):
         if agent_pov:
             return self.get_pov_render(tile_size)
         else:
-            img = self.get_full_render(highlight, tile_size)
-            # Constants for the energy bar
-            ENERGY_BAR_HEIGHT = self.tile_size  # Height of the energy bar in pixels
-            ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])  # Green color
-            ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])  # Red color
-            cut_off = int(self.tile_size / 2)
-            cut_off = (cut_off, self.tile_size - cut_off)
-            # Calculate the width of the energy bar based on the remaining steps
-            energy_fraction = self.battery / self.full_battery
-            energy_bar_width = int(energy_fraction * img.shape[1])
+            return self.get_full_render(highlight, tile_size)
 
-            # Create an empty image for the energy bar
-            energy_bar_img = np.ones((ENERGY_BAR_HEIGHT, img.shape[1], 3), dtype=np.uint8) * 255
-
-            # Calculate the color of the energy bar based on the remaining steps
-            energy_bar_color = (
-                    ENERGY_BAR_COLOR_FULL * energy_fraction + ENERGY_BAR_COLOR_EMPTY * (1 - energy_fraction)
-            ).astype(np.uint8)
-
-            # Draw the energy bar
-            energy_bar_img[:, :energy_bar_width] = energy_bar_color
-
-            # Concatenate the energy bar with the original image
-            return np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
 
     def _reward(self) -> float:
         # Basic small negative reward for each step
