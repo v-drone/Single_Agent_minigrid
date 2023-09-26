@@ -6,15 +6,14 @@ import numpy as np
 
 class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
     def __init__(self, env, tile_size=8):
-        super().__init__(env)
-
         # Rendering attributes for observations
         self.tile_size = tile_size
         self.agent_pov = env.agent_pov
+        super().__init__(env, tile_size)
 
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)
-        print(img.shape)
+        print(img.shape, self.tile_size)
         # Constants for the energy bar
         # Height of the energy bar in pixels
         ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])  # Green color
