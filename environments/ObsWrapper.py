@@ -1,4 +1,5 @@
 from gymnasium import spaces
+from minigrid.core.mission import MissionSpace
 from minigrid.wrappers import RGBImgPartialObsWrapper
 import numpy as np
 
@@ -18,7 +19,7 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
                 {
                     "image": image_observation_space,
                     "direction": spaces.Discrete(4),
-                    "mission": self.mission_space,
+                    "mission": MissionSpace(mission_func=self._gen_mission),
                 }
             )
 

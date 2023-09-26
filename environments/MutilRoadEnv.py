@@ -47,6 +47,7 @@ class RouteEnv(EmptyEnv):
         self.battery = battery
         self.prev_pos = None
         self.agent_pov = False
+
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
         super()._gen_grid(width, height)
@@ -160,7 +161,6 @@ class RouteEnv(EmptyEnv):
             return self.get_pov_render(tile_size)
         else:
             return self.get_full_render(highlight, tile_size)
-
 
     def _reward(self) -> float:
         # Basic small negative reward for each step
