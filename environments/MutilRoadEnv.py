@@ -117,8 +117,7 @@ class RouteEnv(EmptyEnv):
 
         self.mission = self._gen_mission()
 
-    @staticmethod
-    def _gen_mission():
+    def _gen_mission(self):
         return "get to the green goal after get to all blue square"
 
     def step(self, action):
