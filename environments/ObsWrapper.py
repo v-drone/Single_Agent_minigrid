@@ -12,7 +12,7 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
           # Height of the energy bar in pixels
         ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])  # Green color
         ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])  # Red color
-        if self.aent_pov:
+        if self.agent_pov:
             ENERGY_BAR_HEIGHT = self.tile_size
             cut_off = int(self.tile_size / 2)
             cut_off = (cut_off, self.tile_size - cut_off)
