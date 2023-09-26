@@ -25,7 +25,8 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
             cut_off = (cut_off, self.tile_size - cut_off)
         else:
             ENERGY_BAR_HEIGHT = int(0.2 * self.tile_size)
-            cut_off = (ENERGY_BAR_HEIGHT, 0)
+            cut_off = int(ENERGY_BAR_HEIGHT / 2)
+            cut_off = (cut_off, self.ENERGY_BAR_HEIGHT - cut_off)
         # Calculate the width of the energy bar based on the remaining steps
         energy_fraction = self.battery / self.full_battery
         energy_bar_width = int(energy_fraction * img.shape[1])
