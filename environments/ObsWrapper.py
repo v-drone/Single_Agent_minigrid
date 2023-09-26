@@ -28,6 +28,6 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
 
         # Draw the energy bar
         energy_bar_img[:, :energy_bar_width] = energy_bar_color
-
+        # img = np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
         # Concatenate the energy bar with the original image
-        return {**obs, "image": np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)}
+        return {**obs, "image": img}
