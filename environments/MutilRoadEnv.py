@@ -41,7 +41,8 @@ class RouteEnv(EmptyEnv):
         self.unvisited_tiles = set()
         self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
-        # self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3), np.uint8)
+        self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3),
+                                     np.uint8)
         self.full_battery = battery
         self.battery = battery
         self.prev_pos = None
