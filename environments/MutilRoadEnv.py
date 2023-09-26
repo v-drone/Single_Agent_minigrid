@@ -8,6 +8,7 @@ from gymnasium.spaces.box import Box
 import numpy as np
 import pygame
 import random
+from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
 
 
 class PathTile(Floor):
@@ -40,14 +41,15 @@ class RouteEnv(EmptyEnv):
         self.unvisited_tiles = set()
         self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
-        self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3), np.uint8)
+        # self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3), np.uint8)
         self.full_battery = battery
         self.battery = battery
         self.prev_pos = None
+        self.agent_pov = False
 
-    def reset(self, *, seed: int = None, options: dict[str, Any] = None) -> tuple[ObsType, dict[str, Any]]:
-        super().reset()
-        return self._gen_obs(), {}
+    # def reset(self, *, seed: int = None, options: dict[str, Any] = None) -> tuple[ObsType, dict[str, Any]]:
+    #     super().reset()
+    #     return self._gen_obs(), {}
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
@@ -93,7 +95,9 @@ class RouteEnv(EmptyEnv):
                 next_x, next_y = route_start_x + dx, route_start_y + dy
 
                 # Check if the next cell is within grid, is empty, and is not the agent's start/goal position
-                if (1 <= next_x < width - 1) and (1 <= next_y < height - 1) and self.grid.get(next_x, next_y) is None and (next_x, next_y) != (start_x, start_y):
+                if (1 <= next_x < width - 1) and (1 <= next_y < height - 1) and self.grid.get(next_x,
+                                                                                              next_y) is None and (
+                        next_x, next_y) != (start_x, start_y):
                     # Add the cell to the route and update the start cell
                     route_cells.append((next_x, next_y))
                     route_start_x, route_start_y = next_x, next_y
@@ -150,79 +154,39 @@ class RouteEnv(EmptyEnv):
 
         return obs, reward, terminated, truncated, info
 
-    def _gen_obs(self):
-        img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
+    def get_frame(
+            self,
+            highlight: bool = True,
+            tile_size: int = 3,
+            agent_pov: bool = False,
+    ):
+        if agent_pov:
+            return self.get_pov_render(tile_size)
+        else:
+            img = self.get_full_render(highlight, tile_size)
+            # Constants for the energy bar
+            ENERGY_BAR_HEIGHT = self.tile_size  # Height of the energy bar in pixels
+            ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])  # Green color
+            ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])  # Red color
+            cut_off = int(self.tile_size / 2)
+            cut_off = (cut_off, self.tile_size - cut_off)
+            # Calculate the width of the energy bar based on the remaining steps
+            energy_fraction = self.battery / self.full_battery
+            energy_bar_width = int(energy_fraction * img.shape[1])
 
-        # Constants for the energy bar
-        ENERGY_BAR_HEIGHT = self.tile_size  # Height of the energy bar in pixels
-        ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])  # Green color
-        ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])  # Red color
-        cut_off = int(self.tile_size / 2)
-        cut_off = (cut_off, self.tile_size - cut_off)
-        # Calculate the width of the energy bar based on the remaining steps
-        energy_fraction = self.battery / self.full_battery
-        energy_bar_width = int(energy_fraction * img.shape[1])
+            # Create an empty image for the energy bar
+            energy_bar_img = np.ones((ENERGY_BAR_HEIGHT, img.shape[1], 3), dtype=np.uint8) * 255
 
-        # Create an empty image for the energy bar
-        energy_bar_img = np.ones((ENERGY_BAR_HEIGHT, img.shape[1], 3), dtype=np.uint8) * 255
+            # Calculate the color of the energy bar based on the remaining steps
+            energy_bar_color = (
+                    ENERGY_BAR_COLOR_FULL * energy_fraction + ENERGY_BAR_COLOR_EMPTY * (1 - energy_fraction)
+            ).astype(np.uint8)
 
-        # Calculate the color of the energy bar based on the remaining steps
-        energy_bar_color = (
-                ENERGY_BAR_COLOR_FULL * energy_fraction + ENERGY_BAR_COLOR_EMPTY * (1 - energy_fraction)
-        ).astype(np.uint8)
+            # Draw the energy bar
+            energy_bar_img[:, :energy_bar_width] = energy_bar_color
 
-        # Draw the energy bar
-        energy_bar_img[:, :energy_bar_width] = energy_bar_color
-
-        # Concatenate the energy bar with the original image
-        return  np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
-
-
-    def render(self):
-        img = self._gen_obs()
-
-        if self.render_mode == "human":
-            img = np.transpose(img, axes=(1, 0, 2))
-            if self.render_size is None:
-                self.render_size = img.shape[:2]
-            if self.window is None:
-                pygame.init()
-                pygame.display.init()
-                self.window = pygame.display.set_mode(
-                    (self.screen_size, self.screen_size)
-                )
-                pygame.display.set_caption("minigrid")
-            if self.clock is None:
-                self.clock = pygame.time.Clock()
-            surf = pygame.surfarray.make_surface(img)
-
-            # Create background with mission description
-            offset = surf.get_size()[0] * 0.1
-            # offset = 32 if self.agent_pov else 64
-            bg = pygame.Surface(
-                (int(surf.get_size()[0] + offset), int(surf.get_size()[1] + offset))
-            )
-            bg.convert()
-            bg.fill((255, 255, 255))
-            bg.blit(surf, (offset / 2, 0))
-
-            bg = pygame.transform.smoothscale(bg, (self.screen_size, self.screen_size))
-
-            font_size = 10
-            text = self.mission
-            font = pygame.freetype.SysFont(pygame.font.get_default_font(), font_size)
-            text_rect = font.get_rect(text, size=font_size)
-            text_rect.center = bg.get_rect().center
-            text_rect.y = bg.get_height() - font_size * 1.5
-            font.render_to(bg, text_rect, text, size=font_size)
-
-            self.window.blit(bg, (0, 0))
-            pygame.event.pump()
-            self.clock.tick(self.metadata["render_fps"])
-            pygame.display.flip()
-
-        elif self.render_mode == "rgb_array":
-            return img
+            # Concatenate the energy bar with the original image
+            return np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
 
     def _reward(self) -> float:
         # Basic small negative reward for each step
