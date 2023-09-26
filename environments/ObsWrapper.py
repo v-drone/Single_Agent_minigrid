@@ -5,17 +5,6 @@ import numpy as np
 
 
 class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
-    def __init__(self, env, tile_size=8, agent_pov=False):
-        super().__init__(env, tile_size)
-        self.agent_pov = agent_pov
-        if self.agent_pov:
-            image_observation_space = spaces.Box(
-                low=0,
-                high=255,
-                shape=(self.width, self.height, self.agent_view_size, 3),
-                dtype="uint8",
-            )
-            self.observation_space["image"] = image_observation_space
 
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)

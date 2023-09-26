@@ -31,7 +31,7 @@ class RouteEnv(EmptyEnv):
         left = 1
         right = 2
 
-    def __init__(self, size=20, max_steps=100, roads=(3, 5), battery=100, render_mode="human"):
+    def __init__(self, size=20, max_steps=100, roads=(3, 5), battery=100, render_mode="human", agent_pov=True):
 
         super().__init__(size=size, max_steps=max_steps, render_mode=render_mode)
         self.tile_size = 8
@@ -41,12 +41,18 @@ class RouteEnv(EmptyEnv):
         self.unvisited_tiles = set()
         self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
-        # self.observation_space = Box(0, 255, (size * self.tile_size, size * self.tile_size, 3),
-        #                              np.uint8)
         self.full_battery = battery
         self.battery = battery
         self.prev_pos = None
         self.agent_pov = False
+        self.agent_pov = agent_pov
+        if agent_pov:
+            self.observation_space["image"] = spaces.Box(
+                low=0,
+                high=255,
+                shape=(self.width, self.height, 3),
+                dtype="uint8",
+            )
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
