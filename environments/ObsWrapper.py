@@ -12,16 +12,10 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
             image_observation_space = spaces.Box(
                 low=0,
                 high=255,
-                shape=(self.agent_view_size, self.agent_view_size, 3),
+                shape=(self.width, self.height, self.agent_view_size, 3),
                 dtype="uint8",
             )
-            self.observation_space = spaces.Dict(
-                {
-                    "image": image_observation_space,
-                    "direction": spaces.Discrete(4),
-                    "mission": MissionSpace(mission_func=self._gen_mission),
-                }
-            )
+            self.observation_space["image"] = image_observation_space
 
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)
