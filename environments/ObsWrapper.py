@@ -1,3 +1,4 @@
+from gymnasium import spaces
 from minigrid.wrappers import RGBImgPartialObsWrapper
 import numpy as np
 
@@ -6,6 +7,20 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
     def __init__(self, env, tile_size=8, agent_pov=False):
         super().__init__(env, tile_size)
         self.agent_pov = agent_pov
+        if self.agent_pov:
+            image_observation_space = spaces.Box(
+                low=0,
+                high=255,
+                shape=(self.agent_view_size, self.agent_view_size, 3),
+                dtype="uint8",
+            )
+            self.observation_space = spaces.Dict(
+                {
+                    "image": image_observation_space,
+                    "direction": spaces.Discrete(4),
+                    "mission": self.mission_space,
+                }
+            )
 
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)
