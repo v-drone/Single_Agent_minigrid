@@ -10,6 +10,7 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
         self.tile_size = tile_size
         self.agent_pov = env.agent_pov
         super().__init__(env, tile_size)
+        print(self.agent_pov)
 
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)
