@@ -46,7 +46,7 @@ class RouteEnv(EmptyEnv):
         self.prev_pos = None
         self.agent_pov = False
         self.agent_pov = agent_pov
-        if agent_pov:
+        if not agent_pov:
             self.observation_space["image"] = spaces.Box(
                 low=0,
                 high=255,
