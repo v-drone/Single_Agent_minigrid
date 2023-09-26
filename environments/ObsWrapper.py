@@ -9,11 +9,16 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)
         # Constants for the energy bar
-        ENERGY_BAR_HEIGHT = self.tile_size  # Height of the energy bar in pixels
+          # Height of the energy bar in pixels
         ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])  # Green color
         ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])  # Red color
-        cut_off = int(self.tile_size / 2)
-        cut_off = (cut_off, self.tile_size - cut_off)
+        if self.aent_pov:
+            ENERGY_BAR_HEIGHT = self.tile_size
+            cut_off = int(self.tile_size / 2)
+            cut_off = (cut_off, self.tile_size - cut_off)
+        else:
+            ENERGY_BAR_HEIGHT = int(0.2 * self.tile_size)
+            cut_off = (ENERGY_BAR_HEIGHT, 0)
         # Calculate the width of the energy bar based on the remaining steps
         energy_fraction = self.battery / self.full_battery
         energy_bar_width = int(energy_fraction * img.shape[1])
