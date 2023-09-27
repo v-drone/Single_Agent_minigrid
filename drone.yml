@@ -6,6 +6,12 @@ hyper_parameters:
     epsilon_timesteps: 200000
     final_epsilon: 0.01
   framework: torch
+  model:
+    conv_filters:
+      - [ 32, 8, 4 ]   # self.conv1
+      - [ 64, 4, 2 ]   # self.conv2
+      - [ 128, 3, 1 ]  # self.conv3
+      - [ 128, 3, 2 ]  # self.conv4
   hiddens:
     - 512
   lr: 0.0001

@@ -1,4 +1,6 @@
 from torch import nn
+from ray.rllib.models.torch.visionnet import VisionNetwork
+from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 
 
 class CustomCNN(nn.Module):
@@ -10,10 +12,8 @@ class CustomCNN(nn.Module):
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2, padding=1)
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1)
         self.conv4 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
-
         # Fully connected layer
         self.fc = nn.Linear(in_features=128 * 7 * 7, out_features=512)
-
         # Output layer
         self.output = nn.Linear(in_features=512, out_features=num_actions)
 

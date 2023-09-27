@@ -7,11 +7,7 @@ dependencies:
   - python=3.9
   - opencv
   - pip:
-    - --extra-index-url https://download.pytorch.org/whl/cu113
     - setuptools==67.0
-    - torch==1.12.1+cu113
-    - torchvision==0.13.1+cu113
-    - torchaudio==0.12.1
     - grpcio==1.43.0
     - rfc3339==6.2
     - numpy==1.23.5
@@ -92,3 +88,6 @@ dependencies:
     - widgetsnbextension==4.0.5
     - gpustat
     - opencv-python
+    - torch
+    - torchvision
+    - torchaudio
