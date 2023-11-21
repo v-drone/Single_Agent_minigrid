@@ -1,30 +1,50 @@
-from torch import nn
-from ray.rllib.models.torch.visionnet import VisionNetwork
+import torch
+
+import torch.nn as nn
+from gymnasium.spaces.discrete import Discrete
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
+from ray.rllib.models.torch.misc import SlimFC, SlimConv2d
+import logging
+from ray.rllib.algorithms.dqn import DQNTorchPolicy
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-class CustomCNN(nn.Module):
-    def __init__(self, num_actions):
-        super(CustomCNN, self).__init__()
+class CustomCNN(TorchModelV2, nn.Module):
 
-        # Convolutional layers
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=8, stride=4, padding=2)
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1)
-        self.conv4 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
-        # Fully connected layer
-        self.fc = nn.Linear(in_features=128 * 7 * 7, out_features=512)
-        # Output layer
-        self.output = nn.Linear(in_features=512, out_features=num_actions)
+    def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
+        TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
+        nn.Module.__init__(self)
 
-    def forward(self, x):
-        x = nn.ReLU()(self.conv1(x))
-        x = nn.ReLU()(self.conv2(x))
-        x = nn.ReLU()(self.conv3(x))
-        x = nn.ReLU()(self.conv4(x))
+        self.conv_layers = nn.Sequential(
+            SlimConv2d(obs_space.shape[-1], 32, kernel=8, stride=4, padding=2),
+            SlimConv2d(32, 64, kernel=4, stride=2, padding=1),
+            SlimConv2d(64, 64, kernel=3, stride=2, padding=1),
+            SlimConv2d(64, 128, kernel=3, stride=2, padding=1),
+            SlimConv2d(128, 512, kernel=2, stride=2, padding=0),
+        )
 
-        # Flatten the tensor
-        x = x.view(x.size(0), -1)
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, *obs_space.shape).permute(0, 3, 1, 2)
+            conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
 
-        x = nn.ReLU()(self.fc(x))
-        return self.output(x)
+        # self.fc_layers = nn.Sequential(
+        #     SlimFC(conv_out_size, 256),
+        #     SlimFC(256, 3)
+        # )
+        self._features = None
+
+    def import_from_h5(self, h5_file: str) -> None:
+        pass
+
+    def forward(self, input_dict, state, seq_lens):
+        self._features = input_dict["obs"].float()
+        # permute b/c data comes in as [B, dim, dim, channels]:
+        self._features = self._features.permute(0, 3, 1, 2)
+        self._features = self.conv_layers(self._features).flatten(1)
+        # self._features = self.fc_layers(self._features)
+        return self._features, state
+
+    def value_function(self):
+        pass

@@ -1,14 +1,14 @@
-from typing import Any
+from __future__ import annotations
+
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Floor, Goal
 from minigrid.core.actions import IntEnum
+from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
+from typing import Any, Iterable, SupportsFloat, TypeVar
 from gymnasium.core import ActType, ObsType
-from gymnasium.spaces.box import Box
 import numpy as np
-import pygame
 import random
-from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
 
 
 class PathTile(Floor):
@@ -34,7 +34,7 @@ class RouteEnv(EmptyEnv):
     def __init__(self, size=20, max_steps=100, roads=(3, 5), battery=100, render_mode="human", agent_pov=True):
 
         super().__init__(size=size, max_steps=max_steps, render_mode=render_mode)
-        self.tile_size = 8
+        self.spec = EnvSpec("RouteEnv-v0", max_episode_steps=self.max_steps)
         self.screen_size = 300
         self.roads = roads
         # To track tiles that are not yet visited by the agent
@@ -51,8 +51,20 @@ class RouteEnv(EmptyEnv):
                 low=0,
                 high=255,
                 shape=(self.width, self.height, 3),
-                dtype="uint8",
+                dtype=np.uint8
             )
+        else:
+            self.observation_space["image"] = spaces.Box(
+                low=0,
+                high=255,
+                shape=(7, 7, 3),
+                dtype=np.uint8
+            )
+
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
+        obs, _ = super().reset()
+        self.battery = self.full_battery
+        return obs, {}
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
@@ -125,7 +137,7 @@ class RouteEnv(EmptyEnv):
 
     @staticmethod
     def _gen_mission():
-        return "get to the green goal after get to all blue square"
+        return ""
 
     def step(self, action):
         # Record the agent's current position before executing the action
