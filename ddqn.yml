@@ -1,0 +1,25 @@
+hyper_parameters:
+  hiddens: [ 512 ]
+  framework: torch
+  double_q: true
+  dueling: false
+  noisy: false
+  adam_epsilon: .00015
+  exploration_config:
+    epsilon_timesteps: 200000
+    final_epsilon: 0.01
+  lr: 0.0001
+  n_step: 1
+  num_atoms: 1
+  replay_buffer_config:
+    capacity: 1000000
+    prioritized_replay_alpha: 0.5
+    prioritized_replay_beta: 1
+    type: MultiAgentPrioritizedReplayBuffer
+  resources:
+    num_gpus: 1
+  num_steps_sampled_before_learning_starts: 20000
+  target_network_update_freq: 8000
+  rollout_fragment_length: 4
+  train_batch_size: 64
+  min_sample_timesteps_per_iteration: 10000
