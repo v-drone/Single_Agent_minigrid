@@ -86,8 +86,12 @@ dependencies:
     - virtualenv==20.19.0
     - webcolors==1.11.1
     - widgetsnbextension==4.0.5
+    - ray[all]==2.8
     - gpustat
     - opencv-python
     - torch
     - torchvision
     - torchaudio
+    - mlflow
+    - minigrid
+    - mpu
