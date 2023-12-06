@@ -18,8 +18,9 @@ class CustomCNN(TorchModelV2, nn.Module):
 
         self.conv_layers = nn.Sequential(
             SlimConv2d(obs_space.shape[-1], 32, kernel=8, stride=4, padding=2),
-            SlimConv2d(32, 64, kernel=4, stride=4, padding=1),
+            SlimConv2d(32, 64, kernel=4, stride=2, padding=1),
             SlimConv2d(64, 128, kernel=3, stride=2, padding=1),
+            SlimConv2d(128, 128, kernel=3, stride=2, padding=1),
             SlimConv2d(128, 512, kernel=2, stride=1, padding=0),
         )
 
@@ -28,8 +29,9 @@ class CustomCNN(TorchModelV2, nn.Module):
             conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
 
         self.fc_layers = nn.Sequential(
-            SlimFC(conv_out_size, 256),
-            SlimFC(256, 7)
+            SlimFC(conv_out_size, 512),
+            SlimFC(512, 512),
+            SlimFC(512, 7)
         )
         self._features = None
 
