@@ -25,9 +25,9 @@ hyper_parameters:
     num_cpus_per_worker: 1
     num_gpus_per_worker: 0.1
     num_envs_per_worker: 32
-    num_cpus_per_learner_worker: 2
+    num_cpus_per_learner_worker: 1
     num_gpus_per_learner_worker: 1
-  num_workers: 12
+  num_workers: 15
   num_steps_sampled_before_learning_starts: 20000
   rollout_fragment_length: 32
   target_network_update_freq: 50000
