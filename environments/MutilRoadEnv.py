@@ -5,8 +5,7 @@ from minigrid.core.world_object import Floor, Goal
 from minigrid.core.actions import IntEnum
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
-from typing import Any, Iterable, SupportsFloat, TypeVar
-from gymnasium.core import ActType, ObsType
+from typing import Any
 import numpy as np
 import random
 

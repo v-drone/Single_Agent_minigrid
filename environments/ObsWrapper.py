@@ -1,5 +1,3 @@
-from gymnasium import spaces
-from minigrid.core.mission import MissionSpace
 from minigrid.wrappers import RGBImgPartialObsWrapper
 import numpy as np
 

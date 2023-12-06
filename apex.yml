@@ -1,5 +1,9 @@
+mlflow:
+  experiment: "Default"
+  url: "http://127.0.0.1:9999"
+  user: "Local"
 hyper_parameters:
-  hiddens: [ 512 ]
+  hiddens: []
   framework: torch
   double_q: true
   dueling: false
@@ -17,13 +21,19 @@ hyper_parameters:
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
   resources:
-    num_cpus_per_worker: 1
-    num_envs_per_worker: 8
     num_gpus: 1
-    num_gpus_per_worker: 0.1
-    num_workers: 4
+    num_cpus_per_worker: 1
+    num_envs_per_worker: 20
+    num_cpus_per_learner_worker: 2
+    num_gpus_per_learner_worker: 1
+  num_workers: 12
   num_steps_sampled_before_learning_starts: 20000
-  rollout_fragment_length: 20
+  rollout_fragment_length: 64
   target_network_update_freq: 50000
-  train_batch_size: 512
+  train_batch_size: 4096
   min_sample_timesteps_per_iteration: 25000
+log:
+  save_file: "/home/seventheli/logging/simple_env"
+  save_checkout: "/home/seventheli/checkpoints/simple_env"
+  max_time: 360000
+  log: 5

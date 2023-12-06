@@ -1,3 +1,7 @@
+mlflow:
+  experiment: "BeamRider"
+  url: "http://127.0.0.1:9999"
+  user: "Local"
 hyper_parameters:
   hiddens: [ 512 ]
   framework: torch
@@ -23,3 +27,8 @@ hyper_parameters:
   rollout_fragment_length: 4
   train_batch_size: 64
   min_sample_timesteps_per_iteration: 10000
+log:
+  save_file: "/home/seventheli/logging/simple_env"
+  save_checkout: "/home/seventheli/checkpoints/simple_env"
+  max_time: 360000
+  log: 5

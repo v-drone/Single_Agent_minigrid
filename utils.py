@@ -4,11 +4,9 @@ import gc
 import ray
 import yaml
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 from mpu.ml import indices2one_hot
-from func_timeout import func_set_timeout
 from typing import Dict, Tuple, Union
-
 agent_dir = {
     0: '>',
     1: 'V',
@@ -124,22 +122,6 @@ def check_path(path):
         os.makedirs(path)
 
 
-@func_set_timeout(5)
-def log_with_timeout(client, run_id, key, value, step):
-    try:
-        client.log_metric(run_id, key=key, value=value, step=step)
-    except:
-        pass
-
-
-@func_set_timeout(5)
-def logs_with_timeout(data, step):
-    try:
-        mlflow.log_metrics(data, step)
-    except:
-        pass
-
-
 def convert_np_arrays(obj):
     if isinstance(obj, np.ndarray):
         return obj.tolist()
@@ -149,6 +131,17 @@ def convert_np_arrays(obj):
         return [convert_np_arrays(item) for item in obj]
     else:
         return obj
+
+
+def flatten_dict(d):
+    flat_dict = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            for subkey, subvalue in value.items():
+                flat_dict[subkey] = subvalue
+        else:
+            flat_dict[key] = value
+    return flat_dict
 
 
 # This function is copied from:
