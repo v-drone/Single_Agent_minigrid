@@ -95,3 +95,5 @@ dependencies:
     - mlflow
     - minigrid
     - mpu
+    - tqdm
+    - boto3
