@@ -10,35 +10,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
-        super(ResidualBlock, self).__init__()
-        self.conv1 = SlimConv2d(in_channels, out_channels, kernel=3, stride=stride, padding=1)
-        self.conv2 = SlimConv2d(out_channels, out_channels, kernel=3, stride=1, padding=1)
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_channels != out_channels:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0)
-            )
-
-    def forward(self, x):
-        residual = self.shortcut(x)
-        out = self.conv1(x)
-        out = self.conv2(out)
-        out = out + residual
-        return out
-
-
 class CustomCNN(TorchModelV2, nn.Module):
 
     def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2)
+        self.bn1 = nn.BatchNorm2d(16)
 
         self.conv_layers = nn.Sequential(
-            SlimConv2d(obs_space.shape[-1], 32, kernel=8, stride=4, padding=2),
-            SlimConv2d(32, 64, kernel=4, stride=2, padding=1),
-            SlimConv2d(64, 256, kernel=3, stride=2, padding=0),
+            nn.Conv2d(obs_space.shape[-1], 16, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
         )
 
         with torch.no_grad():
@@ -46,11 +38,9 @@ class CustomCNN(TorchModelV2, nn.Module):
             conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
 
         self.fc_layers = nn.Sequential(
-            SlimFC(conv_out_size, 256),
-            SlimFC(256, 256),
-            SlimFC(256, 256),
-            SlimFC(256, 256),
-            SlimFC(256, 7)
+            SlimFC(conv_out_size, 512, activation_fn='relu'),
+            SlimFC(512, 128, activation_fn='relu'),
+            SlimFC(128, action_space.n)
         )
         self._features = None
 
