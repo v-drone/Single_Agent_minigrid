@@ -15,8 +15,6 @@ class CustomCNN(TorchModelV2, nn.Module):
     def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2)
-        self.bn1 = nn.BatchNorm2d(16)
 
         self.conv_layers = nn.Sequential(
             nn.Conv2d(obs_space.shape[-1], 16, kernel_size=5, stride=1, padding=2),

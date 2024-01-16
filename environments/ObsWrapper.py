@@ -1,5 +1,12 @@
 from minigrid.wrappers import RGBImgPartialObsWrapper
 import numpy as np
+import cv2
+
+# Text settings
+font = cv2.FONT_HERSHEY_SIMPLEX
+font_scale = 0.2
+font_color = (0, 0, 0)  # Black color
+line_type = 1
 
 
 class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
@@ -35,6 +42,14 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
 
         # Draw the energy bar
         energy_bar_img[:, :energy_bar_width] = energy_bar_color
+
+        # Calculate text size
+        text = str(self.render_reward)
+        text_size = cv2.getTextSize(text, font, font_scale, line_type)[0]
+        text_x = (energy_bar_img.shape[1] - text_size[0]) // 2
+        text_y = (energy_bar_img.shape[0] + text_size[1]) // 2
+        cv2.putText(energy_bar_img, text, (text_x, text_y), font, font_scale, font_color, line_type)
+
         img = np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
         # Concatenate the energy bar with the original image
         return {**obs, "image": img}
