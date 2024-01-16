@@ -117,15 +117,16 @@ class RouteEnv(EmptyEnv):
                 next_x, next_y = route_start_x + dx, route_start_y + dy
 
                 # Check if the next cell is within grid, is empty, and is not the agent's start/goal position
-                if (1 <= next_x < width - 1) and (1 <= next_y < height - 1) and self.grid.get(next_x,
-                                                                                              next_y) is None and (
-                        next_x, next_y) != (start_x, start_y):
+                if ((1 <= next_x < width - 1)
+                        and (1 <= next_y < height - 1)
+                        and self.grid.get(next_x, next_y) is None
+                        and (next_x, next_y) != (start_x, start_y)):
                     # Add the cell to the route and update the start cell
                     route_cells.append((next_x, next_y))
                     route_start_x, route_start_y = next_x, next_y
                 else:
-                    break  # Stop generating the route if we hit a wall, another route, or the agent's start/goal position
-
+                    # Stop generating the route if we hit a wall, another route, or the agent's start/goal position
+                    break
             # Mark the route cells in the grid
             for x, y in route_cells:
                 self.grid.set(x, y, PathTile())
@@ -170,7 +171,8 @@ class RouteEnv(EmptyEnv):
         self.render_reward[0] = reward
         self.render_reward[1] += reward
         # Check if agent stepped on a path tile and update its color
-        if self.agent_pos != self.prev_pos:  # Ensure the agent has actually moved
+        # Ensure the agent has actually moved
+        if self.agent_pos != self.prev_pos:
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, PathTile) and cell.color != 'purple':
                 cell.toggle(None, self.agent_pos)
@@ -208,18 +210,20 @@ class RouteEnv(EmptyEnv):
             reward += 0.05
 
         # Check if agent stepped on a path tile and update its color
-        if self.agent_pos != self.prev_pos:  # Ensure the agent has actually moved
+        # Ensure the agent has actually moved
+        if self.agent_pos != self.prev_pos:
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, PathTile) and cell.color != 'purple':
-                reward += 0.1  # Reward for visiting a route tile
-
+                # Reward for visiting a route tile
+                reward += 0.1
         else:
             # If agent didn't move and tried a forward action, then it likely hit a wall or obstacle
-            reward -= 0.1
+            reward -= 0.05
 
         # Check the game ending conditions
         # terminated, truncated
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
-            reward += 1  # Provide a positive reward for completing the task
+            # Provide a positive reward for completing the task
+            reward += 10
 
         return reward
