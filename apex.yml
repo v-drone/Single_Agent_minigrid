@@ -3,7 +3,7 @@ mlflow:
   url: "http://10.56.238.20:9999"
   user: "Local"
 hyper_parameters:
-  hiddens: []
+  hiddens: [ ]
   framework: torch
   double_q: true
   dueling: false
@@ -16,7 +16,7 @@ hyper_parameters:
   n_step: 3
   num_atoms: 1
   replay_buffer_config:
-    capacity: 2000000
+    capacity: 800000
     prioritized_replay_alpha: 0.5
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
@@ -31,7 +31,7 @@ hyper_parameters:
   num_steps_sampled_before_learning_starts: 20000
   rollout_fragment_length: 32
   target_network_update_freq: 50000
-  train_batch_size: 1024
+  train_batch_size: 512
   min_sample_timesteps_per_iteration: 25000
 log:
   save_file: "/home/seventheli/logging/simple_env"
