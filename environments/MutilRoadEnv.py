@@ -1,7 +1,4 @@
 from __future__ import annotations
-
-import logging
-
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Floor, Goal
 from minigrid.core.actions import IntEnum

@@ -46,7 +46,7 @@ class CustomBlockCNN(TorchModelV2, nn.Module):
             conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
 
         self.fc_layers = nn.Sequential(
-            SlimFC(conv_out_size, 128, activation_fn='relu'),
+            SlimFC(conv_out_size, 128, activation_fn='tanh'),
             SlimFC(128, action_space.n)
         )
         self._features = None

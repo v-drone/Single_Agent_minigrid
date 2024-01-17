@@ -38,7 +38,7 @@ class CustomBlockCNN(TorchModelV2, nn.Module):
             ResidualBlock(obs_space.shape[-1], 16, stride=3),
             ResidualBlock(16, 32, stride=3),
             ResidualBlock(32, 64, stride=2),
-            ResidualBlock(64, 128, stride=2),
+            ResidualBlock(64, 256, stride=2),
         )
 
         with torch.no_grad():
