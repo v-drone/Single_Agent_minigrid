@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Floor, Goal
 from minigrid.core.actions import IntEnum
@@ -44,10 +46,9 @@ class RouteEnv(EmptyEnv):
         self.full_battery = battery
         self.battery = battery
         self.prev_pos = None
-        self.prev_distance = 0
-        self.current_distance = 0
+        self.prev_distance = size * 2
+        self.current_distance = size * 2
         self.render_reward = [0, 0]
-        self.agent_pov = False
         self.agent_pov = agent_pov
         if not agent_pov:
             self.observation_space["image"] = spaces.Box(
@@ -66,11 +67,12 @@ class RouteEnv(EmptyEnv):
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         obs, _ = super().reset()
-        self.render_reward = [0, 0]
         self.battery = self.full_battery
         self.prev_distance = self.distance_to_closest_blue(self.agent_pos)
         self.current_distance = self.distance_to_closest_blue(self.agent_pos)
         self.visited_tiles = set()
+        self.prev_pos = np.copy(self.agent_pos)
+        self.render_reward = [0, 0]
         return obs, {}
 
     def _gen_grid(self, width, height):
@@ -139,8 +141,6 @@ class RouteEnv(EmptyEnv):
 
         # Initialize the set of unvisited tiles
         self.unvisited_tiles = set(self.all_route_cells)
-        self.prev_pos = None
-
         self.mission = self._gen_mission()
 
     @staticmethod
@@ -149,15 +149,10 @@ class RouteEnv(EmptyEnv):
 
     def step(self, action):
         # Record the agent's current position before executing the action
-        self.prev_pos = self.agent_pos
-        if self.prev_pos is not None:
-            self.prev_distance = self.distance_to_closest_blue(self.prev_pos)
+        self.prev_pos = np.copy(self.agent_pos)
 
         # Execute the agent's action
         obs, reward, terminated, truncated, info = super().step(action)
-
-        self.current_distance = self.distance_to_closest_blue(self.agent_pos)
-
         terminated = False
         if self.agent_pos == self.start_pos:
             self.battery = self.full_battery
@@ -172,18 +167,21 @@ class RouteEnv(EmptyEnv):
         self.render_reward[1] += reward
         # Check if agent stepped on a path tile and update its color
         # Ensure the agent has actually moved
-        if self.agent_pos != self.prev_pos:
+        if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, PathTile) and cell.color != 'purple':
                 cell.toggle(None, self.agent_pos)
                 self.unvisited_tiles.remove(self.agent_pos)
                 self.visited_tiles.add(self.agent_pos)
-
+        if self.unvisited_tiles:
+            self.prev_distance = self.distance_to_closest_blue(self.prev_pos)
+            self.current_distance = self.distance_to_closest_blue(self.agent_pos)
+        else:
+            self.current_distance = 0
+            self.prev_distance = 0
         # Check the game ending conditions
-        # terminated, truncated
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
             terminated = True
-
         return obs, reward, terminated, truncated, info
 
     def get_frame(
@@ -199,7 +197,11 @@ class RouteEnv(EmptyEnv):
 
     def distance_to_closest_blue(self, pos):
         # Calculate the Manhattan distance to the closest blue tile
-        return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
+        try:
+            return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
+        except ValueError:
+            logging.info(pos)
+            logging.info(self.unvisited_tiles)
 
     def _reward(self) -> float:
         # Basic small negative reward for each step
@@ -211,7 +213,7 @@ class RouteEnv(EmptyEnv):
 
         # Check if agent stepped on a path tile and update its color
         # Ensure the agent has actually moved
-        if self.agent_pos != self.prev_pos:
+        if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, PathTile) and cell.color != 'purple':
                 # Reward for visiting a route tile

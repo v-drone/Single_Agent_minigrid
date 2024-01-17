@@ -1,4 +1,5 @@
 from minigrid.wrappers import RGBImgPartialObsWrapper
+from gymnasium import spaces
 import numpy as np
 import cv2
 
@@ -10,11 +11,22 @@ line_type = 1
 
 
 class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
-    def __init__(self, env, tile_size=8):
+    def __init__(self, env, tile_size=8, img_size=150):
         # Rendering attributes for observations
+        super().__init__(env, tile_size)
         self.tile_size = tile_size
         self.agent_pov = env.agent_pov
-        super().__init__(env, tile_size)
+        self.img_size = img_size
+        image_space = spaces.Box(
+            low=0,
+            high=255,
+            shape=(img_size, img_size, 3),
+            dtype="uint8",
+        )
+
+        self.observation_space = spaces.Dict(
+            {**self.observation_space.spaces, "image": image_space}
+        )
 
     def observation(self, obs):
         img = self.get_frame(tile_size=self.tile_size, agent_pov=self.agent_pov)
@@ -51,5 +63,15 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
         cv2.putText(energy_bar_img, text, (text_x, text_y), font, font_scale, font_color, line_type)
 
         img = np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
+
+        # Create a blank image with the new frame size
+        padded_img = np.zeros((self.img_size, self.img_size, 3), dtype=np.uint8) + 255
+
+        # Calculate the position to place the original image
+        y_center = (self.img_size - img.shape[0]) // 2
+        x_center = (self.img_size - img.shape[1]) // 2
+
+        # Place the original image in the center of the new frame
+        padded_img[y_center:y_center + img.shape[0], x_center:x_center + img.shape[1]] = img
         # Concatenate the energy bar with the original image
-        return {**obs, "image": img}
+        return {**obs, "image": padded_img}

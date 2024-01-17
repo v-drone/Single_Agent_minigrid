@@ -10,6 +10,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class CustomBlock(nn.Sequential):
+    def __init__(self, chancel_in, chancel_out, kernel_size, stride, padding, *args):
+        super().__init__(*args)
+        self.append(nn.Conv2d(chancel_in, chancel_out, kernel_size, stride, padding))
+        self.append(nn.BatchNorm2d(chancel_out))
+        self.append(nn.ReLU())
+
+
 class CustomCNN(TorchModelV2, nn.Module):
 
     def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
@@ -17,18 +25,22 @@ class CustomCNN(TorchModelV2, nn.Module):
         nn.Module.__init__(self)
 
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(obs_space.shape[-1], 16, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(obs_space.shape[-1], 16, kernel_size=5, stride=1, padding=0),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
-            nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
+            nn.MaxPool2d((2, 2), stride=2),
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=0),
             nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
-            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.MaxPool2d((2, 2), stride=2),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.MaxPool2d((2, 2)),
+            nn.MaxPool2d((2, 2), stride=2),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=0),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d((2, 2), stride=2),
         )
 
         with torch.no_grad():
