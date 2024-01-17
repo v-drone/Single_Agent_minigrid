@@ -197,11 +197,7 @@ class RouteEnv(EmptyEnv):
 
     def distance_to_closest_blue(self, pos):
         # Calculate the Manhattan distance to the closest blue tile
-        try:
-            return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
-        except ValueError:
-            logging.info(pos)
-            logging.info(self.unvisited_tiles)
+        return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
 
     def _reward(self) -> float:
         # Basic small negative reward for each step

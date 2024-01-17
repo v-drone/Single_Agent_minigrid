@@ -10,13 +10,13 @@ hyper_parameters:
   noisy: false
   adam_epsilon: .00015
   exploration_config:
-    epsilon_timesteps: 200000
+    epsilon_timesteps: 1000000
     final_epsilon: 0.01
   lr: 0.0001
   n_step: 3
   num_atoms: 1
   replay_buffer_config:
-    capacity: 800000
+    capacity: 1000000
     prioritized_replay_alpha: 0.5
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
@@ -26,9 +26,9 @@ hyper_parameters:
   num_envs_per_worker: 32
   num_workers: 8
   num_steps_sampled_before_learning_starts: 20000
-  rollout_fragment_length: 16
+  rollout_fragment_length: 32
   target_network_update_freq: 50000
-  train_batch_size: 256
+  train_batch_size: 512
   min_sample_timesteps_per_iteration: 25000
 log:
   save_file: "/home/seventheli/logging/simple_env"

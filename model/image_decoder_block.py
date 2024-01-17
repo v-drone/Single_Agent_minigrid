@@ -1,5 +1,4 @@
 import torch
-
 import torch.nn as nn
 from gymnasium.spaces.discrete import Discrete
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
@@ -13,8 +12,8 @@ logger = logging.getLogger(__name__)
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1):
         super(ResidualBlock, self).__init__()
-        self.conv1 = SlimConv2d(in_channels, out_channels, kernel=3, stride=stride, padding=1)
-        self.conv2 = SlimConv2d(out_channels, out_channels, kernel=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
         self.shortcut = nn.Sequential()
         if stride != 1 or in_channels != out_channels:
             self.shortcut = nn.Sequential(
@@ -25,21 +24,21 @@ class ResidualBlock(nn.Module):
         residual = self.shortcut(x)
         out = self.conv1(x)
         out = self.conv2(out)
-        out = out + residual
+        out += residual
         return out
 
 
-class CustomCNN(TorchModelV2, nn.Module):
+class CustomBlockCNN(TorchModelV2, nn.Module):
 
     def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
 
         self.conv_layers = nn.Sequential(
-            SlimConv2d(3, 32, 8, 2, 1),
-            ResidualBlock(32, 64, stride=3),
+            ResidualBlock(obs_space.shape[-1], 16, stride=3),
+            ResidualBlock(16, 32, stride=3),
+            ResidualBlock(32, 64, stride=2),
             ResidualBlock(64, 128, stride=2),
-            ResidualBlock(128, 256, stride=2)
         )
 
         with torch.no_grad():
@@ -47,9 +46,8 @@ class CustomCNN(TorchModelV2, nn.Module):
             conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
 
         self.fc_layers = nn.Sequential(
-            SlimFC(conv_out_size, 256),
-            SlimFC(256, 128),
-            SlimFC(128, 7)
+            SlimFC(conv_out_size, 128, activation_fn='relu'),
+            SlimFC(128, action_space.n)
         )
         self._features = None
 

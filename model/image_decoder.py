@@ -49,7 +49,6 @@ class CustomCNN(TorchModelV2, nn.Module):
 
         self.fc_layers = nn.Sequential(
             SlimFC(conv_out_size, 512, activation_fn='relu'),
-            SlimFC(512, 128, activation_fn='relu'),
             SlimFC(128, action_space.n)
         )
         self._features = None
