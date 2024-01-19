@@ -89,9 +89,6 @@ dependencies:
     - ray[all]==2.8
     - gpustat
     - opencv-python
-    - torch
-    - torchvision
-    - torchaudio
     - mlflow
     - minigrid
     - mpu

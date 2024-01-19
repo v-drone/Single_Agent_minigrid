@@ -15,7 +15,7 @@ from ray.tune.logger import JsonLogger
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
 from environments.ObsWrapper import FullRGBImgPartialObsWrapper
-from model.image_decoder_jade1 import CustomBlockCNN
+from model.image_decoder_mobilenet_large import MobileNet
 from minigrid.wrappers import ImgObsWrapper
 
 os.environ['RAY_LOG_LEVEL'] = "DEBUG"
@@ -70,13 +70,13 @@ obs, _ = env.reset()
 step = env.step(1)
 print(env.action_space, env.observation_space)
 
-print(CustomBlockCNN(obs_space=env.observation_space,
-                     action_space=env.action_space,
-                     num_outputs=env.action_space,
-                     model_config={},
-                     name="Test"))
+print(MobileNet(obs_space=env.observation_space,
+                action_space=env.action_space,
+                num_outputs=env.action_space.n,
+                model_config={},
+                name="Test"))
 
-ModelCatalog.register_custom_model("CustomBCNN", CustomBlockCNN)
+ModelCatalog.register_custom_model("MobileNet", MobileNet)
 
 hyper_parameters["model"] = {
     "custom_model": "CustomBCNN",
