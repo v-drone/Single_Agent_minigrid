@@ -25,9 +25,9 @@ class RouteEnv(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         # Turn left, turn right, move forward
-        forward = 0
-        left = 1
-        right = 2
+        left = 0
+        right = 1
+        forward = 2
 
     def __init__(self, size=20, max_steps=100, roads=(3, 5), battery=100, render_mode="human", agent_pov=True):
 
