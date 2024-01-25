@@ -8,6 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class BaseBuffer(ABC):
     """
     Base class that represent a buffer (rollout or replay)
@@ -52,8 +53,8 @@ class BaseBuffer(ABC):
         Add elements to the buffer.
         """
         shape = batch.get("obs").shape[0]
-        self.obs[self.pos:self.pos + shape] = batch.get("obs")
-        self.new_obs[self.pos:self.pos + shape] = batch.get("new_obs")
+        self.obs[self.pos:self.pos + shape] = np.array(batch.get("obs"))
+        self.new_obs[self.pos:self.pos + shape] = np.array(batch.get("new_obs"))
         self.actions[self.pos:self.pos + shape] = batch.get("actions")
         self.rewards[self.pos:self.pos + shape] = batch.get("rewards")
         self.terminateds[self.pos:self.pos + shape] = batch.get("terminateds")

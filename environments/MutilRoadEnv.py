@@ -20,6 +20,20 @@ class PathTile(Floor):
         self.color = 'purple'
 
 
+class TrodTile(Floor):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self, color='yellow'):
+        super().__init__(color)
+
+    def toggle(self, agent, pos):
+        """Change color when agent steps on it."""
+        self.color = 'purple'
+
+    def can_see(self, agent, pos):
+        pass
+
+
 # Update the RouteEnv class to use the new RoutePoint object
 class RouteEnv(EmptyEnv):
     # Enumeration of possible actions
@@ -29,12 +43,13 @@ class RouteEnv(EmptyEnv):
         right = 1
         forward = 2
 
-    def __init__(self, size=20, max_steps=100, roads=(3, 5), battery=100, render_mode="human", agent_pov=True):
+    def __init__(self, size=20, max_steps=100, roads=(3, 5), trods=(3, 5),
+                 battery=100, render_mode="human", **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, render_mode=render_mode)
         self.spec = EnvSpec("RouteEnv-v0", max_episode_steps=self.max_steps)
-        self.screen_size = 300
         self.roads = roads
+        self.trods = trods
         # To track tiles that are not yet visited by the agent
         self.unvisited_tiles = set()
         self.visited_tiles = set()
@@ -46,21 +61,6 @@ class RouteEnv(EmptyEnv):
         self.prev_distance = size * 2
         self.current_distance = size * 2
         self.render_reward = [0, 0]
-        self.agent_pov = agent_pov
-        if not agent_pov:
-            self.observation_space["image"] = spaces.Box(
-                low=0,
-                high=255,
-                shape=(self.width, self.height, 3),
-                dtype=np.uint8
-            )
-        else:
-            self.observation_space["image"] = spaces.Box(
-                low=0,
-                high=255,
-                shape=(7, 7, 3),
-                dtype=np.uint8
-            )
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         obs, _ = super().reset()
@@ -87,7 +87,7 @@ class RouteEnv(EmptyEnv):
         self.start_pos = (start_x, start_y)
         self.grid.set(start_x, start_y, Goal())
 
-        # Randomly decide the number of routes (3 to 5)
+        # Randomly decide the number of routes
         num_routes = random.randint(*self.roads)
         all_route_cells = []
 
@@ -180,17 +180,6 @@ class RouteEnv(EmptyEnv):
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
             terminated = True
         return obs, reward, terminated, truncated, info
-
-    def get_frame(
-            self,
-            highlight: bool = True,
-            tile_size: int = 3,
-            agent_pov: bool = False,
-    ):
-        if agent_pov:
-            return self.get_pov_render(tile_size)
-        else:
-            return self.get_full_render(highlight, tile_size)
 
     def distance_to_closest_blue(self, pos):
         # Calculate the Manhattan distance to the closest blue tile

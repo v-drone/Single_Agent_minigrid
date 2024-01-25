@@ -1,4 +1,4 @@
-from minigrid.wrappers import RGBImgPartialObsWrapper
+from minigrid.wrappers import FullyObsWrapper, ImgObsWrapper
 from gymnasium import spaces
 import numpy as np
 import cv2
@@ -10,7 +10,7 @@ font_color = (0, 0, 0)  # Black color
 line_type = 1
 
 
-class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
+class AddBatteryWrapper(FullyObsWrapper):
     def __init__(self, env, tile_size=8, img_size=150, with_battery=True):
         # Rendering attributes for observations
         super().__init__(env, tile_size)
@@ -65,15 +65,5 @@ class FullRGBImgPartialObsWrapper(RGBImgPartialObsWrapper):
             cv2.putText(energy_bar_img, text, (text_x, text_y), font, font_scale, font_color, line_type)
 
             img = np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
-
-        # Create a blank image with the new frame size
-        padded_img = np.zeros((self.img_size, self.img_size, 3), dtype=np.uint8) + 255
-
-        # Calculate the position to place the original image
-        y_center = (self.img_size - img.shape[0]) // 2
-        x_center = (self.img_size - img.shape[1]) // 2
-
-        # Place the original image in the center of the new frame
-        padded_img[y_center:y_center + img.shape[0], x_center:x_center + img.shape[1]] = img
         # Concatenate the energy bar with the original image
-        return {**obs, "image": padded_img}
+        return {**obs, "image": img}
