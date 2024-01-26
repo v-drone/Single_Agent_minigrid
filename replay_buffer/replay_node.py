@@ -83,19 +83,19 @@ class BaseBuffer(ABC):
     def sample(self):
         upper_bound = self.buffer_size if self.full else self.pos
         if self.randomly:
-            batch_inds = np.random.randint(0, upper_bound, size=self.size())
+            batch_ids = np.random.randint(0, upper_bound, size=self.size())
         else:
-            batch_inds = np.array(range(0, self.size()))
+            batch_ids = np.array(range(0, self.size()))
 
         data = SampleBatch(
             {
-                "obs": self.obs[batch_inds, :],
-                "new_obs": self.new_obs[batch_inds, :],
-                "actions": self.actions[batch_inds],
-                "rewards": self.rewards[batch_inds],
-                "terminateds": self.terminateds[batch_inds],
-                "truncateds": self.truncateds[batch_inds],
-                "weights": self.weights[batch_inds]
+                "obs": self.obs[batch_ids, :],
+                "new_obs": self.new_obs[batch_ids, :],
+                "actions": self.actions[batch_ids],
+                "rewards": self.rewards[batch_ids],
+                "terminateds": self.terminateds[batch_ids],
+                "truncateds": self.truncateds[batch_ids],
+                "weights": self.weights[batch_ids]
             }
         )
         return data
