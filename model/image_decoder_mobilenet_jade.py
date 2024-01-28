@@ -14,10 +14,11 @@ def _mobilenet_v3_conf(width_mult: float = 1.0):
     adjust_channels = partial(InvertedResidualConfig.adjust_channels, width_mult=width_mult)
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
     inverted_residual_setting = [
-        bneck_conf(3, 3, 16, 32, False, "RE", 2, 1),  # Output: 50x50x16
-        bneck_conf(32, 3, 64, 64, False, "RE", 2, 1),  # Output: 25x25x24
-        bneck_conf(64, 3, 72, 128, False, "RE", 2, 1),  # Output: 13x13x24
-        bneck_conf(128, 3, 120, 256, True, "HS", 1, 1),  # Output: 13x13x256, with SE and HS
+        bneck_conf(3, 3, 16, 32, False, "RE", 2, 1),
+        bneck_conf(32, 3, 64, 64, False, "RE", 2, 1),
+        bneck_conf(64, 3, 72, 128, False, "RE", 2, 1),
+        bneck_conf(128, 3, 100, 128, False, "RE", 2, 1),
+        bneck_conf(128, 3, 120, 256, True, "HS", 1, 1),
     ]
     last_channel = adjust_channels(1024)  # C5
     return inverted_residual_setting, last_channel
