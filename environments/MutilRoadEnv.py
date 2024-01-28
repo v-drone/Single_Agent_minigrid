@@ -15,7 +15,7 @@ class PathTile(Floor):
     def __init__(self, color='blue'):
         super().__init__(color)
 
-    def toggle(self, agent, pos):
+    def purple(self):
         """Change color when agent steps on it."""
         self.color = 'purple'
 
@@ -114,8 +114,6 @@ class RouteEnv(EmptyEnv):
                 self.grid.set(x, y, PathTile())
 
             all_route_cells.extend(route_cells)
-        all_route_cells = self._set_map_with_route(width, height)
-
         # Remember the initial position as the final goal
         self.agent_pos = self.start_pos
         self.all_route_cells = all_route_cells
@@ -151,7 +149,7 @@ class RouteEnv(EmptyEnv):
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, PathTile) and cell.color != 'purple':
-                cell.toggle(None, self.agent_pos)
+                cell.purple()
                 self.unvisited_tiles.remove(self.agent_pos)
                 self.visited_tiles.add(self.agent_pos)
         if self.unvisited_tiles:

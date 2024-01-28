@@ -1,10 +1,6 @@
 from __future__ import annotations
 from environments.MutilRoadEnv import RouteEnv, PathTile
-from minigrid.envs.empty import EmptyEnv
-from minigrid.core.world_object import Floor, Goal
-from minigrid.core.actions import IntEnum
-from gymnasium.envs.registration import EnvSpec
-from gymnasium import spaces
+from minigrid.core.world_object import Floor
 from typing import Any
 import numpy as np
 import random
@@ -16,15 +12,9 @@ class TrodTile(Floor):
     def __init__(self, color='yellow'):
         super().__init__(color)
 
-    def toggle(self, agent, pos):
+    def purple(self):
         """Change color when agent steps on it."""
         self.color = 'purple'
-
-    def can_see(self, agent, pos):
-        if self.color == 'purple':
-            return True
-        else:
-            return False
 
 
 # Update the RouteEnv class to use the new RoutePoint object
@@ -35,6 +25,13 @@ class RouteWithTrodEnv(RouteEnv):
         super().__init__(size=size, max_steps=max_steps, routes=routes,
                          battery=battery, render_mode=render_mode, **kwargs)
         self.trods = trods
+        self.unvisited_trods = set()
+        self.visited_trods = set()
+
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
+        obs, _ = super().reset()
+        self.visited_trods = set()
+        return obs, {}
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
@@ -80,11 +77,10 @@ class RouteWithTrodEnv(RouteEnv):
                     break
             # Mark the trod cells in the grid
             for x, y in trod_cells:
-                self.grid.set(x, y, PathTile())
-
-    @staticmethod
-    def _gen_mission():
-        return ""
+                if self.grid.get(x, y) is None:
+                    self.grid.set(x, y, TrodTile())
+                    all_trod_cells.append((x, y))
+        self.unvisited_trods = set(all_trod_cells)
 
     def step(self, action):
         # Record the agent's current position before executing the action
@@ -92,15 +88,6 @@ class RouteWithTrodEnv(RouteEnv):
 
         # Execute the agent's action
         obs, reward, terminated, truncated, info = super().step(action)
-        terminated = False
-        if self.agent_pos == self.start_pos:
-            self.battery = self.full_battery
-        else:
-            self.battery -= 1
-
-        if self.battery <= 0:
-            truncated = True
-
         reward = self._reward()
         self.render_reward[0] = reward
         self.render_reward[1] += reward
@@ -108,48 +95,17 @@ class RouteWithTrodEnv(RouteEnv):
         # Ensure the agent has actually moved
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
-            if isinstance(cell, PathTile) and cell.color != 'purple':
-                cell.toggle(None, self.agent_pos)
-                self.unvisited_tiles.remove(self.agent_pos)
-                self.visited_tiles.add(self.agent_pos)
-        if self.unvisited_tiles:
-            self.prev_distance = self.distance_to_closest_blue(self.prev_pos)
-            self.current_distance = self.distance_to_closest_blue(self.agent_pos)
-        else:
-            self.current_distance = 0
-            self.prev_distance = 0
-        # Check the game ending conditions
-        if not self.unvisited_tiles and self.agent_pos == self.start_pos:
-            terminated = True
+            if isinstance(cell, TrodTile) and cell.color != 'purple':
+                cell.purple()
+                self.unvisited_trods.remove(self.agent_pos)
+                self.visited_trods.add(self.agent_pos)
         return obs, reward, terminated, truncated, info
 
-    def distance_to_closest_blue(self, pos):
-        # Calculate the Manhattan distance to the closest blue tile
-        return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
-
     def _reward(self) -> float:
-        # Basic small negative reward for each step
-        reward = -0.01
-
-        # Calculate the change in distance to the closest blue tile
-        if self.current_distance < self.prev_distance:
-            reward += 0.05
-
-        # Check if agent stepped on a path tile and update its color
-        # Ensure the agent has actually moved
+        reward = super()._reward()
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
-            if isinstance(cell, PathTile) and cell.color != 'purple':
+            if isinstance(cell, TrodTile) and cell.color != 'purple':
                 # Reward for visiting a route tile
-                reward += 0.1
-        else:
-            # If agent didn't move and tried a forward action, then it likely hit a wall or obstacle
-            reward -= 0.05
-
-        # Check the game ending conditions
-        # terminated, truncated
-        if not self.unvisited_tiles and self.agent_pos == self.start_pos:
-            # Provide a positive reward for completing the task
-            reward += 10
-
+                reward += 1
         return reward
