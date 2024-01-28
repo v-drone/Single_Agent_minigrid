@@ -101,7 +101,7 @@ trainer = ApexDDQNWithDPBER(config=hyper_parameters, env="example")
 checkpoint_path = str(checkpoint_path)
 with open(os.path.join(checkpoint_path, "%s_config.pyl" % run_name), "wb") as f:
     pickle.dump(trainer.config.to_dict(), f)
-with open(os.path.join(checkpoint_path, "%s_model_description.txt" % run_name), "wb") as f:
+with open(os.path.join(checkpoint_path, "%s_model_description.txt" % run_name), "w") as f:
     f.write(str(trainer.get_config().model))
 
 checkpoint_path = str(path.join(checkpoint_path, "results"))
