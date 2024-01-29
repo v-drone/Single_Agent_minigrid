@@ -14,7 +14,7 @@ from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
 
 from utils import minigrid_env_creator as env_creator
-from model.original_mobilenet import MobileNet
+from model.original_resnet import Resnet
 
 # Init Ray
 ray.init(
@@ -71,10 +71,10 @@ register_env("example", env_creator)
 
 # Load Model
 
-ModelCatalog.register_custom_model("MobileNet", MobileNet)
+ModelCatalog.register_custom_model("Resnet", Resnet)
 
 hyper_parameters["model"] = {
-    "custom_model": "MobileNet",
+    "custom_model": "Resnet",
     "no_final_linear": True,
     "fcnet_hiddens": hyper_parameters["hiddens"],
     "custom_model_config": {},
