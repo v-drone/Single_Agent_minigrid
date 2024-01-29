@@ -1,5 +1,5 @@
 
-sbatch --mem=250G \
+sbatch --mem=300G \
        --gres=gpu:1 \
        --cpus-per-task=20 \
        --time=4-10:00:00 \
@@ -7,7 +7,7 @@ sbatch --mem=250G \
        /jmain02/home/J2AD006/jxb06/cxz46-jxb06/Single_Agent_minigrid/tasks/jade1_MiniGrid-LavaCrossingS9N3-v0.sh
 
 
-sbatch --mem=250G \
+sbatch --mem=300G \
        --gres=gpu:1 \
        --cpus-per-task=20 \
        --time=4-10:00:00 \
