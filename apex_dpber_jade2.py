@@ -52,6 +52,7 @@ setting = Dynaconf(envvar_prefix="DYNACONF", settings_files=setting)
 hyper_parameters = setting.hyper_parameters.to_dict()
 hyper_parameters["logger_config"] = {"type": JsonLogger, "logdir": checkpoint_path}
 hyper_parameters["env_config"] = {
+    "id": "MiniGrid-LavaCrossingS9N3-v0",
     "size": 12,
     "routes": (2, 4),
     "max_steps": 300,
