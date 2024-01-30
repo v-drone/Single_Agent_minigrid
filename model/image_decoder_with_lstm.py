@@ -18,7 +18,7 @@ class CNN(TorchModelV2, nn.Module):
             nn.Conv2d(obs_space.shape[-1], 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(start_dim=1)
         )
@@ -28,7 +28,7 @@ class CNN(TorchModelV2, nn.Module):
             self.conv_out_size = self.conv_layers(dummy_input).shape[-1]
         # Add a GRU layer for sentence data
         custom_model_config = model_config["custom_model_config"]
-        self.gru = torch.nn.GRU(input_size=self.conv_out_size,
+        self.lstm = torch.nn.LSTM(input_size=self.conv_out_size,
                                 hidden_size=model_config["custom_model_config"]["hidden_size"],
                                 num_layers=1,
                                 batch_first=True)
@@ -52,7 +52,7 @@ class CNN(TorchModelV2, nn.Module):
         self._features = self._features.flatten(0, 1)
         self._features = self.conv_layers(self._features)
         self._features = self._features.view(batch_size, seq_len, -1)
-        self._features, state = self.gru(self._features, None)
+        self._features, state = self.lstm(self._features, None)
         self._features = self._features.flatten(1)
 
         return self.fc_layers(self._features), [state]
