@@ -1,10 +1,7 @@
-import gymnasium
 import numpy as np
-from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX
-from minigrid.wrappers import ObservationWrapper, FullyObsWrapper, RGBImgObsWrapper, Wrapper
+from minigrid.wrappers import ObservationWrapper
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv, TrodTile
 from minigrid.core.grid import Grid
-from gymnasium import spaces
 
 
 class HiddenTrodWrapper(ObservationWrapper):
