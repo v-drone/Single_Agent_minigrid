@@ -12,8 +12,7 @@ class HiddenTrodWrapper(ObservationWrapper):
         # Compute which cells are visible to the agent
         _, vis_mask = self.gen_obs_grid()
 
-        # Compute the world coordinates of the bottom-left corner
-        # of the agent's view area
+        # Compute the world coordinates of the bottom-left corner of the agent's view area
         f_vec = self.dir_vec
         r_vec = self.right_vec
         top_left = (
@@ -47,7 +46,10 @@ class HiddenTrodWrapper(ObservationWrapper):
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.grid.get(i, j)
-                if isinstance(cell, TrodTile) and cell.color != "purple" and not self.in_view(i, j):
+                if isinstance(cell, TrodTile) and self.in_view(i, j):
+                    cell.view = True
+
+                if isinstance(cell, TrodTile) and cell.view:
                     agent_here = np.array_equal(self.agent_pos, (i, j))
                     assert highlight_mask is not None
                     tile_img = Grid.render_tile(

@@ -11,6 +11,7 @@ class TrodTile(Floor):
 
     def __init__(self, color='yellow'):
         super().__init__(color)
+        self.view = False
 
     def purple(self):
         """Change color when agent steps on it."""
