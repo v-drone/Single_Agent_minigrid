@@ -14,11 +14,11 @@ from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
 
 from utils import minigrid_env_creator as env_creator
-from model.original_resnet import Resnet
+from model.image_decoder_with_lstm import CNN
 
 # Init Ray
 ray.init(
-    num_cpus=20, num_gpus=1,
+    num_cpus=30, num_gpus=1,
     include_dashboard=True,
     _system_config={"maximum_gcs_destroyed_actor_cached_count": 200},
 )
@@ -57,9 +57,9 @@ hyper_parameters["env_config"] = {
     "routes": (2, 4),
     "max_steps": 300,
     "battery": 100,
-    "img_size": 224,
-    "tile_size": 20,
-    "num_stack": 3,
+    "img_size": 100,
+    "tile_size": 10,
+    "num_stack": 30,
     "render_mode": "rgb_array",
     "agent_pov": False
 }
@@ -72,13 +72,16 @@ register_env("example", env_creator)
 
 # Load Model
 
-ModelCatalog.register_custom_model("Resnet", Resnet)
+ModelCatalog.register_custom_model("CNN_with_lstm", CNN)
 
 hyper_parameters["model"] = {
-    "custom_model": "Resnet",
+    "custom_model": "CNN_with_lstm",
     "no_final_linear": True,
     "fcnet_hiddens": hyper_parameters["hiddens"],
-    "custom_model_config": {},
+    "custom_model_config": {
+        "hidden_size": 512,
+        "sen_len": hyper_parameters["env_config"]["num_stack"],
+    },
 }
 
 # Set BER
@@ -86,7 +89,7 @@ sub_buffer_size = hyper_parameters["rollout_fragment_length"]
 replay_buffer_config = {
     **hyper_parameters["replay_buffer_config"],
     "type": MultiAgentPrioritizedBlockReplayBuffer,
-    "capacity": 200000,
+    "capacity": 50000,
     "obs_space": env_example.observation_space,
     "action_space": env_example.action_space,
     "sub_buffer_size": sub_buffer_size,

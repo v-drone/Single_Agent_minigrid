@@ -14,11 +14,11 @@ from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
 
 from utils import minigrid_env_creator as env_creator
-from model.image_decoder_with_lstm import CNN
+from model.image_decoder_with_lstm_last import CNN
 
 # Init Ray
 ray.init(
-    num_cpus=20, num_gpus=1,
+    num_cpus=30, num_gpus=1,
     include_dashboard=True,
     _system_config={"maximum_gcs_destroyed_actor_cached_count": 200},
 )
@@ -89,7 +89,7 @@ sub_buffer_size = hyper_parameters["rollout_fragment_length"]
 replay_buffer_config = {
     **hyper_parameters["replay_buffer_config"],
     "type": MultiAgentPrioritizedBlockReplayBuffer,
-    "capacity": 200000,
+    "capacity": 50000,
     "obs_space": env_example.observation_space,
     "action_space": env_example.action_space,
     "sub_buffer_size": sub_buffer_size,

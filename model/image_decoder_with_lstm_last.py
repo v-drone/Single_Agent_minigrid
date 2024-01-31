@@ -32,8 +32,7 @@ class CNN(TorchModelV2, nn.Module):
                                   hidden_size=model_config["custom_model_config"]["hidden_size"],
                                   num_layers=1,
                                   batch_first=True)
-        feature_in = custom_model_config["hidden_size"] * custom_model_config["sen_len"]
-
+        feature_in = custom_model_config["hidden_size"]
         self.fc_layers = nn.Sequential(
             SlimFC(feature_in, 256),
             SlimFC(256, 128),
@@ -53,6 +52,7 @@ class CNN(TorchModelV2, nn.Module):
         self._features = self.conv_layers(self._features)
         self._features = self._features.view(batch_size, seq_len, -1)
         self._features, state = self.lstm(self._features, None)
+        self._features = self._features[:, -1, :]
         self._features = self._features.flatten(1)
 
         return self.fc_layers(self._features), [state]
