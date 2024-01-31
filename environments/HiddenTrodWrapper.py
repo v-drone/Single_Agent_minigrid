@@ -48,8 +48,7 @@ class HiddenTrodWrapper(ObservationWrapper):
                 cell = self.grid.get(i, j)
                 if isinstance(cell, TrodTile) and self.in_view(i, j):
                     cell.view = True
-
-                if isinstance(cell, TrodTile) and cell.view:
+                if isinstance(cell, TrodTile) and not cell.view:
                     agent_here = np.array_equal(self.agent_pos, (i, j))
                     assert highlight_mask is not None
                     tile_img = Grid.render_tile(

@@ -14,7 +14,7 @@ from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
 
 from utils import minigrid_env_creator as env_creator
-from model.original_mobilenet import MobileNet
+from model.image_decoder_with_lstm import CNN
 
 # Init Ray
 ray.init(
@@ -57,9 +57,9 @@ hyper_parameters["env_config"] = {
     "routes": (2, 4),
     "max_steps": 300,
     "battery": 100,
-    "img_size": 224,
-    "tile_size": 20,
-    "num_stack": 3,
+    "img_size": 100,
+    "tile_size": 10,
+    "num_stack": 30,
     "render_mode": "rgb_array",
     "agent_pov": False
 }
@@ -72,13 +72,16 @@ register_env("example", env_creator)
 
 # Load Model
 
-ModelCatalog.register_custom_model("MobileNet", MobileNet)
+ModelCatalog.register_custom_model("CNN_with_lstm", CNN)
 
 hyper_parameters["model"] = {
-    "custom_model": "MobileNet",
+    "custom_model": "CNN_with_lstm",
     "no_final_linear": True,
     "fcnet_hiddens": hyper_parameters["hiddens"],
-    "custom_model_config": {},
+    "custom_model_config": {
+        "hidden_size": 512,
+        "sen_len": hyper_parameters["env_config"]["num_stack"],
+    },
 }
 
 # Set BER
