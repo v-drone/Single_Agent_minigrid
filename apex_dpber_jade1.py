@@ -130,9 +130,9 @@ for i in tqdm.tqdm(range(1, setting.log.max_run)):
     output, error = process.communicate()
 
     if process.returncode == 0:
-        tqdm.tqdm.write("nvidia-smi output:\n", output.decode())
+        tqdm.tqdm.write("nvidia-smi output:\n %s" % output.decode())
     else:
-        tqdm.tqdm.write("error:\n", error.decode())
+        tqdm.tqdm.write("error:\n %s" % error.decode())
 
     if i % setting.log.log == 0:
         trainer.save_checkpoint(checkpoint_path)
