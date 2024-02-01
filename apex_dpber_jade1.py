@@ -18,7 +18,7 @@ from model.image_decoder_with_lstm_last import CNN
 
 # Init Ray
 ray.init(
-    num_cpus=30, num_gpus=1,
+    num_cpus=20, num_gpus=1,
     include_dashboard=True,
     _system_config={"maximum_gcs_destroyed_actor_cached_count": 200},
 )
