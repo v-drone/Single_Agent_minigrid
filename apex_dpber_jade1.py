@@ -53,7 +53,7 @@ setting = Dynaconf(envvar_prefix="DYNACONF", settings_files=setting)
 hyper_parameters = setting.hyper_parameters.to_dict()
 hyper_parameters["logger_config"] = {"type": JsonLogger, "logdir": checkpoint_path}
 hyper_parameters["env_config"] = {
-    "id": "MiniGrid-LavaCrossingS9N3-v0",
+    "id": env_name,
     "size": 12,
     "routes": (2, 4),
     "max_steps": 300,
@@ -123,19 +123,19 @@ for i in tqdm.tqdm(range(1, setting.log.max_run)):
     result = trainer.train()
     time_used = result["time_total_s"]
 
-    with open("./nvidia-smi-2.txt", "w") as f:
-        process = subprocess.Popen("nvidia-smi", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, error = process.communicate()
-        if process.returncode == 0:
-            f.write("nvidia-smi output:\n %s" % output.decode())
-        else:
-            f.write("error:\n %s" % error.decode())
-        process = subprocess.Popen("top", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, error = process.communicate()
-        if process.returncode == 0:
-            f.write("top output:\n %s" % output.decode())
-        else:
-            f.write("error:\n %s" % error.decode())
+    process = subprocess.Popen("nvidia-smi", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    if process.returncode == 0:
+        result["nvidia-smi"] = output.decode()
+    else:
+        result["nvidia-smi"] = error.decode()
+
+    process = subprocess.Popen("top", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    if process.returncode == 0:
+        result["top"] = output.decode()
+    else:
+        result["top"] = error.decode()
 
     if i % setting.log.log == 0:
         trainer.save_checkpoint(checkpoint_path)
