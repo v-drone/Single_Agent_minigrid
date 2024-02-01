@@ -117,10 +117,23 @@ with open(os.path.join(checkpoint_path, "%s_model_description.txt" % run_name), 
 checkpoint_path = str(path.join(checkpoint_path, "results"))
 check_path(checkpoint_path)
 
+import subprocess
+
 # Run algorithms
 for i in tqdm.tqdm(range(1, setting.log.max_run)):
     result = trainer.train()
     time_used = result["time_total_s"]
+
+    command = "nvidia-smi"
+
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+
+    if process.returncode == 0:
+        print("nvidia-smi output:\n", output.decode())
+    else:
+        print("error:\n", error.decode())
+
     if i % setting.log.log == 0:
         trainer.save_checkpoint(checkpoint_path)
     with open(path.join(log_path, str(i) + ".json"), "w") as f:
