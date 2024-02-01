@@ -4,6 +4,7 @@ import argparse
 import json
 import pickle
 import tqdm
+import subprocess
 from os import path
 from utils import check_path, convert_np_arrays
 from dynaconf import Dynaconf
@@ -122,6 +123,18 @@ check_path(checkpoint_path)
 for i in tqdm.tqdm(range(1, setting.log.max_run)):
     result = trainer.train()
     time_used = result["time_total_s"]
+
+    command = "nvidia-smi"
+
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+
+    with open("./nvidia-smi-1.txt", "w") as f:
+        if process.returncode == 0:
+            f.write("nvidia-smi output:\n %s" % output.decode())
+        else:
+            f.write("error:\n %s" % error.decode())
+
     if i % setting.log.log == 0:
         trainer.save_checkpoint(checkpoint_path)
     with open(path.join(log_path, str(i) + ".json"), "w") as f:

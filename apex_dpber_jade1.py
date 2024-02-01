@@ -1,5 +1,6 @@
 import os
 import ray
+import subprocess
 import argparse
 import json
 import pickle
@@ -117,8 +118,6 @@ with open(os.path.join(checkpoint_path, "%s_model_description.txt" % run_name), 
 checkpoint_path = str(path.join(checkpoint_path, "results"))
 check_path(checkpoint_path)
 
-import subprocess
-
 # Run algorithms
 for i in tqdm.tqdm(range(1, setting.log.max_run)):
     result = trainer.train()
@@ -129,7 +128,7 @@ for i in tqdm.tqdm(range(1, setting.log.max_run)):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = process.communicate()
 
-    with open("./nvidia-smi.txt", "w") as f:
+    with open("./nvidia-smi-1.txt", "w") as f:
         if process.returncode == 0:
             f.write("nvidia-smi output:\n %s" % output.decode())
         else:
