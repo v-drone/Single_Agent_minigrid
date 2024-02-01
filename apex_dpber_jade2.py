@@ -76,7 +76,7 @@ env_example = creator_with_stack(hyper_parameters["env_config"])
 obs, _ = env_example.reset()
 step = env_example.step(1)
 print(env_example.action_space, env_example.observation_space)
-register_env("example", env_creator)
+register_env("example", creator_with_stack)
 
 # Load Model
 
