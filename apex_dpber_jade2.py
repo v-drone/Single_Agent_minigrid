@@ -12,7 +12,7 @@ from ray.tune.registry import register_env
 from ray.tune.logger import JsonLogger
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
-
+from environments.StackWrapper import StackWrapper
 from utils import minigrid_env_creator as env_creator
 from model.image_decoder_with_lstm import CNN
 
@@ -64,7 +64,15 @@ hyper_parameters["env_config"] = {
     "agent_pov": False
 }
 
-env_example = env_creator(hyper_parameters["env_config"])
+
+def creator_with_stack(config):
+    env = env_creator(config)
+    env = StackWrapper(env, num_stack=config["num_stack"])
+    return env
+
+
+env_example = creator_with_stack(hyper_parameters["env_config"])
+
 obs, _ = env_example.reset()
 step = env_example.step(1)
 print(env_example.action_space, env_example.observation_space)
