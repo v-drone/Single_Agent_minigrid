@@ -123,14 +123,17 @@ for i in tqdm.tqdm(range(1, setting.log.max_run)):
     result = trainer.train()
     time_used = result["time_total_s"]
 
-    command = "nvidia-smi"
-
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output, error = process.communicate()
-
     with open("./nvidia-smi-2.txt", "w") as f:
+        process = subprocess.Popen("nvidia-smi", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, error = process.communicate()
         if process.returncode == 0:
             f.write("nvidia-smi output:\n %s" % output.decode())
+        else:
+            f.write("error:\n %s" % error.decode())
+        process = subprocess.Popen("top", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, error = process.communicate()
+        if process.returncode == 0:
+            f.write("top output:\n %s" % output.decode())
         else:
             f.write("error:\n %s" % error.decode())
 
