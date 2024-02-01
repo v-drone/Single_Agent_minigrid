@@ -42,8 +42,7 @@ class MobileNet(TorchModelV2, nn.Module):
             feature_in = self.conv_out_size
 
         self.fc_layers = nn.Sequential(
-            SlimFC(feature_in, 256),
-            SlimFC(256, 128),
+            SlimFC(feature_in, 128),
             SlimFC(128, 128),
             SlimFC(128, action_space.n)
         )

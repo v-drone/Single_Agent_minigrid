@@ -96,7 +96,7 @@ sub_buffer_size = hyper_parameters["rollout_fragment_length"]
 replay_buffer_config = {
     **hyper_parameters["replay_buffer_config"],
     "type": MultiAgentPrioritizedBlockReplayBuffer,
-    "capacity": 100000,
+    "capacity": 50000,
     "obs_space": env_example.observation_space,
     "action_space": env_example.action_space,
     "sub_buffer_size": sub_buffer_size,
