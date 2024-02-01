@@ -129,10 +129,11 @@ for i in tqdm.tqdm(range(1, setting.log.max_run)):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = process.communicate()
 
-    if process.returncode == 0:
-        tqdm.tqdm.write("nvidia-smi output:\n %s" % output.decode())
-    else:
-        tqdm.tqdm.write("error:\n %s" % error.decode())
+    with open("./nvidia-smi.txt", "w") as f:
+        if process.returncode == 0:
+            f.write("nvidia-smi output:\n %s" % output.decode())
+        else:
+            f.write("error:\n %s" % error.decode())
 
     if i % setting.log.log == 0:
         trainer.save_checkpoint(checkpoint_path)
