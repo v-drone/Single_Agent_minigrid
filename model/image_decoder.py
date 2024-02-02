@@ -1,37 +1,48 @@
-import torch
 import torch.nn as nn
-from gymnasium.spaces.discrete import Discrete
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.models.torch.misc import SlimFC
+import gymnasium as gym
+from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
+from ray.rllib.models.torch.misc import SlimConv2d
+from ray.rllib.utils.typing import ModelConfigDict
+from typing import Sequence
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class CNN(TorchModelV2, nn.Module):
-    def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
-        TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
-        nn.Module.__init__(self)
-
+class CNN(DQNTorchModel):
+    def __init__(
+            self,
+            obs_space: gym.spaces.Space,
+            action_space: gym.spaces.Discrete,
+            num_outputs: int,
+            model_config: ModelConfigDict,
+            name: str,
+            *,
+            q_hiddens: Sequence[int] = (256,),
+            dueling: bool = False,
+            dueling_activation: str = "relu",
+            num_atoms: int = 1,
+            use_noisy: bool = False,
+            v_min: float = -10.0,
+            v_max: float = 10.0,
+            sigma0: float = 0.5,
+            add_layer_norm: bool = False
+    ):
+        super().__init__(obs_space=obs_space, action_space=action_space,
+                         num_outputs=num_outputs, model_config=model_config,
+                         name=name, q_hiddens=q_hiddens,
+                         dueling=dueling, dueling_activation=dueling_activation,
+                         num_atoms=num_atoms,
+                         use_noisy=use_noisy,
+                         v_min=v_min, v_max=v_max, sigma0=sigma0,
+                         add_layer_norm=add_layer_norm)
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(obs_space.shape[-1], 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
+            SlimConv2d(obs_space.shape[-1], 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
+            SlimConv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
+            SlimConv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
+            SlimConv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
             nn.AdaptiveMaxPool2d((1, 1))
-        )
-
-        with torch.no_grad():
-            dummy_input = torch.zeros(1, *obs_space.shape).permute(0, 3, 1, 2)
-            self.conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
-            feature_in = self.conv_out_size
-
-        self.fc_layers = nn.Sequential(
-            SlimFC(feature_in, 256),
-            SlimFC(256, 128),
-            SlimFC(128, 128),
-            SlimFC(128, action_space.n)
         )
         self._features = None
 
@@ -43,8 +54,7 @@ class CNN(TorchModelV2, nn.Module):
         # permute b/c data comes in as [B, dim, dim, channels]:
         self._features = self._features.permute(0, 3, 1, 2)
         self._features = self.conv_layers(self._features)
-        self._features = self.fc_layers(self._features.flatten(1))
-        return self._features, state
+        return self._features.flatten(1), state
 
     def value_function(self):
         pass

@@ -1,18 +1,42 @@
 import torch
+import gymnasium as gym
 import torch.nn as nn
-from gymnasium.spaces.discrete import Discrete
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.models.torch.misc import SlimFC
+from typing import Sequence
+from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
+from ray.rllib.utils.typing import ModelConfigDict
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class CNN(TorchModelV2, nn.Module):
-    def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
-        TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
-        nn.Module.__init__(self)
+class CNN(DQNTorchModel):
+    def __init__(
+            self,
+            obs_space: gym.spaces.Space,
+            action_space: gym.spaces.Discrete,
+            num_outputs: int,
+            model_config: ModelConfigDict,
+            name: str,
+            *,
+            q_hiddens: Sequence[int] = (256,),
+            dueling: bool = False,
+            dueling_activation: str = "relu",
+            num_atoms: int = 1,
+            use_noisy: bool = False,
+            v_min: float = -10.0,
+            v_max: float = 10.0,
+            sigma0: float = 0.5,
+            add_layer_norm: bool = False
+    ):
+        super().__init__(obs_space=obs_space, action_space=action_space,
+                         num_outputs=num_outputs, model_config=model_config,
+                         name=name, q_hiddens=q_hiddens,
+                         dueling=dueling, dueling_activation=dueling_activation,
+                         num_atoms=num_atoms,
+                         use_noisy=use_noisy,
+                         v_min=v_min, v_max=v_max, sigma0=sigma0,
+                         add_layer_norm=add_layer_norm)
 
         self.conv_layers = nn.Sequential(
             nn.Conv2d(obs_space.shape[-1], 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
@@ -29,16 +53,9 @@ class CNN(TorchModelV2, nn.Module):
         # Add a GRU layer for sentence data
         custom_model_config = model_config["custom_model_config"]
         self.lstm = torch.nn.LSTM(input_size=self.conv_out_size,
-                                  hidden_size=model_config["custom_model_config"]["hidden_size"],
+                                  hidden_size=custom_model_config["hidden_size"],
                                   num_layers=1,
                                   batch_first=True)
-        feature_in = custom_model_config["hidden_size"]
-        self.fc_layers = nn.Sequential(
-            SlimFC(feature_in, 256),
-            SlimFC(256, 128),
-            SlimFC(128, 128),
-            SlimFC(128, action_space.n)
-        )
         self._features = None
 
     def import_from_h5(self, h5_file: str) -> None:
@@ -53,9 +70,7 @@ class CNN(TorchModelV2, nn.Module):
         self._features = self._features.view(batch_size, seq_len, -1)
         self._features, state = self.lstm(self._features, None)
         self._features = self._features[:, -1, :]
-        self._features = self._features.flatten(1)
-
-        return self.fc_layers(self._features), [state]
+        return self._features.flatten(1), state
 
     def value_function(self):
         pass
