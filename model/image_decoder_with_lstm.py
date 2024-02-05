@@ -2,7 +2,7 @@ import torch
 import gymnasium as gym
 import torch.nn as nn
 from typing import Sequence
-from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
+from model.image_decoder import BasicCNN
 from ray.rllib.utils.typing import ModelConfigDict
 import logging
 
@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class CNN(DQNTorchModel):
+class CnnLSTM(BasicCNN):
     def __init__(
             self,
             obs_space: gym.spaces.Space,
@@ -41,15 +41,6 @@ class CNN(DQNTorchModel):
                          use_noisy=use_noisy,
                          v_min=v_min, v_max=v_max, sigma0=sigma0,
                          add_layer_norm=add_layer_norm)
-
-        self.conv_layers = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
-            nn.AdaptiveMaxPool2d((1, 1)),
-            nn.Flatten(start_dim=1)
-        )
         self.img_size = img_size
         self.sen_len = sen_len
         self.hidden_size = hidden_size
@@ -61,9 +52,6 @@ class CNN(DQNTorchModel):
                                   hidden_size=self.hidden_size,
                                   num_layers=2,
                                   batch_first=True)
-
-    def import_from_h5(self, h5_file: str) -> None:
-        pass
 
     def process_conv(self, obs):
         batch_size, seq_len, f = obs.shape

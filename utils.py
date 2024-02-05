@@ -5,17 +5,16 @@ import ray
 import yaml
 import gymnasium
 import numpy as np
+import torch.nn as nn
 from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
-from environments.StackWrapper import StackWrapper
 from environments.AddBatteryWrapper import AddBatteryWrapper
 from environments.AddRewardWrapper import AddRewardWrapper
 from environments.HiddenTrodWrapper import HiddenTrodWrapper
 from minigrid.wrappers import RGBImgObsWrapper, ImgObsWrapper
-from gymnasium.experimental.wrappers import ResizeObservationV0
-from gymnasium.wrappers import TimeLimit
+from gymnasium.wrappers import ResizeObservation, TimeLimit
 
 agent_dir = {
     0: '>',
@@ -25,20 +24,57 @@ agent_dir = {
 }
 
 
+def display_feature_map_info(model_conv, input_size: tuple):
+    """
+    Display the size of the feature maps and the receptive field after each layer.
+
+    Parameters:
+    - model: The neural network model containing the layers.
+    - input_size: The size of the input image in (C, H, W) format.
+
+    Note: This function assumes the model's convolutional layers are wrapped in nn.Sequential.
+    """
+    current_size = input_size
+    receptive_field = 1
+    stride_accumulate = 1  # Accumulated stride
+
+    for layer in model_conv:
+        if isinstance(layer, nn.Conv2d):
+            kernel_size = layer.kernel_size[0]
+            stride = layer.stride[0]
+            padding = layer.padding[0]
+            current_size = (
+                current_size[0],
+                (current_size[1] + 2 * padding - kernel_size) // stride + 1,
+                (current_size[2] + 2 * padding - kernel_size) // stride + 1,
+            )
+
+            receptive_field += (kernel_size - 1) * stride_accumulate
+            stride_accumulate *= stride
+
+        elif isinstance(layer, nn.AdaptiveMaxPool2d):
+            current_size = (current_size[0],) + layer.output_size
+
+        print(f"After layer {layer}: Feature map size = {current_size}, Receptive field = {receptive_field}")
+
+
 def minigrid_env_creator(env_config):
     if env_config["id"] == "RouteWithTrod":
         env = RouteWithTrodEnv(**env_config)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
         env = HiddenTrodWrapper(env)
-        env = AddBatteryWrapper(env)
         env = AddRewardWrapper(env)
+        env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
+        env = AddBatteryWrapper(env)
+        env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     else:
         env = gymnasium.make(env_config["id"], render_mode="rgb_array")
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
-    env = ResizeObservationV0(env, (env_config["img_size"], env_config["img_size"]))
-    env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
+        env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
+        env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
+
     return env
 
 

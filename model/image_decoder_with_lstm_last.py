@@ -1,7 +1,7 @@
 import torch
 import gymnasium as gym
 from typing import Sequence
-from model.image_decoder_with_lstm import CNN
+from model.image_decoder_with_lstm import CnnLSTM
 from ray.rllib.utils.typing import ModelConfigDict
 import logging
 
@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class LastCNN(CNN):
+class LastCNN(CnnLSTM):
     def __init__(
             self,
             obs_space: gym.spaces.Space,

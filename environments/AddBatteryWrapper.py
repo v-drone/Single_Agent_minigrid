@@ -2,11 +2,10 @@ import numpy as np
 from gymnasium import spaces
 from functools import reduce
 from minigrid.wrappers import ObservationWrapper
-from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
 
 
 class AddBatteryWrapper(ObservationWrapper):
-    def __init__(self, env: RouteWithTrodEnv):
+    def __init__(self, env):
         super().__init__(env)
         self.observation_space = spaces.Box(
             low=0,

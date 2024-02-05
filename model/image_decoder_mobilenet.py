@@ -1,8 +1,9 @@
 import torch
+import gymnasium as gym
 from torch import nn
-from gymnasium.spaces import Discrete
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.models.torch.misc import SlimFC
+from model.image_decoder import BasicCNN
+from ray.rllib.utils.typing import ModelConfigDict
+from typing import Sequence
 from torchvision.models.mobilenetv3 import InvertedResidualConfig, partial, MobileNetV3
 import logging
 
@@ -23,11 +24,35 @@ def _mobilenet_v3_conf(width_mult: float = 1.0):
     return inverted_residual_setting, last_channel
 
 
-class MobileNet(TorchModelV2, nn.Module):
+class MobileNet(BasicCNN):
 
-    def __init__(self, obs_space, action_space: Discrete, num_outputs, model_config, name):
-        TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
-        nn.Module.__init__(self)
+    def __init__(
+            self,
+            obs_space: gym.spaces.Space,
+            action_space: gym.spaces.Discrete,
+            num_outputs: int,
+            model_config: ModelConfigDict,
+            name: str,
+            *,
+            q_hiddens: Sequence[int] = (256,),
+            dueling: bool = False,
+            dueling_activation: str = "relu",
+            num_atoms: int = 1,
+            use_noisy: bool = False,
+            v_min: float = -10.0,
+            v_max: float = 10.0,
+            sigma0: float = 0.5,
+            add_layer_norm: bool = False,
+    ):
+        super().__init__(obs_space=obs_space, action_space=action_space,
+                         num_outputs=num_outputs, model_config=model_config,
+                         name=name, q_hiddens=q_hiddens,
+                         dueling=dueling, dueling_activation=dueling_activation,
+                         num_atoms=num_atoms,
+                         use_noisy=use_noisy,
+                         v_min=v_min, v_max=v_max, sigma0=sigma0,
+                         add_layer_norm=add_layer_norm)
+
         inverted_residual_setting, last_channel = _mobilenet_v3_conf()
 
         self.conv_layers = nn.Sequential()
@@ -40,24 +65,3 @@ class MobileNet(TorchModelV2, nn.Module):
             dummy_input = torch.zeros(1, *obs_space.shape).permute(0, 3, 1, 2)
             self.conv_out_size = self.conv_layers(dummy_input).flatten(1).shape[-1]
             feature_in = self.conv_out_size
-
-        self.fc_layers = nn.Sequential(
-            SlimFC(feature_in, 128),
-            SlimFC(128, 128),
-            SlimFC(128, action_space.n)
-        )
-        self._features = None
-
-    def import_from_h5(self, h5_file: str) -> None:
-        pass
-
-    def forward(self, input_dict, state, seq_lens):
-        self._features = input_dict["obs"].float()
-        # permute b/c data comes in as [B, dim, dim, channels]:
-        self._features = self._features.permute(0, 3, 1, 2)
-        self._features = self.conv_layers(self._features)
-        self._features = self.fc_layers(self._features.flatten(1))
-        return self._features, state
-
-    def value_function(self):
-        pass

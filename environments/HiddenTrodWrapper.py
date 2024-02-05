@@ -5,7 +5,7 @@ from minigrid.core.grid import Grid
 
 
 class HiddenTrodWrapper(ObservationWrapper):
-    def __init__(self, env: RouteWithTrodEnv):
+    def __init__(self, env):
         super().__init__(env)
 
     def observation(self, obs):
