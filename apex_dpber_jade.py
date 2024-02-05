@@ -1,11 +1,12 @@
+import os
 import json
 import tqdm
+import pickle
 import subprocess
-from os import path
 from ray.tune.registry import register_env
 from ray.tune.logger import JsonLogger
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
-from utils import minigrid_env_creator, convert_np_arrays
+from utils import minigrid_env_creator, convert_np_arrays, check_path
 
 
 def set_hyper_parameters(setting, checkpoint_path, env_name):
@@ -49,7 +50,16 @@ def set_hyper_parameters(setting, checkpoint_path, env_name):
     return hyper_parameters, env_example
 
 
-def train_loop(trainer, setting, checkpoint_path, log_path):
+def train_loop(trainer, run_name, setting, checkpoint_path, log_path):
+    checkpoint_path = str(checkpoint_path)
+    with open(os.path.join(checkpoint_path, "%s_config.pyl" % run_name), "wb") as f:
+        pickle.dump(trainer.config.to_dict(), f)
+    with open(os.path.join(checkpoint_path, "%s_model_description.txt" % run_name), "w") as f:
+        f.write(str(trainer.get_config().model))
+
+    checkpoint_path = str(os.path.join(checkpoint_path, "results"))
+    check_path(checkpoint_path)
+
     for i in tqdm.tqdm(range(1, setting.log.max_run)):
         result = trainer.train()
         time_used = result["time_total_s"]
@@ -70,7 +80,7 @@ def train_loop(trainer, setting, checkpoint_path, log_path):
 
         if i % setting.log.log == 0:
             trainer.save_checkpoint(checkpoint_path)
-        with open(path.join(log_path, str(i) + ".json"), "w") as f:
+        with open(os.path.join(log_path, str(i) + ".json"), "w") as f:
             result["config"] = None
             json.dump(convert_np_arrays(result), f)
         if time_used >= setting.log.max_time:

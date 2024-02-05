@@ -14,6 +14,8 @@ from environments.MutilRoadEnv import RouteEnv
 from environments.AddBatteryWrapper import AddBatteryWrapper
 from environments.AddRewardWrapper import AddRewardWrapper
 from environments.HiddenTrodWrapper import HiddenTrodWrapper
+from environments.SmallNegWrapper import SmallNegativeWrapper
+from environments.DistanceBouns import CloserWrapper
 from minigrid.wrappers import RGBImgObsWrapper, ImgObsWrapper
 from gymnasium.wrappers import ResizeObservation, TimeLimit
 
@@ -62,6 +64,8 @@ def display_feature_map_info(model_conv, input_size: tuple):
 def minigrid_env_creator(env_config):
     if env_config["id"] == "RouteWithTrod":
         env = RouteWithTrodEnv(**env_config)
+        env = SmallNegativeWrapper(env)
+        env = CloserWrapper(env)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
         env = HiddenTrodWrapper(env)
@@ -71,6 +75,8 @@ def minigrid_env_creator(env_config):
         env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     elif env_config["id"] == "Route":
         env = RouteEnv(**env_config)
+        env = SmallNegativeWrapper(env)
+        env = CloserWrapper(env)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
         env = HiddenTrodWrapper(env)

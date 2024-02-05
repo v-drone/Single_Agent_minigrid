@@ -34,7 +34,7 @@ class ResidualBlock(nn.Module):
         return out
 
 
-class SlimCNN(BasicCNN):
+class BlockCNN(BasicCNN):
     def __init__(
             self,
             obs_space: gym.spaces.Space,
@@ -52,17 +52,21 @@ class SlimCNN(BasicCNN):
             v_max: float = 10.0,
             sigma0: float = 0.5,
             add_layer_norm: bool = False,
+            img_size=0,
+            **kwargs
     ):
         super().__init__(obs_space=obs_space, action_space=action_space,
                          num_outputs=num_outputs, model_config=model_config,
                          name=name, q_hiddens=q_hiddens,
                          dueling=dueling, dueling_activation=dueling_activation,
-                         num_atoms=num_atoms,
-                         use_noisy=use_noisy,
+                         num_atoms=num_atoms, use_noisy=use_noisy,
                          v_min=v_min, v_max=v_max, sigma0=sigma0,
-                         add_layer_norm=add_layer_norm)
+                         add_layer_norm=add_layer_norm,
+                         img_size=img_size,
+                         **kwargs
+                         )
         self.conv_layers = nn.Sequential(
-            SlimConv2d(obs_space.shape[-1], 32, kernel=5, stride=3, padding=1),
+            SlimConv2d(3, 32, kernel=5, stride=3, padding=1),
             ResidualBlock(32, 64, stride=2),
             ResidualBlock(64, 64, stride=2),
             ResidualBlock(64, 256, stride=1),

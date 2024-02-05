@@ -5,7 +5,7 @@ import argparse
 from os import path
 from dynaconf import Dynaconf
 from apex_dpber_jade import set_hyper_parameters, train_loop
-from model.image_decoder_block import SlimCNN
+from model.image_decoder_block import BlockCNN
 from ray.rllib.models import ModelCatalog
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from utils import check_path
@@ -43,27 +43,20 @@ checkpoint_path = path.join(checkpoint_path, run_name)
 check_path(checkpoint_path)
 
 # Load Model
-ModelCatalog.register_custom_model("SlimCNN", SlimCNN)
+ModelCatalog.register_custom_model("BlockCNN", BlockCNN)
 
 # Load hyper_parameters
 hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, env_name)
-
+hyper_parameters["replay_buffer_config"]["capacity"] = 2000000
 hyper_parameters["model"] = {
-    "custom_model": "SlimCNN",
+    "custom_model": "BlockCNN",
     "no_final_linear": True,
-    "fcnet_hiddens": hyper_parameters["hiddens"],
+    "fcnet_hiddens": hyper_parameters["hiddens"] + [257],
+    "custom_model_config": {
+        "img_size": 100,
+    }
 }
 
-trainer = ApexDDQNWithDPBER(config=hyper_parameters, env="example")
-
-checkpoint_path = str(checkpoint_path)
-with open(os.path.join(checkpoint_path, "%s_config.pyl" % run_name), "wb") as f:
-    pickle.dump(trainer.config.to_dict(), f)
-with open(os.path.join(checkpoint_path, "%s_model_description.txt" % run_name), "w") as f:
-    f.write(str(trainer.get_config().model))
-
-checkpoint_path = str(path.join(checkpoint_path, "results"))
-check_path(checkpoint_path)
-
 # Run algorithms
-train_loop(trainer, setting, checkpoint_path, log_path)
+trainer = ApexDDQNWithDPBER(config=hyper_parameters, env="example")
+train_loop(trainer, run_name, setting, checkpoint_path, log_path)

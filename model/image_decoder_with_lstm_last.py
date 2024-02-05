@@ -46,9 +46,6 @@ class LastCNN(CnnLSTM):
                          **kwargs
                          )
 
-    def import_from_h5(self, h5_file: str) -> None:
-        pass
-
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"].float()
         img, bat, batch_size, seq_len = self.process_conv(obs)
@@ -59,6 +56,3 @@ class LastCNN(CnnLSTM):
         lstm_output, state = self.lstm(lstm_input, None)
         lstm_output = lstm_output[:, -1, :]
         return lstm_output.flatten(1), [state]
-
-    def value_function(self):
-        pass

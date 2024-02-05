@@ -1,16 +1,16 @@
 import torch
+import logging
 import gymnasium as gym
 import torch.nn as nn
 from typing import Sequence
-from model.image_decoder import BasicCNN
+from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
 from ray.rllib.utils.typing import ModelConfigDict
-import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class CnnLSTM(BasicCNN):
+class CnnLSTM(DQNTorchModel):
     def __init__(
             self,
             obs_space: gym.spaces.Space,
@@ -44,6 +44,14 @@ class CnnLSTM(BasicCNN):
         self.img_size = img_size
         self.sen_len = sen_len
         self.hidden_size = hidden_size
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten(1)
+        )
         with torch.no_grad():
             dummy_input = torch.zeros(1, *[3, img_size, img_size])
             self.conv_out_size = self.conv_layers(dummy_input).shape[-1]

@@ -89,9 +89,6 @@ class RouteWithTrodEnv(RouteEnv):
 
         # Execute the agent's action
         obs, reward, terminated, truncated, info = super().step(action)
-        reward = self._reward()
-        self.render_reward[0] = reward
-        self.render_reward[1] += reward
         # Check if agent stepped on a path tile and update its color
         # Ensure the agent has actually moved
         if not np.equal(self.agent_pos, self.prev_pos).all():
@@ -100,13 +97,13 @@ class RouteWithTrodEnv(RouteEnv):
                 cell.purple()
                 self.unvisited_trods.remove(self.agent_pos)
                 self.visited_trods.add(self.agent_pos)
+        reward = self._reward()
         return obs, reward, terminated, truncated, info
 
     def _reward(self) -> float:
         reward = super()._reward()
-        if not np.equal(self.agent_pos, self.prev_pos).all():
-            cell = self.grid.get(*self.agent_pos)
-            if isinstance(cell, TrodTile) and cell.color != 'purple':
-                # Reward for visiting a route tile
-                reward += 0.1
-        return reward
+        if not self.unvisited_tiles and self.agent_pos == self.start_pos:
+            # Provide a positive reward for completing the task
+            return reward + 0.05 * len(self.visited_trods)
+        else:
+            return reward
