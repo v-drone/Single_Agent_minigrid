@@ -10,6 +10,7 @@ from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
+from environments.MutilRoadEnv import RouteEnv
 from environments.AddBatteryWrapper import AddBatteryWrapper
 from environments.AddRewardWrapper import AddRewardWrapper
 from environments.HiddenTrodWrapper import HiddenTrodWrapper
@@ -61,6 +62,15 @@ def display_feature_map_info(model_conv, input_size: tuple):
 def minigrid_env_creator(env_config):
     if env_config["id"] == "RouteWithTrod":
         env = RouteWithTrodEnv(**env_config)
+        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
+        env = ImgObsWrapper(env)
+        env = HiddenTrodWrapper(env)
+        env = AddRewardWrapper(env)
+        env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
+        env = AddBatteryWrapper(env)
+        env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
+    elif env_config["id"] == "Route":
+        env = RouteEnv(**env_config)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
         env = HiddenTrodWrapper(env)

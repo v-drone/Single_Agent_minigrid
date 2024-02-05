@@ -190,6 +190,6 @@ class RouteEnv(EmptyEnv):
         # terminated, truncated
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
             # Provide a positive reward for completing the task
-            reward += 10
+            reward += 2
 
         return reward

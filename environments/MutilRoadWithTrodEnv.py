@@ -108,5 +108,5 @@ class RouteWithTrodEnv(RouteEnv):
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, TrodTile) and cell.color != 'purple':
                 # Reward for visiting a route tile
-                reward += 1
+                reward += 0.1
         return reward
