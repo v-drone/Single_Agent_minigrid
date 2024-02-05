@@ -74,7 +74,7 @@ class CnnLSTM(DQNTorchModel):
         img = img.flatten(0, 1)
         img = self.conv_layers(img)
         img = img.view(batch_size, seq_len, -1)
-        lstm_input = torch.concatenate([img, bat.unsqueeze(-1)], dim=-1)
+        lstm_input = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
         lstm_output, state = self.lstm(lstm_input, None)
         return lstm_output.flatten(1), [state]
 

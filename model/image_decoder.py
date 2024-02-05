@@ -67,7 +67,7 @@ class BasicCNN(DQNTorchModel):
         img = img.permute(0, 3, 1, 2)
         img = self.conv_layers(img)
         img = img.view(batch_size, -1)
-        self._features = torch.concatenate([img, bat.unsqueeze(-1)], dim=-1)
+        self._features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
         return self._features.flatten(1), state
 
     def value_function(self):
