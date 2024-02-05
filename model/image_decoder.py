@@ -21,7 +21,7 @@ class BasicCNN(DQNTorchModel):
             *,
             q_hiddens: Sequence[int] = (256,),
             dueling: bool = False,
-            dueling_activation: str = "tanh",
+            dueling_activation: str = "relu",
             num_atoms: int = 1,
             use_noisy: bool = False,
             v_min: float = -10.0,
