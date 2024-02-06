@@ -1,3 +1,6 @@
+from typing import Any
+
+from gymnasium.core import WrapperObsType
 from minigrid.wrappers import Wrapper
 import numpy as np
 import cv2
@@ -9,13 +12,22 @@ font_color = (0, 0, 0)  # Black color
 line_type = 1
 
 
-class AddRewardWrapper(Wrapper):
+class AddRewardRenderWrapper(Wrapper):
     def __init__(self, env):
         """Constructor for the imgervation wrapper."""
         super().__init__(env)
+        self.render_reward = [0.0, 0.0]
+
+    def reset(self, *, seed=None, option=None):
+        obs, _ = super().reset()
+        self.render_reward = [0, 0]
+        return obs, _
 
     def render(self):
         img = super().render()
+        reward = self.reward()
+        self.render_reward[0] = reward
+        self.render_reward[1] += reward
         ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])
         ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])
         ENERGY_BAR_HEIGHT = self.tile_size

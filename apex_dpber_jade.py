@@ -20,7 +20,7 @@ def set_hyper_parameters(setting, checkpoint_path, env_name):
         "max_steps": 300,
         "battery": 100,
         "img_size": 100,
-        "tile_size": 15,
+        "tile_size": 8,
         "num_stack": 30,
         "render_mode": "rgb_array",
         "agent_pov": False

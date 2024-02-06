@@ -44,7 +44,6 @@ class RouteEnv(EmptyEnv):
         self.prev_pos = None
         self.prev_distance = size * 2
         self.current_distance = size * 2
-        self.render_reward = [0.0, 0.0]
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         obs, _ = super().reset()
@@ -53,7 +52,6 @@ class RouteEnv(EmptyEnv):
         self.current_distance = self.distance_to_closest_blue(self.agent_pos)
         self.visited_tiles = set()
         self.prev_pos = np.copy(self.agent_pos)
-        self.render_reward = [0, 0]
         return obs, {}
 
     def _gen_grid(self, width, height):
@@ -164,8 +162,7 @@ class RouteEnv(EmptyEnv):
             terminated = True
         else:
             terminated = False
-        self.render_reward[0] = reward
-        self.render_reward[1] += reward
+
         return obs, reward, terminated, truncated, info
 
     def distance_to_closest_blue(self, pos):
