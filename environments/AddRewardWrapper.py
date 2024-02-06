@@ -15,8 +15,8 @@ class AddRewardRenderWrapper(gym.RewardWrapper):
         super().__init__(env)
         self.render_reward = [0.0, 0.0]
 
-    def reset(self, *, seed=None, option=None):
-        obs, _ = super().reset()
+    def reset(self, *, seed=None, options=None):
+        obs, _ = self.env.reset(seed=seed, options=options)
         self.render_reward = [0, 0]
         return obs, _
 
@@ -27,7 +27,7 @@ class AddRewardRenderWrapper(gym.RewardWrapper):
         return reward
 
     def render(self):
-        img = super().render()
+        img = self.env.render()
         ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])
         ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])
         ENERGY_BAR_HEIGHT = self.tile_size
