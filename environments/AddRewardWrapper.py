@@ -1,7 +1,4 @@
-from typing import Any
-
-from gymnasium.core import WrapperObsType
-from minigrid.wrappers import Wrapper
+import gymnasium as gym
 import numpy as np
 import cv2
 
@@ -12,7 +9,7 @@ font_color = (0, 0, 0)  # Black color
 line_type = 1
 
 
-class AddRewardRenderWrapper(Wrapper):
+class AddRewardRenderWrapper(gym.RewardWrapper):
     def __init__(self, env):
         """Constructor for the imgervation wrapper."""
         super().__init__(env)
@@ -23,11 +20,14 @@ class AddRewardRenderWrapper(Wrapper):
         self.render_reward = [0, 0]
         return obs, _
 
-    def render(self):
-        img = super().render()
-        reward = self.reward()
+    def reward(self, reward):
+        # Calculate the change in distance to the closest blue tile
         self.render_reward[0] = reward
         self.render_reward[1] += reward
+        return reward
+
+    def render(self):
+        img = super().render()
         ENERGY_BAR_COLOR_FULL = np.array([0, 255, 0])
         ENERGY_BAR_COLOR_EMPTY = np.array([255, 0, 0])
         ENERGY_BAR_HEIGHT = self.tile_size
