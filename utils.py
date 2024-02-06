@@ -12,7 +12,8 @@ from typing import Dict, Tuple, Union
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
 from environments.MutilRoadEnv import RouteEnv
 from environments.AddBatteryWrapper import AddBatteryWrapper
-from environments.AddRewardWrapper import AddRewardRenderWrapper
+from environments.AddEmptyWrapper import AddEmptyWrapper
+from environments.AddRewardRenderWrapper import AddRewardRenderWrapper
 from environments.HiddenTrodWrapper import HiddenTrodWrapper
 from environments.SmallNegWrapper import SmallNegativeWrapper
 from environments.DistanceBouns import CloserWrapper
@@ -89,6 +90,7 @@ def minigrid_env_creator(env_config):
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
         env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
+        env = AddEmptyWrapper(env)
         env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
 
     return env
