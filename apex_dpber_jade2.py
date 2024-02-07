@@ -28,13 +28,14 @@ setting = Dynaconf(envvar_prefix="DYNACONF", settings_files=setting)
 # Config path
 env_name = parser.parse_args().env_path
 run_name = str(parser.parse_args().run_name)
-log_path = parser.parse_args().log_path
-checkpoint_path = parser.parse_args().checkpoint_path
+log_path = str(parser.parse_args().log_path)
+checkpoint_path = str(parser.parse_args().checkpoint_path)
 run_name = env_name + " dpber " + run_name
-
 # Check path available
 check_path(log_path)
-log_path = str(path.join(log_path, run_name))
+log_path = path.join(log_path, run_name)
+check_path(log_path)
+log_path = path.join(log_path, "data")
 check_path(log_path)
 check_path(checkpoint_path)
 checkpoint_path = path.join(checkpoint_path, run_name)
@@ -57,4 +58,4 @@ hyper_parameters["model"] = {
 
 # Run algorithms
 trainer = ApexDDQNWithDPBER(config=hyper_parameters, env="example")
-train_loop(trainer, run_name, setting, checkpoint_path, log_path)
+train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_path)

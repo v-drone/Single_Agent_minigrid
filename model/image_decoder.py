@@ -72,3 +72,21 @@ class BasicCNN(DQNTorchModel):
 
     def value_function(self):
         pass
+
+
+class WrappedModel(nn.Module):
+    def __init__(self, original_model):
+        super(WrappedModel, self).__init__()
+        self.original_model = original_model
+
+    def forward(self, obs):
+        img, bat, batch_size = self.original_model.process_conv(obs)
+        img = img.permute(0, 3, 1, 2)
+        img = self.original_model.conv_layers(img)
+        img = img.view(batch_size, -1)
+        features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
+        action_scores = features.flatten(1)
+        advantage = self.original_model.advantage_module(action_scores)
+        value = self.original_model.value_module(features)
+        logit = torch.unsqueeze(torch.ones_like(action_scores), -1)
+        return advantage, value, logit

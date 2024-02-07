@@ -66,10 +66,11 @@ class BlockCNN(BasicCNN):
                          **kwargs
                          )
         self.conv_layers = nn.Sequential(
-            SlimConv2d(3, 32, kernel=5, stride=3, padding=1),
+            ResidualBlock(3, 32, stride=2),
             ResidualBlock(32, 64, stride=2),
-            ResidualBlock(64, 64, stride=2),
-            ResidualBlock(64, 256, stride=1),
+            ResidualBlock(64, 128, stride=2),
+            ResidualBlock(128, 128, stride=2),
+            ResidualBlock(128, 256, stride=1),
             nn.AdaptiveMaxPool2d((1, 1))
         )
         self._features = None

@@ -27,38 +27,25 @@ agent_dir = {
 }
 
 
-def display_feature_map_info(model_conv, input_size: tuple):
+def display_feature_map_info(model, obs):
     """
-    Display the size of the feature maps and the receptive field after each layer.
+    Directly measure the size of the feature maps and the receptive field after each layer by using an observation.
 
     Parameters:
     - model: The neural network model containing the layers.
-    - input_size: The size of the input image in (C, H, W) format.
+    - obs: The input observation to the model, should be a torch.Tensor of shape (N, C, H, W).
 
-    Note: This function assumes the model's convolutional layers are wrapped in nn.Sequential.
+    Note: This function assumes the model's layers are accessible and can be iterated over.
+          It does not calculate the receptive field as it's complex to directly measure without calculation.
     """
-    current_size = input_size
-    receptive_field = 1
-    stride_accumulate = 1  # Accumulated stride
+    x = obs
+    print(f"Input: Feature map size = {x.shape()[1:]}")
 
-    for layer in model_conv:
-        if isinstance(layer, nn.Conv2d):
-            kernel_size = layer.kernel_size[0]
-            stride = layer.stride[0]
-            padding = layer.padding[0]
-            current_size = (
-                current_size[0],
-                (current_size[1] + 2 * padding - kernel_size) // stride + 1,
-                (current_size[2] + 2 * padding - kernel_size) // stride + 1,
-            )
+    for name, layer in model.named_children():
+        x = layer(x)  # Forward pass through the layer
+        print(f"After layer {name}: Feature map size = {x.size()[1:]}")
+        # Note: Directly measuring the receptive field is more complex and typically not done in this manner.
 
-            receptive_field += (kernel_size - 1) * stride_accumulate
-            stride_accumulate *= stride
-
-        elif isinstance(layer, nn.AdaptiveMaxPool2d):
-            current_size = (current_size[0],) + layer.output_size
-
-        print(f"After layer {layer}: Feature map size = {current_size}, Receptive field = {receptive_field}")
 
 
 def minigrid_env_creator(env_config):
