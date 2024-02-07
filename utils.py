@@ -40,11 +40,11 @@ def display_feature_map_info(model, obs):
           It does not calculate the receptive field as it's complex to directly measure without calculation.
     """
     x = obs
-    print(f"Input: Feature map size = {x.shape()[1:]}")
+    print(f"Input: Feature map size = {x.shape[1:]}")
 
     for name, layer in model.named_children():
         x = layer(x)  # Forward pass through the layer
-        print(f"After layer {name}: Feature map size = {x.shape()[1:]}")
+        print(f"After layer {name}: Feature map size = {x.shape[1:]}")
         # Note: Directly measuring the receptive field is more complex and typically not done in this manner.
 
 
