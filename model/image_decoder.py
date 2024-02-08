@@ -85,8 +85,8 @@ class WrappedModel(nn.Module):
         img = self.original_model.conv_layers(img)
         img = img.view(batch_size, -1)
         features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
-        action_scores = features.flatten(1)
+        action_scores = features.flatten(start_dim=1)  # Ensure no in-place modification
         advantage = self.original_model.advantage_module(action_scores)
         value = self.original_model.value_module(features)
-        logit = torch.unsqueeze(torch.ones_like(action_scores), -1)
+        logit = torch.unsqueeze(torch.ones_like(action_scores), -1)  # No in-place modification here
         return advantage, value, logit
