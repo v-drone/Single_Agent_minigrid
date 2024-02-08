@@ -193,3 +193,6 @@ dependencies:
     - widgetsnbextension==4.0.5
     - wrapt==1.16.0
     - yarl==1.9.3
+    - torch==2.1.0  --index-url https://download.pytorch.org/whl/cu121
+    - torchvision==0.16.0  --index-url https://download.pytorch.org/whl/cu121
+    - torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
