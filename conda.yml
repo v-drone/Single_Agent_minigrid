@@ -9,7 +9,6 @@ dependencies:
   - python=3.9
   - opencv
   - pip:
-      - --index-url https://download.pytorch.org/whl/cu121
       - Farama-Notifications==0.0.4
       - absl-py==1.4.0
       - aiohttp-cors==0.7.0
@@ -110,7 +109,6 @@ dependencies:
       - onnxruntime==1.17.0
       - opencensus-context==0.1.3
       - opencensus==0.11.0
-      - opencv-python==4.8.1.78
       - opentelemetry-api==1.21.0
       - opentelemetry-exporter-otlp-proto-common==1.21.0
       - opentelemetry-exporter-otlp-proto-grpc==1.21.0
@@ -170,9 +168,6 @@ dependencies:
       - threadpoolctl==3.1.0
       - tifffile==2023.2.3
       - timm==0.9.12
-      - torch==2.1.1
-      - torchaudio==2.1.1
-      - torchvision==0.16.1
       - tornado==6.3.3
       - tqdm==4.66.1
       - traitlets==5.13.0
@@ -194,6 +189,3 @@ dependencies:
       - widgetsnbextension==4.0.5
       - wrapt==1.16.0
       - yarl==1.9.3
-      - torch==2.1.0
-      - torchvision==0.16.0
-      - torchaudio==2.1.0
