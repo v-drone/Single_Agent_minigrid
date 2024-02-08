@@ -48,7 +48,6 @@ def display_feature_map_info(model, obs):
         # Note: Directly measuring the receptive field is more complex and typically not done in this manner.
 
 
-
 def minigrid_env_creator(env_config):
     if env_config["id"] == "RouteWithTrod":
         env = RouteWithTrodEnv(**env_config)
