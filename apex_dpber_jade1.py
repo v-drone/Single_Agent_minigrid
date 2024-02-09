@@ -5,6 +5,7 @@ from dynaconf import Dynaconf
 from apex_dpber_jade import set_hyper_parameters, train_loop
 from ray.rllib.models import ModelCatalog
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
+from model.image_decoder import BasicCNN
 from utils import check_path
 
 # Init Ray
@@ -30,19 +31,19 @@ run_name = str(parser.parse_args().run_name)
 log_path = str(parser.parse_args().log_path)
 checkpoint_path = str(parser.parse_args().checkpoint_path)
 
-# Load Model
-from model.image_decoder_block import BlockCNN
-
+# Load hyper_parameters
 hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, "Route")
 hyper_parameters["hiddens"] = [256, 256, 128]
-model_name = "BlockCNN"
-ModelCatalog.register_custom_model(model_name, BlockCNN)
+model_name = "BasicCNN"
+# Load Model
+ModelCatalog.register_custom_model(model_name, BasicCNN)
 hyper_parameters["model"] = {
-    "custom_model": "BlockCNN",
+    "custom_model": "BasicCNN",
     "no_final_linear": True,
-    "fcnet_hiddens": hyper_parameters["hiddens"] + [256 + 1],
+    "fcnet_hiddens": hyper_parameters["hiddens"] + [257],
     "custom_model_config": {
         "img_size": 100,
+        "dueling_activation": "relu",
     }
 }
 
