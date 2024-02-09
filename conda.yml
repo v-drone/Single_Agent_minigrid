@@ -2,7 +2,6 @@ name: drone
 channels:
   - conda-forge
   - defaults
-  - pytorch
   - nvidia
 dependencies:
   - pip

@@ -82,7 +82,7 @@ def train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_pat
 
         if i % setting.log.log == 0:
             model_to_save = trainer.learner_thread.local_worker.get_policy().model
-            save_model_to_onnx(model_to_save, obs.sahpe, "cuda", checkpoint_path + "/wrapped_model.onnx")
+            save_model_to_onnx(model_to_save, obs.shape, "cuda", checkpoint_path + "/wrapped_model.onnx")
             trainer.save_checkpoint(checkpoint_path)
         with open(os.path.join(log_path, str(i) + ".json"), "w") as f:
             result["config"] = None
@@ -96,6 +96,6 @@ def save_model_to_onnx(model, input_shape, device, model_path):
     dummy_input = torch.randn(1, *input_shape)
     dummy_input = dummy_input.to(device)
     torch.onnx.export(wrapped_model, dummy_input, model_path,
-                      verbose=True,
+                      verbose=False,
                       input_names=["obs"],
                       output_names=["advantage", "value", "logit"])

@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import gymnasium as gym
 from model.image_decoder import BasicCNN
@@ -11,27 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, in_channels, out_channels):
         super(ResidualBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU()
-
+        self.tunnel = nn.Sequential()
+        self.tunnel.append(SlimConv2d(in_channels, out_channels, kernel=3, stride=1, padding=1))
+        self.tunnel.append(SlimConv2d(out_channels, out_channels, kernel=3, stride=1, padding=1))
         self.shortcut = nn.Sequential()
-        if stride != 1 or in_channels != out_channels:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_channels)
-            )
+        if in_channels != out_channels:
+            self.shortcut.append(SlimConv2d(in_channels, out_channels, kernel=3, stride=1, padding=1))
 
     def forward(self, x):
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        out = self.relu(out)
-        return out
+        identity = x
+        conv = self.tunnel(x)
+        shortcut = self.shortcut(identity)
+        output = torch.add(conv, shortcut)
+        return output
 
 
 class BlockCNN(BasicCNN):
@@ -66,11 +61,12 @@ class BlockCNN(BasicCNN):
                          **kwargs
                          )
         self.conv_layers = nn.Sequential(
-            ResidualBlock(3, 32, stride=2),
-            ResidualBlock(32, 64, stride=2),
-            ResidualBlock(64, 128, stride=2),
-            ResidualBlock(128, 128, stride=2),
-            ResidualBlock(128, 256, stride=1),
-            nn.AdaptiveMaxPool2d((1, 1))
+            ResidualBlock(3, 32),
+            nn.AvgPool2d(2),  # Output: 50x50x32
+            ResidualBlock(32, 64),
+            nn.AvgPool2d(2),  # Output: 25x25x64
+            ResidualBlock(64, 128),
+            nn.AvgPool2d(2),  # Output: 12x12x128
+            ResidualBlock(128, 256),
+            nn.MaxPool2d(kernel_size=12, stride=1, padding=0)
         )
-        self._features = None

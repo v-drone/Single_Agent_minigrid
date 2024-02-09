@@ -46,9 +46,7 @@ class BasicCNN(DQNTorchModel):
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
             nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 7x7x256
             nn.AdaptiveMaxPool2d((1, 1)),
-            nn.Flatten(1)
         )
-        self._features = None
 
     def import_from_h5(self, h5_file: str) -> None:
         pass
@@ -65,10 +63,10 @@ class BasicCNN(DQNTorchModel):
         obs = input_dict["obs"].float()
         img, bat, batch_size = self.process_conv(obs)
         img = img.permute(0, 3, 1, 2)
-        img = self.conv_layers(img)
+        img = self.conv_layers(img).flatten(1)
         img = img.view(batch_size, -1)
-        self._features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
-        return self._features.flatten(1), state
+        features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
+        return features.flatten(1), state
 
     def value_function(self):
         pass
@@ -82,7 +80,7 @@ class WrappedModel(nn.Module):
     def forward(self, obs):
         img, bat, batch_size = self.original_model.process_conv(obs)
         img = img.permute(0, 3, 1, 2)
-        img = self.original_model.conv_layers(img)
+        img = self.original_model.conv_layers(img).flatten(1)
         img = img.view(batch_size, -1)
         features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
         action_scores = features.flatten(start_dim=1)  # Ensure no in-place modification
