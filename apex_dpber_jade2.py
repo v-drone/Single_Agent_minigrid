@@ -3,7 +3,6 @@ import argparse
 from os import path
 from dynaconf import Dynaconf
 from apex_dpber_jade import set_hyper_parameters, train_loop
-from model.image_decoder_block import BlockCNN
 from ray.rllib.models import ModelCatalog
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
 from utils import check_path
