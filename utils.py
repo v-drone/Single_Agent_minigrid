@@ -5,7 +5,6 @@ import ray
 import yaml
 import gymnasium
 import numpy as np
-import torch.nn as nn
 from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
@@ -49,19 +48,13 @@ def display_feature_map_info(model, obs):
 
 
 def minigrid_env_creator(env_config):
-    if env_config["id"] == "RouteWithTrod":
-        env = RouteWithTrodEnv(**env_config)
-        env = SmallNegativeWrapper(env)
-        env = CloserWrapper(env)
-        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
-        env = ImgObsWrapper(env)
-        env = HiddenTrodWrapper(env)
-        env = AddRewardRenderWrapper(env)
-        env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
-        env = AddBatteryWrapper(env)
-        env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
-    elif env_config["id"] == "Route":
-        env = RouteEnv(**env_config)
+    if env_config["id"] in ["RouteWithTrod", "Route"]:
+        if env_config["id"] == "RouteWithTrod":
+            env = RouteWithTrodEnv(**env_config)
+        elif env_config["id"] == "Route":
+            env = RouteEnv(**env_config)
+        else:
+            raise NotImplementedError
         env = SmallNegativeWrapper(env)
         env = CloserWrapper(env)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
