@@ -8,6 +8,7 @@ import numpy as np
 from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
+from environments.TrodByMapEnv import RouteByMapEnv
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
 from environments.MutilRoadEnv import RouteEnv
 from environments.AddBatteryWrapper import AddBatteryWrapper
@@ -48,11 +49,13 @@ def display_feature_map_info(model, obs):
 
 
 def minigrid_env_creator(env_config):
-    if env_config["id"] in ["RouteWithTrod", "Route"]:
+    if env_config["id"] in ["RouteWithTrod", "Route", "RouteByMapEnv"]:
         if env_config["id"] == "RouteWithTrod":
             env = RouteWithTrodEnv(**env_config)
         elif env_config["id"] == "Route":
             env = RouteEnv(**env_config)
+        elif env_config["id"] == "RouteByMapEnv":
+            env = RouteByMapEnv(**env_config)
         else:
             raise NotImplementedError
         env = SmallNegativeWrapper(env)

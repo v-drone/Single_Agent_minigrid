@@ -1,6 +1,6 @@
 import numpy as np
 from minigrid.wrappers import ObservationWrapper
-from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv, TrodTile
+from environments.MutilRoadWithTrodEnv import TrodTile
 from minigrid.core.grid import Grid
 
 

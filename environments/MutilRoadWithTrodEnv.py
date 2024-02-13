@@ -21,9 +21,11 @@ class TrodTile(Floor):
 # Update the RouteEnv class to use the new RoutePoint object
 class RouteWithTrodEnv(RouteEnv):
 
-    def __init__(self, size=20, max_steps=100, routes=(3, 5), trods=(3, 5),
+    def __init__(self, size=20, max_steps=100, agent_view_size=7,
+                 routes=(3, 5), trods=(3, 5),
                  battery=100, render_mode="human", **kwargs):
         super().__init__(size=size, max_steps=max_steps, routes=routes,
+                         agent_view_size=agent_view_size,
                          battery=battery, render_mode=render_mode, **kwargs)
         self.trods = trods
         self.unvisited_trods = set()

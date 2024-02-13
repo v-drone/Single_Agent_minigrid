@@ -29,9 +29,11 @@ class RouteEnv(EmptyEnv):
         right = 1
         forward = 2
 
-    def __init__(self, size=20, max_steps=100, routes=(3, 5), battery=100, render_mode="human", **kwargs):
+    def __init__(self, size=20, max_steps=100, routes=(3, 5), battery=100, agent_view_size=7,
+                 render_mode="human", **kwargs):
 
-        super().__init__(size=size, max_steps=max_steps, render_mode=render_mode)
+        super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
+                         render_mode=render_mode)
         self.spec = EnvSpec("RouteEnv-v0", max_episode_steps=self.max_steps)
         self.routes = routes
         # To track tiles that are not yet visited by the agent
