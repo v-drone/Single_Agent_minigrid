@@ -16,7 +16,7 @@ artifacts = mlflow_client.list_artifacts(run_id)
 artifacts = [file_info for file_info in artifacts if not re.match(r'\d+.json', file_info.path)]
 for each in artifacts:
     mlflow_client.download_artifacts(run_id=run_id, path=each.path, dst_path=for_pred)
-session = ort.InferenceSession("./for_pred/wrapped_model.onnx")
+session = ort.InferenceSession("model_checkpoints/blue_and_yellow/basic_cnn.onnx")
 
 env_config = {
     "id": "Route",

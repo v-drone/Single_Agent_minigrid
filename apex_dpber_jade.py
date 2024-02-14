@@ -8,7 +8,7 @@ from ray.tune.registry import register_env
 from ray.tune.logger import JsonLogger
 from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
 from utils import minigrid_env_creator, convert_np_arrays, check_path
-from model.image_decoder import WrappedModel
+from model.image_decoder import WrappedModel, WrappedEmbedding
 
 
 def set_hyper_parameters(setting, checkpoint_path, env_name):
@@ -82,7 +82,7 @@ def train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_pat
 
         if i % setting.log.log == 0:
             model_to_save = trainer.learner_thread.local_worker.get_policy().model
-            save_model_to_onnx(model_to_save, obs.shape, "cuda", checkpoint_path + "/wrapped_model.onnx")
+            save_model_to_onnx(model_to_save, obs.shape, "cuda", checkpoint_path + "/basic_cnn.onnx")
             trainer.save_checkpoint(checkpoint_path)
         with open(os.path.join(log_path, str(i) + ".json"), "w") as f:
             result["config"] = None
@@ -99,3 +99,8 @@ def save_model_to_onnx(model, input_shape, device, model_path):
                       verbose=False,
                       input_names=["obs"],
                       output_names=["advantage", "value", "logit"])
+
+
+def save_embedding_model(model, model_path):
+    wrapped_model = WrappedEmbedding(model)
+    torch.save(wrapped_model, model_path)

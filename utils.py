@@ -17,6 +17,9 @@ from environments.AddRewardRenderWrapper import AddRewardRenderWrapper
 from environments.HiddenTrodWrapper import HiddenTrodWrapper
 from environments.SmallNegWrapper import SmallNegativeWrapper
 from environments.DistanceBouns import CloserWrapper
+from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
+from environments.HitTrodWrapper import HitTrodWrapper
+from environments.HitRouteWrapper import HitRouteWrapper
 from minigrid.wrappers import RGBImgObsWrapper, ImgObsWrapper
 from gymnasium.wrappers import ResizeObservation, TimeLimit
 
@@ -54,8 +57,13 @@ def minigrid_env_creator(env_config):
             env = RouteWithTrodEnv(**env_config)
         elif env_config["id"] == "Route":
             env = RouteEnv(**env_config)
+            if env_config.get("hit", False):
+                env = HitRouteWrapper(env)
         elif env_config["id"] == "RouteByMapEnv":
             env = RouteByMapEnv(**env_config)
+            if env_config.get("hit", False):
+                env = HitRouteWrapper(env)
+                env = HitTrodWrapper(env)
         else:
             raise NotImplementedError
         env = SmallNegativeWrapper(env)
@@ -74,7 +82,9 @@ def minigrid_env_creator(env_config):
         env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
         env = AddEmptyWrapper(env)
         env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
-
+    if env_config.get("ride_model", None) is not None:
+        env = SimpleRIDEWrapper(env, env_config.get("ride_model"),
+                                env_config.get("device", "cpu"))
     return env
 
 

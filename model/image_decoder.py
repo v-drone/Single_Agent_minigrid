@@ -90,3 +90,22 @@ class WrappedModel(nn.Module):
         value = self.original_model.value_module(features)
         logit = torch.unsqueeze(torch.ones_like(action_scores), -1)  # No in-place modification here
         return advantage, value, logit
+
+
+class WrappedEmbedding(nn.Module):
+    def __init__(self, original_model):
+        super(WrappedEmbedding, self).__init__()
+        self.conv_layers = original_model.conv_layers
+        self.img_size = original_model.img_size
+
+    def forward(self, obs):
+        batch_size, f = obs.shape
+        bat = obs[:, -1]
+        img = obs[:, 0:-1]
+        # permute b/c data comes in as [B, dim, dim, channels]:
+        img = img.reshape([batch_size, self.img_size, self.img_size, 3])
+        img = img.permute(0, 3, 1, 2)
+        img = self.conv_layers(img)
+        img = img.view(batch_size, -1)
+        features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
+        return features

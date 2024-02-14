@@ -1,5 +1,5 @@
 from __future__ import annotations
-from environments.MutilRoadEnv import RouteEnv, PathTile
+from environments.MutilRoadEnv import RouteEnv
 from minigrid.core.world_object import Floor
 from typing import Any
 import numpy as np
