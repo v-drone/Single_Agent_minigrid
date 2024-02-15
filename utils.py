@@ -67,7 +67,8 @@ def minigrid_env_creator(env_config):
         else:
             raise NotImplementedError
         env = SmallNegativeWrapper(env)
-        env = CloserWrapper(env)
+        if env_config.get("closer", True):
+            env = CloserWrapper(env)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
         env = HiddenTrodWrapper(env)
