@@ -30,6 +30,7 @@ class RouteEnv(EmptyEnv):
         forward = 2
 
     def __init__(self, size=20, max_steps=100, routes=(3, 5), battery=100, agent_view_size=7,
+                 basic_coefficient=0.1,
                  render_mode="human", **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
@@ -44,6 +45,7 @@ class RouteEnv(EmptyEnv):
         self.full_battery = battery
         self.battery = battery
         self.prev_pos = None
+        self.basic_coefficient = basic_coefficient
         self.prev_distance = size * 2
         self.current_distance = size * 2
 
@@ -167,6 +169,9 @@ class RouteEnv(EmptyEnv):
 
         return obs, reward, terminated, truncated, info
 
+    def reward_breakdown(self):
+        return super()._reward(), self._reward()
+
     def distance_to_closest_blue(self, pos):
         # Calculate the Manhattan distance to the closest blue tile
         return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
@@ -174,6 +179,6 @@ class RouteEnv(EmptyEnv):
     def _reward(self) -> float:
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
             # Provide a positive reward for completing the task
-            return super()._reward() + 0.05 * len(self.visited_tiles)
+            return super()._reward() * self.basic_coefficient + 0.05 * len(self.visited_tiles)
         else:
             return 0

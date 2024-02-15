@@ -102,6 +102,9 @@ class RouteWithTrodEnv(RouteEnv):
         reward = self._reward()
         return obs, reward, terminated, truncated, info
 
+    def reward_breakdown(self):
+        return super().reward_breakdown(), self._reward()
+
     def _reward(self) -> float:
         reward = super()._reward()
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
