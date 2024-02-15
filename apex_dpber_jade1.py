@@ -59,5 +59,7 @@ checkpoint_path = path.join(checkpoint_path, run_name)
 check_path(checkpoint_path)
 
 # Run algorithms
+hyper_parameters["sample_async"] = True
+hyper_parameters["remote_worker_envs"] = True
 trainer = ApexDDQNWithDPBER(config=hyper_parameters, env="example")
-train_loop(trainer, run_name, setting, checkpoint_path, log_path)
+train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_path)

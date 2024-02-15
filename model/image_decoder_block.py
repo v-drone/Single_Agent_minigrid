@@ -62,11 +62,12 @@ class BlockCNN(BasicCNN):
                          )
         self.conv_layers = nn.Sequential(
             ResidualBlock(3, 32),
-            nn.AvgPool2d(2),  # Output: 50x50x32
+            nn.AvgPool2d(2),                                # Output: 50x50x32
             ResidualBlock(32, 64),
-            nn.AvgPool2d(2),  # Output: 25x25x64
+            nn.AvgPool2d(2),                                # Output: 25x25x64
             ResidualBlock(64, 128),
-            nn.AvgPool2d(2),  # Output: 12x12x128
+            nn.AvgPool2d(2),                                # Output: 12x12x128
             ResidualBlock(128, 256),
-            nn.MaxPool2d(kernel_size=12, stride=1, padding=0)
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten(1)
         )
