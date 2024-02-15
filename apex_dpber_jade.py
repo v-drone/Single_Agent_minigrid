@@ -82,7 +82,8 @@ def train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_pat
 
         if i % setting.log.log == 0:
             model_to_save = trainer.learner_thread.local_worker.get_policy().model
-            save_model_to_onnx(model_to_save, obs.shape, "cuda", checkpoint_path + "/basic_cnn.onnx")
+            save_model_to_onnx(model_to_save, obs.shape, "cuda", checkpoint_path + "/wrapped_model.onnx")
+            save_embedding_model(model_to_save, checkpoint_path + "/emb.pt")
             trainer.save_checkpoint(checkpoint_path)
         with open(os.path.join(log_path, str(i) + ".json"), "w") as f:
             result["config"] = None
