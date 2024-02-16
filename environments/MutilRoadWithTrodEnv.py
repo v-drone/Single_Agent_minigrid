@@ -1,27 +1,87 @@
 from __future__ import annotations
-from environments.MutilRoadEnv import RouteEnv
+from environments.CustomGrid import COLOR_TO_IDX, CHECKED
+from environments.MutilRoadEnv import RouteEnv, get_color
 from minigrid.core.world_object import Floor
+from minigrid.core.constants import OBJECT_TO_IDX
+from minigrid.utils.rendering import fill_coords, point_in_rect, point_in_line
 from typing import Any
 import numpy as np
 import random
 
 
+def point_on_line(x0, y0, x1, y1, x, y, r=0.01):
+    p0 = np.array([x0, y0], dtype=np.float32)
+    p1 = np.array([x1, y1], dtype=np.float32)
+    dir_l = p1 - p0
+    dist = np.linalg.norm(dir_l)
+    dir_l = dir_l / dist
+
+    q = np.array([x, y])
+    pq = q - p0
+
+    a = np.dot(pq, dir_l)
+    a = np.clip(a, 0, dist)
+    p = p0 + a * dir_l
+
+    dist_to_line = np.linalg.norm(q - p)
+    return dist_to_line <= r
+
+
 class TrodTile(Floor):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color='yellow'):
+    def __init__(self, color='purple', color_buffer=0):
         super().__init__(color)
-        self.view = False
+        self.color_buffer = color_buffer
+        self._color = get_color(self.color, self.color_buffer)
+        self.cx = []
+        self.cy = []
+        for _ in range(self.color_buffer):
+            cx = random.uniform(0.1, 0.9)
+            cy = random.uniform(0.1, 0.9)
+            self.cx.append(cx)
+            self.cy.append(cy)
 
-    def purple(self):
+    def update_color(self):
         """Change color when agent steps on it."""
-        self.color = 'purple'
+        self.color = CHECKED
+        self._color = get_color(self.color, 0)
+
+    def render(self, img):
+        r = 0.02
+        # Convert color to RGB and apply random variation
+        # fill_coords(img, point_in_rect(0, 1, 0, 1), color)
+        fill_coords(img, point_in_rect(0, 1, 0, 1), self._color)
+
+        if self.color_buffer // 2 == 0:
+
+            horizontal_lines = [(0.1, 0.33, 0.9, 0.33), (0.1, 0.66, 0.9, 0.66)]
+            vertical_lines = [(0.33, 0.1, 0.33, 0.9), (0.66, 0.1, 0.66, 0.9)]
+
+            for x0, y0, x1, y1 in horizontal_lines:
+                fill_coords(img, lambda x, y: point_on_line(x0, y0, x1, y1, x, y, r), (0, 0, 0))
+
+            for x0, y0, x1, y1 in vertical_lines:
+                fill_coords(img, lambda x, y: point_on_line(x0, y0, x1, y1, x, y, r), (0, 0, 0))
+
+        else:
+            # Little waves
+            for i in range(3):
+                ylo = 0.3 + 0.2 * i
+                yhi = 0.4 + 0.2 * i
+                fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
+                fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
+                fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
+                fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
+
+    def encode(self):
+        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, 0
 
 
 # Update the RouteEnv class to use the new RoutePoint object
 class RouteWithTrodEnv(RouteEnv):
 
-    def __init__(self, size=20, max_steps=100, agent_view_size=7,
+    def __init__(self, size=20, max_steps=100, agent_view_size=3,
                  routes=(3, 5), trods=(3, 5),
                  battery=100, render_mode="human", **kwargs):
         super().__init__(size=size, max_steps=max_steps, routes=routes,
@@ -81,7 +141,9 @@ class RouteWithTrodEnv(RouteEnv):
             # Mark the trod cells in the grid
             for x, y in trod_cells:
                 if self.grid.get(x, y) is None:
-                    self.grid.set(x, y, TrodTile())
+                    _ = TrodTile(color_buffer=self._rand_int(0, 5))
+
+                    self.grid.set(x, y, _)
                     all_trod_cells.append((x, y))
         self.unvisited_trods = set(all_trod_cells)
 
@@ -95,8 +157,8 @@ class RouteWithTrodEnv(RouteEnv):
         # Ensure the agent has actually moved
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
-            if isinstance(cell, TrodTile) and cell.color != 'purple':
-                cell.purple()
+            if isinstance(cell, TrodTile) and cell.color != CHECKED:
+                cell.update_color()
                 self.unvisited_trods.remove(self.agent_pos)
                 self.visited_trods.add(self.agent_pos)
         reward = self._reward()

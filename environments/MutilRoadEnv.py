@@ -1,45 +1,53 @@
 from __future__ import annotations
 from minigrid.envs.empty import EmptyEnv
-from minigrid.core.world_object import Floor, Goal,Lava
+from minigrid.core.world_object import Floor, Goal
 from minigrid.core.actions import IntEnum
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
+from environments.CustomGrid import Grid, COLOR_TO_IDX, COLORS, CHECKED
 import numpy as np
 import random
-from minigrid.utils.rendering import (
-    fill_coords,
-    point_in_circle,
-    point_in_line,
-    point_in_rect,
-)
+import colorsys
+from minigrid.utils.rendering import fill_coords, point_in_rect
+from minigrid.core.constants import OBJECT_TO_IDX
+
+
+def get_color(color, color_buffer):
+    color = COLORS[color] / 2
+    hsv_color = colorsys.rgb_to_hsv(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0)
+
+    buffer = color_buffer * 0.02
+    new_h = np.clip(hsv_color[0] + buffer, 0, 1)
+    new_s = np.clip(hsv_color[1] + buffer, 0, 1)
+    new_v = np.clip(hsv_color[2] + buffer, 0, 1)
+
+    new_rgb = colorsys.hsv_to_rgb(new_h, new_s, new_v)
+    return [int(new_rgb[0] * 255), int(new_rgb[1] * 255), int(new_rgb[2] * 255)]
+
 
 class PathTile(Floor):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color='blue'):
+    def __init__(self, color='blue', color_buffer=0, label=1.0):
         super().__init__(color)
+        self.color_buffer = color_buffer
+        self._color = get_color(self.color, self.color_buffer)
+        self.label = label
 
-    def purple(self):
+    def update_color(self):
         """Change color when agent steps on it."""
-        self.color = 'purple'
+        self.color = CHECKED
+        self._color = get_color(self.color, 0)
 
     def render(self, img):
-        c = (255, 128, 0)
+        # Convert color to RGB and apply random variation
+        # fill_coords(img, point_in_rect(0, 1, 0, 1), color)
 
-        # Background color
-        fill_coords(img, point_in_rect(0, 1, 0, 1), c)
+        fill_coords(img, point_in_rect(0, 1, 0, 1), self._color)
 
-        # Add noise
-        for i in range(3):
-
-            # Noise copy from lava
-            ylo = 0.3 + 0.2 * i
-            yhi = 0.4 + 0.2 * i
-            fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
+    def encode(self):
+        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, 0
 
 
 # Update the RouteEnv class to use the new RoutePoint object
@@ -51,7 +59,7 @@ class RouteEnv(EmptyEnv):
         right = 1
         forward = 2
 
-    def __init__(self, size=20, max_steps=100, routes=(3, 5), battery=100, agent_view_size=7,
+    def __init__(self, size=20, max_steps=100, routes=(3, 5), battery=100, agent_view_size=3,
                  basic_coefficient=0.1,
                  render_mode="human", **kwargs):
 
@@ -82,16 +90,22 @@ class RouteEnv(EmptyEnv):
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
-        super()._gen_grid(width, height)
-        # Clear any existing goals from the grid
-        for i in range(width):
-            for j in range(height):
-                if isinstance(self.grid.get(i, j), Goal):
-                    self.grid.set(i, j, None)
+        self.grid = Grid(width, height)
+
+        # Generate the surrounding walls
+        self.grid.wall_rect(0, 0, width, height)
+
+        if self.agent_start_pos is not None:
+            self.agent_pos = self.agent_start_pos
+            self.agent_dir = self.agent_start_dir
+        else:
+            self.place_agent()
 
         # Random starting/goal point for the agent
         start_x, start_y = random.randint(1, width - 2), random.randint(1, height - 2)
         self.start_pos = (start_x, start_y)
+        self.agent_pos = self.start_pos
+        self.agent_dir = self._rand_int(0, 4)
         self.grid.set(start_x, start_y, Goal())
 
         # Randomly decide the number of routes
@@ -134,8 +148,9 @@ class RouteEnv(EmptyEnv):
                     # Stop generating the route if we hit a wall, another route, or the agent's start/goal position
                     break
             # Mark the route cells in the grid
-            for x, y in route_cells:
-                self.grid.set(x, y, PathTile())
+            for o, (x, y) in enumerate(route_cells):
+                _ = PathTile(color_buffer=self._rand_int(0, 4))
+                self.grid.set(x, y, _)
 
             all_route_cells.extend(route_cells)
         # Remember the initial position as the final goal
@@ -174,8 +189,8 @@ class RouteEnv(EmptyEnv):
 
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
-            if isinstance(cell, PathTile) and cell.color != 'purple':
-                cell.purple()
+            if isinstance(cell, PathTile) and cell.color != CHECKED:
+                cell.update_color()
                 self.unvisited_tiles.remove(self.agent_pos)
                 self.visited_tiles.add(self.agent_pos)
 
