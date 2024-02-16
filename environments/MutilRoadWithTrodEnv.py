@@ -32,6 +32,7 @@ class TrodTile(Floor):
 
     def __init__(self, color='purple', color_buffer=0):
         super().__init__(color)
+        self.view = False
         self.color_buffer = color_buffer
         self._color = get_color(self.color, self.color_buffer)
         self.cx = []
