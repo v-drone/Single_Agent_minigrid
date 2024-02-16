@@ -1,13 +1,18 @@
 from __future__ import annotations
 from minigrid.envs.empty import EmptyEnv
-from minigrid.core.world_object import Floor, Goal
+from minigrid.core.world_object import Floor, Goal,Lava
 from minigrid.core.actions import IntEnum
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
 import numpy as np
 import random
-
+from minigrid.utils.rendering import (
+    fill_coords,
+    point_in_circle,
+    point_in_line,
+    point_in_rect,
+)
 
 class PathTile(Floor):
     """Custom world object to represent the path tiles."""
@@ -18,6 +23,23 @@ class PathTile(Floor):
     def purple(self):
         """Change color when agent steps on it."""
         self.color = 'purple'
+
+    def render(self, img):
+        c = (255, 128, 0)
+
+        # Background color
+        fill_coords(img, point_in_rect(0, 1, 0, 1), c)
+
+        # Add noise
+        for i in range(3):
+
+            # Noise copy from lava
+            ylo = 0.3 + 0.2 * i
+            yhi = 0.4 + 0.2 * i
+            fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
+            fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
+            fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
+            fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
 
 
 # Update the RouteEnv class to use the new RoutePoint object
