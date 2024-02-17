@@ -52,31 +52,33 @@ class TrodTile(Floor):
         r = 0.02
         # Convert color to RGB and apply random variation
         # fill_coords(img, point_in_rect(0, 1, 0, 1), color)
-        fill_coords(img, point_in_rect(0, 1, 0, 1), self._color)
+        if self.view:
+            fill_coords(img, point_in_rect(0, 1, 0, 1), self._color)
+            if self.color_buffer // 2 == 0:
 
-        if self.color_buffer // 2 == 0:
+                horizontal_lines = [(0.1, 0.33, 0.9, 0.33), (0.1, 0.66, 0.9, 0.66)]
+                vertical_lines = [(0.33, 0.1, 0.33, 0.9), (0.66, 0.1, 0.66, 0.9)]
 
-            horizontal_lines = [(0.1, 0.33, 0.9, 0.33), (0.1, 0.66, 0.9, 0.66)]
-            vertical_lines = [(0.33, 0.1, 0.33, 0.9), (0.66, 0.1, 0.66, 0.9)]
+                for x0, y0, x1, y1 in horizontal_lines:
+                    fill_coords(img, lambda x, y: point_on_line(x0, y0, x1, y1, x, y, r), (0, 0, 0))
 
-            for x0, y0, x1, y1 in horizontal_lines:
-                fill_coords(img, lambda x, y: point_on_line(x0, y0, x1, y1, x, y, r), (0, 0, 0))
+                for x0, y0, x1, y1 in vertical_lines:
+                    fill_coords(img, lambda x, y: point_on_line(x0, y0, x1, y1, x, y, r), (0, 0, 0))
 
-            for x0, y0, x1, y1 in vertical_lines:
-                fill_coords(img, lambda x, y: point_on_line(x0, y0, x1, y1, x, y, r), (0, 0, 0))
-
+            else:
+                # Little waves
+                for i in range(3):
+                    ylo = 0.3 + 0.2 * i
+                    yhi = 0.4 + 0.2 * i
+                    fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
+                    fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
+                    fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
+                    fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
         else:
-            # Little waves
-            for i in range(3):
-                ylo = 0.3 + 0.2 * i
-                yhi = 0.4 + 0.2 * i
-                fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
-                fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
-                fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
-                fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
+            fill_coords(img, point_in_rect(0, 1, 0, 1), (0, 0, 0))
 
     def encode(self):
-        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, 0
+        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, int(self.view)
 
 
 # Update the RouteEnv class to use the new RoutePoint object
@@ -146,7 +148,12 @@ class RouteWithTrodEnv(RouteEnv):
 
                     self.grid.set(x, y, _)
                     all_trod_cells.append((x, y))
+
         self.unvisited_trods = set(all_trod_cells)
+        for each in self.unvisited_trods:
+            cell = self.grid.get(*each)
+            if isinstance(cell, TrodTile) and self.in_view(each[0], each[1]):
+                cell.view = True
 
     def step(self, action):
         # Record the agent's current position before executing the action
@@ -156,22 +163,29 @@ class RouteWithTrodEnv(RouteEnv):
         obs, reward, terminated, truncated, info = super().step(action)
         # Check if agent stepped on a path tile and update its color
         # Ensure the agent has actually moved
+
+        for each in self.unvisited_trods:
+            cell = self.grid.get(*each)
+            if isinstance(cell, TrodTile) and self.in_view(each[0], each[1]):
+                cell.view = True
+
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
             if isinstance(cell, TrodTile) and cell.color != CHECKED:
                 cell.update_color()
                 self.unvisited_trods.remove(self.agent_pos)
                 self.visited_trods.add(self.agent_pos)
+
         reward = self._reward()
         return obs, reward, terminated, truncated, info
 
     def reward_breakdown(self):
-        return super().reward_breakdown(), self._reward()
+        return super().reward_breakdown(), 0.15 * len(self.visited_trods), self._reward()
 
     def _reward(self) -> float:
         reward = super()._reward()
         if not self.unvisited_tiles and self.agent_pos == self.start_pos:
             # Provide a positive reward for completing the task
-            return reward + 0.05 * len(self.visited_trods)
+            return reward + 0.15 * len(self.visited_trods)
         else:
             return reward

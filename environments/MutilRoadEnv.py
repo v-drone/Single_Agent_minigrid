@@ -207,7 +207,8 @@ class RouteEnv(EmptyEnv):
         return obs, reward, terminated, truncated, info
 
     def reward_breakdown(self):
-        return super()._reward(), super()._reward() * self.basic_coefficient + 0.05 * len(self.visited_tiles)
+        return (super()._reward() * self.basic_coefficient,
+                super()._reward() * self.basic_coefficient + 0.05 * len(self.visited_tiles))
 
     def distance_to_closest_blue(self, pos):
         # Calculate the Manhattan distance to the closest blue tile

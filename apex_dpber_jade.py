@@ -61,10 +61,13 @@ def train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_pat
 
     checkpoint_path = str(os.path.join(checkpoint_path, "results"))
     check_path(checkpoint_path)
-
+    keys_to_extract_sam = {"episode_reward_max", "episode_reward_min", "episode_reward_mean"}
     for i in tqdm.tqdm(range(1, setting.log.max_run)):
         result = trainer.train()
         time_used = result["time_total_s"]
+        sampler = result.get("sampler_results", {}).copy()
+
+        sam = {key: sampler[key] for key in keys_to_extract_sam if key in sampler}
 
         process = subprocess.Popen("nvidia-smi", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, error = process.communicate()
@@ -79,6 +82,8 @@ def train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_pat
             result["top"] = output.decode()
         else:
             result["top"] = error.decode()
+        tqdm.tqdm.write("episode %d ; " % result["episodes_total"] + " ".join(["%s : %f8" % (i, j)
+                                                                               for i, j in sam.items()]))
 
         if i % setting.log.log == 0:
             model_to_save = trainer.learner_thread.local_worker.get_policy().model

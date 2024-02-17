@@ -14,7 +14,6 @@ from environments.MutilRoadEnv import RouteEnv
 from environments.AddBatteryWrapper import AddBatteryWrapper
 from environments.AddEmptyWrapper import AddEmptyWrapper
 from environments.AddRewardRenderWrapper import AddRewardRenderWrapper
-from environments.HiddenTrodWrapper import HiddenTrodWrapper
 from environments.SmallNegWrapper import SmallNegativeWrapper
 from environments.DistanceBouns import CloserWrapper
 from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
@@ -71,7 +70,6 @@ def minigrid_env_creator(env_config):
             env = CloserWrapper(env)
         env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
         env = ImgObsWrapper(env)
-        env = HiddenTrodWrapper(env)
         env = AddRewardRenderWrapper(env)
         env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
         env = AddBatteryWrapper(env)
