@@ -57,12 +57,12 @@ def minigrid_env_creator(env_config):
         elif env_config["id"] == "Route":
             env = RouteEnv(**env_config)
             if env_config.get("hit", False):
-                env = HitRouteWrapper(env)
+                env = HitRouteWrapper(env, bonus=env_config["hit"])
         elif env_config["id"] == "RouteByMapEnv":
             env = RouteByMapEnv(**env_config)
             if env_config.get("hit", False):
-                env = HitRouteWrapper(env)
-                env = HitTrodWrapper(env)
+                env = HitRouteWrapper(env, bonus=env_config["hit"])
+                env = HitTrodWrapper(env, bonus=env_config["hit"] * 2)
         else:
             raise NotImplementedError
         env = SmallNegativeWrapper(env)
