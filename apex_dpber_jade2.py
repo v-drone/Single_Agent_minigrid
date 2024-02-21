@@ -38,7 +38,7 @@ hyper_parameters["hiddens"] = [256, 256, 128]
 model_name = "BlockCNN"
 ModelCatalog.register_custom_model(model_name, BlockCNN)
 hyper_parameters["model"] = {
-    "custom_model": "BlockCNN",
+    "custom_model": model_name,
     "no_final_linear": True,
     "fcnet_hiddens": hyper_parameters["hiddens"] + [256 + 1],
     "custom_model_config": {

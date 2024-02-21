@@ -40,7 +40,7 @@ from model.image_decoder import BasicCNN
 
 ModelCatalog.register_custom_model(model_name, BasicCNN)
 hyper_parameters["model"] = {
-    "custom_model": "BasicCNN",
+    "custom_model": model_name,
     "no_final_linear": True,
     "fcnet_hiddens": hyper_parameters["hiddens"] + [257],
     "custom_model_config": {
