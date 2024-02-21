@@ -33,7 +33,7 @@ checkpoint_path = str(parser.parse_args().checkpoint_path)
 # Load Model
 from model.image_decoder_block import BlockCNN
 
-hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, "Route")
+hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, env_name)
 hyper_parameters["hiddens"] = [256, 256, 128]
 model_name = "BlockCNN"
 ModelCatalog.register_custom_model(model_name, BlockCNN)

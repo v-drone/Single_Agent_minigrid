@@ -31,7 +31,7 @@ log_path = str(parser.parse_args().log_path)
 checkpoint_path = str(parser.parse_args().checkpoint_path)
 
 # Load hyper_parameters
-hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, "Route")
+hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, env_name)
 hyper_parameters["hiddens"] = [256, 256, 128]
 model_name = "BasicCNN"
 
