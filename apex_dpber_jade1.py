@@ -5,7 +5,6 @@ from dynaconf import Dynaconf
 from apex_dpber_jade import set_hyper_parameters, train_loop
 from ray.rllib.models import ModelCatalog
 from algorithms.apex_ddqn import ApexDDQNWithDPBER
-from model.image_decoder import BasicCNN
 from utils import check_path
 
 # Init Ray
@@ -35,7 +34,10 @@ checkpoint_path = str(parser.parse_args().checkpoint_path)
 hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, "Route")
 hyper_parameters["hiddens"] = [256, 256, 128]
 model_name = "BasicCNN"
+
 # Load Model
+from model.image_decoder import BasicCNN
+
 ModelCatalog.register_custom_model(model_name, BasicCNN)
 hyper_parameters["model"] = {
     "custom_model": "BasicCNN",

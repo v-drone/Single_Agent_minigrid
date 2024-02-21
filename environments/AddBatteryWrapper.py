@@ -33,4 +33,5 @@ class AddBatteryWrapper(ObservationWrapper):
         # energy_bar_img[:, :energy_bar_width] = energy_bar_color
         #
         # img_ex = np.concatenate((energy_bar_img, img[cut_off[0]:-cut_off[1], :, :]), axis=0)
-        return np.concatenate([img, np.array([self.battery])])
+        return np.concatenate([img, np.array([self.battery], dtype=np.uint8)],
+                              dtype=self.observation_space.dtype)
