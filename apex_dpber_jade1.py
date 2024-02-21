@@ -49,7 +49,7 @@ hyper_parameters["model"] = {
     }
 }
 
-run_name = "%s %s dpber " % (env_name, model_name) + run_name
+run_name = "%s %s dpber %s" % (env_name, model_name, run_name)
 # Check path available
 check_path(log_path)
 log_path = path.join(log_path, run_name)
