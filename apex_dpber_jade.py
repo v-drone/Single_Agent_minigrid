@@ -23,7 +23,6 @@ def set_hyper_parameters(setting, checkpoint_path, env_name):
         "battery": 100,
         "img_size": 100,
         "tile_size": 8,
-        "num_stack": 30,
         "render_mode": "rgb_array",
         "agent_pov": False
     }
@@ -37,7 +36,7 @@ def set_hyper_parameters(setting, checkpoint_path, env_name):
     replay_buffer_config = {
         **hyper_parameters["replay_buffer_config"],
         "type": MultiAgentPrioritizedBlockReplayBuffer,
-        "capacity": 1000000,
+        "capacity": hyper_parameters["replay_buffer_config"]["capacity"],
         "obs_space": env_example.observation_space,
         "action_space": env_example.action_space,
         "sub_buffer_size": sub_buffer_size,
