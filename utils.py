@@ -22,6 +22,7 @@ from environments.HitRouteWrapper import HitRouteWrapper
 from minigrid.wrappers import RGBImgObsWrapper, ImgObsWrapper
 from gymnasium.wrappers import ResizeObservation, TimeLimit
 
+
 agent_dir = {
     0: '>',
     1: 'V',
