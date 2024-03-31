@@ -4,8 +4,8 @@ from typing import Any
 
 import math
 from minigrid.core.constants import TILE_PIXELS
-
-from minigrid.utils.rendering import downsample, fill_coords, highlight_img, point_in_triangle, rotate_fn
+from minigrid.core.world_object import Lava
+from minigrid.utils.rendering import downsample, fill_coords, point_in_rect, point_in_triangle, rotate_fn
 
 COLORS = {
     "red": np.array([255, 0, 0]),
@@ -20,6 +20,17 @@ COLORS = {
 COLOR_TO_IDX = {"red": 0, "green": 1, "blue": 2, "purple": 3, "yellow": 4, "grey": 5, "white": 9}
 
 CHECKED = 'yellow'
+
+
+class WallFail(Lava):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self, color: str = "grey"):
+        super().__init__()
+        self.color = color
+
+    def render(self, img):
+        fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
 
 class Grid(OriginalGrid):
@@ -61,9 +72,9 @@ class Grid(OriginalGrid):
             tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi * agent_dir)
             fill_coords(img, tri_fn, (255, 0, 0))
 
-        # Highlight the cell if needed
-        if highlight:
-            highlight_img(img)
+        # # Highlight the cell if needed
+        # if highlight:
+        #     highlight_img(img)
 
         img = downsample(img, subdivs)
 
@@ -71,6 +82,12 @@ class Grid(OriginalGrid):
         self.tile_cache[key] = img
 
         return img
+
+    def wall_rect(self, x: int, y: int, w: int, h: int):
+        self.horz_wall(x, y, w, WallFail)
+        self.horz_wall(x, y + h - 1, w, WallFail)
+        self.vert_wall(x, y, h, WallFail)
+        self.vert_wall(x + w - 1, y, h, WallFail)
 
     def render(self, tile_size: int, agent_pos: tuple[int, int], agent_dir=None, highlight_mask=None):
         """

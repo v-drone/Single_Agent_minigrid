@@ -1,16 +1,16 @@
 from __future__ import annotations
+from environments.CustomGrid import Grid, COLOR_TO_IDX, COLORS, CHECKED
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Floor, Goal
 from minigrid.core.actions import IntEnum
+from minigrid.utils.rendering import fill_coords, point_in_rect
+from minigrid.core.constants import OBJECT_TO_IDX
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
-from environments.CustomGrid import Grid, COLOR_TO_IDX, COLORS, CHECKED
 import numpy as np
 import random
 import colorsys
-from minigrid.utils.rendering import fill_coords, point_in_rect
-from minigrid.core.constants import OBJECT_TO_IDX
 
 
 def get_color(color, color_buffer):
@@ -78,6 +78,7 @@ class RouteEnv(EmptyEnv):
         self.basic_coefficient = basic_coefficient
         self.prev_distance = size * 2
         self.current_distance = size * 2
+        self.walked = np.zeros(shape=[size, size], dtype=np.uint8)
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         obs, _ = super().reset()
@@ -86,6 +87,7 @@ class RouteEnv(EmptyEnv):
         self.current_distance = self.distance_to_closest_blue(self.agent_pos)
         self.visited_tiles = set()
         self.prev_pos = np.copy(self.agent_pos)
+        self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
         return obs, {}
 
     def _gen_grid(self, width, height):
@@ -194,13 +196,16 @@ class RouteEnv(EmptyEnv):
                 self.unvisited_tiles.remove(self.agent_pos)
                 self.visited_tiles.add(self.agent_pos)
 
+        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
         reward = self._reward()
         # Check if agent stepped on a path tile and update its color
         # Ensure the agent has actually moved
 
         # Check the game ending conditions
-        if not self.unvisited_tiles and self.agent_pos == self.start_pos:
+        if not self.unvisited_tiles and terminated:
             terminated = True
+        elif self.agent_pos != self.start_pos and terminated:
+            pass
         else:
             terminated = False
 

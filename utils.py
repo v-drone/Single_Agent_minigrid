@@ -8,20 +8,19 @@ import numpy as np
 from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
+from minigrid.wrappers import ImgObsWrapper
+from gymnasium.wrappers import ResizeObservation, TimeLimit
 from environments.TrodByMapEnv import RouteByMapEnv
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
 from environments.MutilRoadEnv import RouteEnv
-from environments.AddBatteryWrapper import AddBatteryWrapper
-from environments.AddEmptyWrapper import AddEmptyWrapper
+from environments.ExtraInfoWrapper import ExtraInfoWrapper
 from environments.AddRewardRenderWrapper import AddRewardRenderWrapper
 from environments.SmallNegWrapper import SmallNegativeWrapper
 from environments.DistanceBouns import CloserWrapper
 from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
 from environments.HitTrodWrapper import HitTrodWrapper
 from environments.HitRouteWrapper import HitRouteWrapper
-from minigrid.wrappers import RGBImgObsWrapper, ImgObsWrapper
-from gymnasium.wrappers import ResizeObservation, TimeLimit
-
+from environments.TwoWayRGB import RGBImgObsWrapper
 
 agent_dir = {
     0: '>',
@@ -69,18 +68,15 @@ def minigrid_env_creator(env_config):
         env = SmallNegativeWrapper(env)
         if env_config.get("closer", True):
             env = CloserWrapper(env)
-        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
+        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"], shape=env_config["shape"])
         env = ImgObsWrapper(env)
         env = AddRewardRenderWrapper(env)
-        env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
-        env = AddBatteryWrapper(env)
+        env = ExtraInfoWrapper(env)
         env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     else:
         env = gymnasium.make(env_config["id"], render_mode="rgb_array")
-        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"])
+        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"], shape=env_config["shape"])
         env = ImgObsWrapper(env)
-        env = ResizeObservation(env, (env_config["img_size"], env_config["img_size"]))
-        env = AddEmptyWrapper(env)
         env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     if env_config.get("ride_model", None) is not None:
         env = SimpleRIDEWrapper(env, env_config.get("ride_model"),

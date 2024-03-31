@@ -10,6 +10,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def sigmoid(x, alpha=50, beta=0.1):
+    return 1 / (1 + torch.exp(-beta * (x - alpha)))
+
+
 class BasicCNN(DQNTorchModel):
     def __init__(
             self,
@@ -28,7 +32,10 @@ class BasicCNN(DQNTorchModel):
             v_max: float = 10.0,
             sigma0: float = 0.5,
             add_layer_norm: bool = False,
-            img_size=0,
+            map_size=0,
+            view_size=0,
+            code_size=0,
+            battery=100,
             **kwargs
     ):
         super().__init__(obs_space=obs_space, action_space=action_space,
@@ -39,12 +46,35 @@ class BasicCNN(DQNTorchModel):
                          use_noisy=use_noisy,
                          v_min=v_min, v_max=v_max, sigma0=sigma0,
                          add_layer_norm=add_layer_norm)
-        self.img_size = img_size
+        self.map_size = map_size
+        self.view_size = view_size
+        self.code_size = code_size
+        self.battery = battery
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 13x13x256
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 7x7x256
+            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),  # Output: 7x7x512
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten(1)
+        )
+        self.view_layers = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),  # Output: 32x32x32
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 16x16x64
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 8x8x128
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 4x4x256
+            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),  # Output: 4x4x512
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten(1)
+        )
+
+        self.code_layers = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),  # Output: 32x32x16
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),  # Output: 16x16x32
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 8x8x64
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 4x4x128
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 4x4x256
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(1)
         )
@@ -56,18 +86,43 @@ class BasicCNN(DQNTorchModel):
     def process_conv(self, obs):
         batch_size, f = obs.shape
         bat = obs[:, -1]
-        img = obs[:, 0:-1]
-        # permute b/c data comes in as [B, dim, dim, channels]:
-        img = img.reshape([batch_size, self.img_size, self.img_size, 3])
-        return img, bat, batch_size
+        epsilon = 1e-6
+        bat_prime = bat + epsilon
+        bat_normalized = 1 - sigmoid(bat_prime, int(self.battery / 2), 0.1)
+
+        if bat_normalized.device != obs.device:
+            bat_normalized = bat_normalized.to(obs.device)
+
+        img = obs[:, 0:self.map_size * self.map_size * 3]
+        img = img.reshape([batch_size, self.map_size, self.map_size, 3])
+        location = self.map_size * self.map_size * 3
+        view = obs[:, location: location + self.view_size * self.view_size * 3]
+        view = view.reshape([batch_size, self.view_size, self.view_size, 3])
+        location += self.view_size * self.view_size * 3
+        code = obs[:, location: -1]
+        code = code.reshape([batch_size, self.code_size, self.code_size, 1])
+        return img, view, code, bat_normalized, batch_size
 
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"].float()
-        img, bat, batch_size = self.process_conv(obs)
+        img, view, code, bat, batch_size = self.process_conv(obs)
+
+        # map
         img = img.permute(0, 3, 1, 2)
         img = self.conv_layers(img)
         img = img.view(batch_size, -1)
-        self._features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
+
+        # view
+        view = view.permute(0, 3, 1, 2)
+        view = self.view_layers(view)
+        view = view.view(batch_size, -1)
+
+        # code
+        code = code.permute(0, 3, 1, 2)
+        code = self.code_layers(code)
+        code = code.view(batch_size, -1)
+
+        self._features = torch.concat([img, view, code, bat.unsqueeze(-1)], dim=-1)
         return self._features.flatten(1), state
 
     def value_function(self):
@@ -80,32 +135,58 @@ class WrappedModel(nn.Module):
         self.original_model = original_model
 
     def forward(self, obs):
-        img, bat, batch_size = self.original_model.process_conv(obs)
-        img = img.permute(0, 3, 1, 2)
-        img = self.original_model.conv_layers(img)
-        img = img.view(batch_size, -1)
-        features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
+        map_img, view_img, code, bat, batch_size = self.original_model.process_conv(obs)
+
+        # map_img
+        map_img = map_img.permute(0, 3, 1, 2)
+        map_img = self.original_model.conv_layers(map_img)
+        map_img = map_img.view(batch_size, -1)
+
+        # view_img
+        view_img = view_img.permute(0, 3, 1, 2)
+        view_img = self.original_model.view_layers(view_img)
+        view_img = view_img.view(batch_size, -1)
+
+        # code_img
+        code = code.permute(0, 3, 1, 2)
+        code = self.original_model.code_layers(code)
+        code = code.view(batch_size, -1)
+
+        features = torch.concat([map_img, view_img, code, bat.unsqueeze(-1)], dim=-1)
         action_scores = features.flatten(start_dim=1)  # Ensure no in-place modification
         advantage = self.original_model.advantage_module(action_scores)
-        value = self.original_model.value_module(features)
         logit = torch.unsqueeze(torch.ones_like(action_scores), -1)  # No in-place modification here
-        return advantage, value, logit
+        if self.original_model.dueling:
+            value = self.original_model.value_module(features)
+            return advantage, value, logit
+        else:
+            return advantage, logit, logit
 
 
 class WrappedEmbedding(nn.Module):
     def __init__(self, original_model):
         super(WrappedEmbedding, self).__init__()
-        self.conv_layers = original_model.conv_layers
-        self.img_size = original_model.img_size
+        self.original_model = original_model
+        self.map_size = original_model.map_size
+        self.code_size = original_model.code_size
+        self.view_size = original_model.view_size
 
     def forward(self, obs):
-        batch_size, f = obs.shape
-        bat = obs[:, -1]
-        img = obs[:, 0:-1]
-        # permute b/c data comes in as [B, dim, dim, channels]:
-        img = img.reshape([batch_size, self.img_size, self.img_size, 3])
-        img = img.permute(0, 3, 1, 2)
-        img = self.conv_layers(img)
-        img = img.view(batch_size, -1)
-        features = torch.concat([img, bat.unsqueeze(-1)], dim=-1)
-        return features
+        map_img, view_img, code, bat, batch_size = self.original_model.process_conv(obs)
+
+        # map_img
+        map_img = map_img.permute(0, 3, 1, 2)
+        map_img = self.original_model.conv_layers(map_img)
+        map_img = map_img.view(batch_size, -1)
+
+        # view_img
+        view_img = view_img.permute(0, 3, 1, 2)
+        view_img = self.original_model.view_layers(view_img)
+        view_img = view_img.view(batch_size, -1)
+
+        # code_img
+        code = code.permute(0, 3, 1, 2)
+        code = self.original_model.code_layers(code)
+        code = code.view(batch_size, -1)
+
+        return torch.concat([map_img, view_img, code, bat.unsqueeze(-1)], dim=-1)

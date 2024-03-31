@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 from dynaconf import Dynaconf
 from utils import check_path
-from apex_dpber_jade import set_hyper_parameters, train_loop
+from train_functions import set_hyper_parameters, train_loop
 from ray.rllib.models import ModelCatalog
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.utils.typing import PolicyID
@@ -58,7 +58,7 @@ hyper_parameters, env_example = set_hyper_parameters(setting, checkpoint_path, e
 #hyper_parameters["callbacks"] = RestoreReCallbacks
 
 # Load Model
-from model.image_decoder_block import BlockCNN
+from model.image_decoder_attention import BlockCNN
 
 hyper_parameters["hiddens"] = [256, 256, 128]
 model_name = "BlockCNN"

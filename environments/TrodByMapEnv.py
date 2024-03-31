@@ -1,16 +1,13 @@
 from __future__ import annotations
-
 import random
 
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv, TrodTile
 from environments.MutilRoadEnv import PathTile, Goal
-from minigrid.core.world_object import Floor, Lava
+from minigrid.core.world_object import Lava
 from minigrid.core.grid import Grid
 from typing import Any
-import numpy as np
 
 
-# Update the RouteEnv class to use the new RoutePoint object
 class RouteByMapEnv(RouteWithTrodEnv):
 
     def __init__(self, size=20, max_steps=100, routes=(3, 5), trods=(3, 5),
