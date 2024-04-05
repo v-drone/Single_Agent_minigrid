@@ -6,6 +6,7 @@ from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
 from ray.rllib.utils.typing import ModelConfigDict
 from typing import Sequence
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,18 +35,15 @@ class SimpleAttention(nn.Module):
 
 
 class BatteryAttention(nn.Module):
-    def __init__(self, feature_dim, battery_dim=1, hidden_dim=128):
+    def __init__(self, feature_dim, battery_dim=1):
         super(BatteryAttention, self).__init__()
-        self.feature_transform = nn.Linear(feature_dim, hidden_dim)
-        self.battery_transform = nn.Linear(battery_dim, hidden_dim)
-        self.final_transform = nn.Linear(hidden_dim, feature_dim)
+        self.attention_fc = nn.Linear(battery_dim, feature_dim)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, features, battery):
-        transformed_features = self.feature_transform(features)
-        battery_info = self.battery_transform(battery)
-        combined = transformed_features + battery_info
-        attention_weights = self.sigmoid(self.final_transform(combined))
+        # features [batch_size, feature_dim]
+        # battery [batch_size, 1]
+        attention_weights = self.sigmoid(self.attention_fc(battery))
         weighted_features = features * attention_weights
         return weighted_features
 
@@ -70,6 +68,7 @@ class AttentionCNN(DQNTorchModel):
             add_layer_norm: bool = False,
             map_size=0,
             view_size=0,
+            code_size=0,
             battery=100,
             **kwargs
     ):
@@ -83,9 +82,10 @@ class AttentionCNN(DQNTorchModel):
                          add_layer_norm=add_layer_norm)
         self.map_size = map_size
         self.view_size = view_size
+        self.code_size = code_size
         self.battery = battery
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
+            nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
             nn.LeakyReLU(negative_slope=0.01),
@@ -115,7 +115,23 @@ class AttentionCNN(DQNTorchModel):
             nn.Flatten(1),
         )
 
-        self.battery_attention = BatteryAttention(feature_dim=512 + 512)
+        self.code_layers = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),  # Output: 32x32x16
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),  # Output: 16x16x32
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 8x8x64
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 4x4x128
+            nn.LeakyReLU(negative_slope=0.01),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 4x4x256
+            nn.LeakyReLU(negative_slope=0.01),
+            SimpleAttention(256),
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten(1),
+        )
+
+        self.battery_attention = BatteryAttention(feature_dim=512 + 512 + 256)
         self._features = None
 
     def import_from_h5(self, h5_file: str) -> None:
@@ -137,11 +153,13 @@ class AttentionCNN(DQNTorchModel):
         view = obs[:, location: location + self.view_size * self.view_size * 3]
         view = view.reshape([batch_size, self.view_size, self.view_size, 3])
         location += self.view_size * self.view_size * 3
-        return img, view, bat_normalized, batch_size
+        code = obs[:, location: -1]
+        code = code.reshape([batch_size, self.code_size, self.code_size, 1])
+        return img, view, code, bat_normalized, batch_size
 
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"].float()
-        img, view, bat, batch_size = self.process_conv(obs)
+        img, view, code, bat, batch_size = self.process_conv(obs)
 
         # map
         img = img.permute(0, 3, 1, 2)
@@ -153,7 +171,12 @@ class AttentionCNN(DQNTorchModel):
         view = self.view_layers(view)
         view = view.view(batch_size, -1)
 
-        self._features = torch.concat([img, view], dim=-1)
+        # code
+        code = code.permute(0, 3, 1, 2)
+        code = self.code_layers(code)
+        code = code.view(batch_size, -1)
+
+        self._features = torch.concat([img, view, code], dim=-1)
 
         self._features = self.battery_attention(self._features, bat.unsqueeze(-1))
 
@@ -169,7 +192,7 @@ class WrappedModel(nn.Module):
         self.original_model = original_model
 
     def forward(self, obs):
-        map_img, view_img, bat, batch_size = self.original_model.process_conv(obs)
+        map_img, view_img, code, bat, batch_size = self.original_model.process_conv(obs)
 
         # map_img
         map_img = map_img.permute(0, 3, 1, 2)
@@ -181,7 +204,12 @@ class WrappedModel(nn.Module):
         view_img = self.original_model.view_layers(view_img)
         view_img = view_img.view(batch_size, -1)
 
-        features = torch.concat([map_img, view_img], dim=-1)
+        # code_img
+        code = code.permute(0, 3, 1, 2)
+        code = self.original_model.code_layers(code)
+        code = code.view(batch_size, -1)
+
+        features = torch.concat([map_img, view_img, code], dim=-1)
         features = self.original_model.battery_attention(features, bat.unsqueeze(-1))
         action_scores = features.flatten(start_dim=1)  # Ensure no in-place modification
         advantage = self.original_model.advantage_module(action_scores)
@@ -202,7 +230,7 @@ class WrappedEmbedding(nn.Module):
         self.view_size = original_model.view_size
 
     def forward(self, obs):
-        map_img, view_img, bat, batch_size = self.original_model.process_conv(obs)
+        map_img, view_img, code, bat, batch_size = self.original_model.process_conv(obs)
 
         # map_img
         map_img = map_img.permute(0, 3, 1, 2)
@@ -214,6 +242,11 @@ class WrappedEmbedding(nn.Module):
         view_img = self.original_model.view_layers(view_img)
         view_img = view_img.view(batch_size, -1)
 
-        features = torch.concat([map_img, view_img], dim=-1)
+        # code_img
+        code = code.permute(0, 3, 1, 2)
+        code = self.original_model.code_layers(code)
+        code = code.view(batch_size, -1)
+
+        features = torch.concat([map_img, view_img, code], dim=-1)
         features = self.original_model.battery_attention(features, bat.unsqueeze(-1))
         return features
