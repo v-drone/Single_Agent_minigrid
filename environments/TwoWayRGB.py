@@ -11,7 +11,7 @@ class RGBImgObsWrapper(ObservationWrapper):
             shape = [[100, 100], [64, 64]]
         self.shape = shape
         self.tile_size = tile_size
-        new_image_space = [np.prod(self.shape[0]) * 3 + np.prod(self.shape[1]) * 3, ]
+        new_image_space = [np.prod(self.shape[0]) * 4 + np.prod(self.shape[1]) * 3, ]
         new_image_space = spaces.Box(
             low=0,
             high=255,
@@ -23,10 +23,17 @@ class RGBImgObsWrapper(ObservationWrapper):
         )
 
     def observation(self, obs):
+        walked = self.walked.copy()
+        resized_walked = cv2.resize(walked,
+                                    [self.shape[0][0], self.shape[0][1]],
+                                    interpolation=cv2.INTER_LINEAR)
+        resized_walked = np.expand_dims(resized_walked, -1)
         rgb_img = self.get_frame(highlight=False, tile_size=self.tile_size)
         rgb_img = cv2.resize(
             rgb_img, self.shape[0][::-1], interpolation=cv2.INTER_AREA
-        ).flatten()
+        )
+        print(rgb_img.shape, resized_walked.shape)
+        rgb_img = np.concatenate([rgb_img, resized_walked], -1).flatten()
         rgb_view = self.get_frame(highlight=False, tile_size=self.tile_size, agent_pov=True)
         rgb_view = cv2.resize(
             rgb_view, self.shape[1][::-1], interpolation=cv2.INTER_AREA
