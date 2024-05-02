@@ -10,7 +10,7 @@ import os
 class AirSimEnv(abc.ABC):
     def __init__(self):
         super(AirSimEnv, self).__init__()
-        self.remote_ip = "192.168.0.101:5000"
+        self.remote_ip = "http://192.168.0.103:5000"
         self.unity_process = None
         self.client = None
         self.client_id = None
