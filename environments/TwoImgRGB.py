@@ -32,7 +32,6 @@ class RGBImgObsWrapper(ObservationWrapper):
         rgb_img = cv2.resize(
             rgb_img, self.shape[0][::-1], interpolation=cv2.INTER_AREA
         )
-        print(rgb_img.shape, resized_walked.shape)
         rgb_img = np.concatenate([rgb_img, resized_walked], -1).flatten()
         rgb_view = self.get_frame(highlight=False, tile_size=self.tile_size, agent_pov=True)
         rgb_view = cv2.resize(

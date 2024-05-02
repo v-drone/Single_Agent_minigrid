@@ -9,7 +9,7 @@ from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
 from minigrid.wrappers import ImgObsWrapper
-from gymnasium.wrappers import ResizeObservation, TimeLimit
+from gymnasium.wrappers import TimeLimit
 from environments.TrodByMapEnv import RouteByMapEnv
 from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
 from environments.MutilRoadEnv import RouteEnv
@@ -20,7 +20,7 @@ from environments.DistanceBouns import CloserWrapper
 from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
 from environments.HitTrodWrapper import HitTrodWrapper
 from environments.HitRouteWrapper import HitRouteWrapper
-from environments.TwoWayRGB import RGBImgObsWrapper
+from environments.TwoImgRGB import RGBImgObsWrapper
 
 agent_dir = {
     0: '>',

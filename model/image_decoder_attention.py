@@ -131,9 +131,9 @@ class AttentionCNN(DQNTorchModel):
         if bat_normalized.device != obs.device:
             bat_normalized = bat_normalized.to(obs.device)
 
-        img = obs[:, 0:self.map_size * self.map_size * 3]
-        img = img.reshape([batch_size, self.map_size, self.map_size, 3])
-        location = self.map_size * self.map_size * 3
+        img = obs[:, 0:self.map_size * self.map_size * 4]
+        img = img.reshape([batch_size, self.map_size, self.map_size, 4])
+        location = self.map_size * self.map_size * 4
         view = obs[:, location: location + self.view_size * self.view_size * 3]
         view = view.reshape([batch_size, self.view_size, self.view_size, 3])
         location += self.view_size * self.view_size * 3
