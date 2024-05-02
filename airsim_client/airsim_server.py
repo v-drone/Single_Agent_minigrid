@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 airsim_info = {
     1: {"port": 41451, "path": "c:\\User\\dawei\\Desktop\\airsim_win\\AirsimAssets1"},
-    2: {"port": 41452, "path": "c:\\User\\dawei\\Desktop\\airsim_win\\AirsimAssets2"},
+    # 2: {"port": 41452, "path": "c:\\User\\dawei\\Desktop\\airsim_win\\AirsimAssets2"},
 }
 
 used_ports = {}
