@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 airsim_info = {
-    1: {"port": 41451, "path": "c:\\Users\\c0000378\\Documents\\airsimcar\\AirSimAssets"},
+    1: {"port": 41451, "path": "c:\\Users\\c0000378\\Documents\\airsimcar\\AirSimAssets.exe"},
     # 2: {"port": 41452, "path": "c:\\User\\dawei\\Desktop\\airsim_win\\AirsimAssets2"},
 }
 
