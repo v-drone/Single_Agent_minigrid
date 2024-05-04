@@ -7,7 +7,9 @@ app = Flask(__name__)
 
 airsim_info = {
     #1: {"port": 41451, "path": "c:\\Users\\c0000378\\Documents\\airsimcar\\AirSimAssets.exe"},
-    1: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar\\AirSimAssets.exe"},
+    1: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_1\\AirSimAssets.exe"},
+    2: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_2\\AirSimAssets.exe"},
+
 }
 
 used_ports = {}
@@ -30,13 +32,14 @@ def start_airsim(path):
         raise Exception(f"Unity executable not found or not executable: {path}")
 
 
+# DONE
 @app.route('/get_client', methods=['GET'])
 def get_client():
     info_id, port, path = get_available_port()
     if info_id is not None and port is not None and path is not None:
         process = start_airsim(path)
         used_ports[info_id] = process.pid
-        return jsonify({'port': port, 'client_id': info_id})
+        return jsonify({'port': port, 'client_id': info_id, 'message': 'AirSim Client started'})
     else:
         return jsonify({'message': 'No available AirSim environment'})
 

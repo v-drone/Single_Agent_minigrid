@@ -52,7 +52,9 @@ class UAVWithMapEmpty(EmptyEnv):
         self.local_client_id = self.connect_local_airsim_server()
 
     def connect_local_airsim_server(self):
-        return requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
+        response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
+        if response.status_code == 200:
+            self.local_client_id = response.json()["local_client_id"]
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         obs, _ = super().reset()
