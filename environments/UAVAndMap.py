@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import requests
+
 from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Goal
@@ -26,7 +29,7 @@ class UAVWithMapEmpty(EmptyEnv):
         left_90 = 4
 
     def __init__(self, size=40, max_steps=400, battery=100, agent_view_size=3,
-                 basic_coefficient=0.1, ip_address="localhost", port=2222,
+                 basic_coefficient=0.1, port=5000,
                  render_mode="human", **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
@@ -45,6 +48,11 @@ class UAVWithMapEmpty(EmptyEnv):
         self.walked = np.zeros(shape=[size, size], dtype=np.uint8)
         self.visited_tiles = set()
         self.unvisited_tiles = set()
+        self.local_port = port
+        self.local_client_id = self.connect_local_airsim_server()
+
+    def connect_local_airsim_server(self):
+        return requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         obs, _ = super().reset()
