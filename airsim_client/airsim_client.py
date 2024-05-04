@@ -29,10 +29,10 @@ def restart_unity_environment():
     print(client[local_client_id])
     time.sleep(5)
     _ = {
-            'local_client_id': local_client_id,
-            'client_id': client_info_data["client_id"],
-            'client_port': client_info_data["port"]
-        }
+        'local_client_id': local_client_id,
+        'client_id': client_info_data["client_id"],
+        'client_port': client_info_data["port"]
+    }
     print(_)
     return jsonify(
         {
@@ -62,8 +62,9 @@ def render(local_client_id, mode='human'):
 
 @app.route('/close/<local_client_id>', methods=['POST'])
 def close(local_client_id):
-    # 请在这里添加关闭客户端的逻辑
-    pass
+    client_id = client_info[local_client_id]["client_id"]
+    client_info_data = requests.post(remote_address + "/cleanup_client", json={"client_id": client_id})
+    return client_info_data.json()
 
 
 if __name__ == '__main__':

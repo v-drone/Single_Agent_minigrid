@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 airsim_info = {
-    #1: {"port": 41451, "path": "c:\\Users\\c0000378\\Documents\\airsimcar\\AirSimAssets.exe"},
+    # 1: {"port": 41451, "path": "c:\\Users\\c0000378\\Documents\\airsimcar\\AirSimAssets.exe"},
     1: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_1\\AirSimAssets.exe"},
     2: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_2\\AirSimAssets.exe"},
 
@@ -52,11 +52,11 @@ def cleanup_port():
         try:
             os.kill(used_ports[client_id], signal.SIGTERM)
             del used_ports[client_id]
-            return jsonify({'message': f'Resources cleaned up for client_id {client_id}'})
+            return jsonify({'message': f'Resources cleaned up for client_id {client_id}', 'code': 0})
         except ProcessLookupError:
-            return jsonify({'message': f'Process not found for client_id {client_id}'})
+            return jsonify({'message': f'Process not found for client_id {client_id}', 'code': 1})
     else:
-        return jsonify({'message': f'Port not found in used ports'})
+        return jsonify({'message': f'Port not found in used ports', 'code': 2})
 
 
 if __name__ == '__main__':
