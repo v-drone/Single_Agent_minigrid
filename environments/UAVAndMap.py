@@ -49,14 +49,28 @@ class UAVWithMapEmpty(EmptyEnv):
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.local_port = port
-        self.local_client_id = self.connect_local_airsim_server()
+        self.local_client_id = None
+        self.connect_local_airsim_server(0)
+        self.prev_transitions = None
 
-    def connect_local_airsim_server(self):
+    def connect_local_airsim_server(self, tried):
+        if tried >= 10:
+            raise Exception
         response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
         if response.status_code == 200:
             self.local_client_id = response.json()["local_client_id"]
+        else:
+            tried += 1
+            self.connect_local_airsim_server(tried)
+
+    def kill_connect(self):
+        response = requests.post("http://127.0.0.1:%d/close/%d" % (self.local_port, self.local_client_id), json={})
+        if response.status_code == 200:
+            self.local_client_id = None
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
+        if self.local_client_id is None:
+            self.connect_local_airsim_server(0)
         obs, _ = super().reset()
         self.visited_tiles = set()
         self.unvisited_tiles = set()
