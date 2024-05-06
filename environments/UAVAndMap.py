@@ -29,7 +29,7 @@ class UAVWithMapEmpty(EmptyEnv):
         left_90 = 4
 
     def __init__(self, size=40, max_steps=400, battery=100, agent_view_size=3,
-                 basic_coefficient=0.1, port=5000,
+                 basic_coefficient=0.1, port=6000,
                  render_mode="human", **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,

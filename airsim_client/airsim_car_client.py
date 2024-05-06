@@ -5,7 +5,7 @@ import requests
 from airsim import CarClient
 
 remote_ip = "127.0.0.1"
-remote_address = "http://192.168.0.103:5000"
+remote_address = "http://127.0.0.1:5000"
 client_info = {}
 client = {}
 
@@ -70,4 +70,4 @@ def close(local_client_id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=6000)
