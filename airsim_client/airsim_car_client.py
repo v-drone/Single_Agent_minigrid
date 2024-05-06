@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 import requests
 from airsim import CarClient
 
-remote_ip = "192.168.0.103"
+remote_ip = "127.0.0.1"
 remote_address = "http://192.168.0.103:5000"
 client_info = {}
 client = {}
@@ -23,10 +23,10 @@ def restart_unity_environment():
         "client_port": client_info_data["port"],
         "client_id": client_info_data["client_id"],
     }
+    print(client_info[local_client_id])
     client_port = client_info[local_client_id]["client_port"]
     client[local_client_id] = CarClient(remote_ip, port=client_port)
     client[local_client_id].confirmConnection()
-    print(client_info[local_client_id])
     return jsonify(client_info[local_client_id])
 
 
