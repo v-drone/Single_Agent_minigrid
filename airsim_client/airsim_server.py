@@ -52,6 +52,7 @@ def get_client():
         process = start_airsim(path)
         time.sleep(5)
         used_ports[port] = process.pid
+        print(port)
         return jsonify({'port': port, 'client_id': info_id, 'message': 'AirSim Client started'})
     else:
         return jsonify({'message': 'No available AirSim environment'})
