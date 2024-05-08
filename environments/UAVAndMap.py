@@ -54,7 +54,7 @@ class UAVWithMapEmpty(EmptyEnv):
         self.prev_transitions = None
 
     def connect_local_airsim_server(self, tried):
-        if tried >= 10:
+        if tried >= 1:
             raise Exception
         response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
         if response.status_code == 200:
@@ -70,13 +70,19 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         if self.local_client_id is None:
-            self.connect_local_airsim_server(0)
+            self.connect_local_airsim_server(1)
         obs, _ = super().reset()
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.battery = self.full_battery
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-        return obs, {}
+        response = requests.post("http://127.0.0.1:%d/reset" % self.local_port,
+                                 json={"local_client_id": self.local_client_id})
+        if response.status_code == 200:
+            obs_ex = response.json()["obs"]
+            return obs, obs_ex
+        else:
+            raise Exception
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid

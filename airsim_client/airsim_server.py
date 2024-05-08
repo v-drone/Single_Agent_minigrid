@@ -24,7 +24,8 @@ def get_available_port():
 
 def start_airsim(path):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        batch_mode_args = ['-batchmode', '-nographics']
+        # batch_mode_args = ['-batchmode', '-nographics']
+        batch_mode_args = []
         command = [path] + batch_mode_args
         return subprocess.Popen(command)
 
