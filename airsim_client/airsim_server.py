@@ -11,7 +11,6 @@ airsim_info = {
     0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar\\AirSimAssets.exe"},
     # 1: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_1\\AirSimAssets.exe"},
     # 2: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_2\\AirSimAssets.exe"},
-
 }
 
 used_ports = {}
@@ -35,8 +34,8 @@ def get_available_port():
 
 def start_airsim(path):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        batch_mode_args = ['-batchmode', '-nographics']
-        # batch_mode_args = []
+        # batch_mode_args = ['-batchmode', '-nographics']
+        batch_mode_args = []
         command = [path] + batch_mode_args
         return subprocess.Popen(command)
 
