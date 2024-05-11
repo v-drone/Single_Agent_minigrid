@@ -23,14 +23,16 @@ class UAVWithMapEmpty(EmptyEnv):
     class Actions(IntEnum):
         # Turn left, turn right, move forward
         forward = 0
-        right_45 = 1
-        right_90 = 2
-        left_45 = 3
-        left_90 = 4
+        steering_0 = 1
+        steering_left_50 = 2
+        steering_right_50 = 3
+        steering_left_25 = 4
+        steering_right_25 = 5
+        stop = 6
 
     def __init__(self, size=40, max_steps=400, battery=100, agent_view_size=3,
                  basic_coefficient=0.1, port=6000,
-                 render_mode="human", **kwargs):
+                 render_mode="human", exist=0, **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
                          render_mode=render_mode)
@@ -50,10 +52,14 @@ class UAVWithMapEmpty(EmptyEnv):
         self.unvisited_tiles = set()
         self.local_port = port
         self.local_client_id = None
-        self.connect_local_airsim_server(0)
         self.prev_transitions = None
+        self.exist = exist
+        self.connect_local_airsim_server(0)
 
     def connect_local_airsim_server(self, tried):
+        if self.exist == 1:
+            self.local_client_id = 0
+            return
         if tried >= 1:
             raise Exception
         response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
@@ -64,7 +70,8 @@ class UAVWithMapEmpty(EmptyEnv):
             self.connect_local_airsim_server(tried)
 
     def kill_connect(self):
-        response = requests.post("http://127.0.0.1:%d/close/%d" % (self.local_port, self.local_client_id), json={})
+        response = requests.post("http://127.0.0.1:%d/close/" % self.local_port,
+                                 json={"local_client_id": self.local_client_id})
         if response.status_code == 200:
             self.local_client_id = None
 

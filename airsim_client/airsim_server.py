@@ -62,7 +62,7 @@ def cleanup_port():
     data = request.json
     if 'client_id' in data:
         client_id = data['client_id']
-        port = data['port']
+        port = airsim_info[client_id]["port"]
         code = kill_airsim(port)
         return jsonify({'message': f'Resources cleaned up for client_id {client_id}', 'code': code})
 

@@ -81,7 +81,9 @@ def close():
     else:
         local_client_id = data.get('local_client_id')
     client_id = client_info[int(local_client_id)]["client_id"]
+    print(client_id)
     client_info_data = requests.post(remote_address + "/cleanup_client", json={"client_id": client_id})
+    print(client_info_data.json())
     return client_info_data.json()
 
 
