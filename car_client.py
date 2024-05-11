@@ -46,7 +46,9 @@ def step():
             return jsonify({'error': f'Client {local_client_id} not found'}), 404
         else:
             car = client_info[local_client_id]["car"]
-            return jsonify({'message': f'Step action {action} executed for client {local_client_id}'})
+            obs = car.do_action(action)
+            return jsonify({"obs": obs.tolist(),
+                            'message': f'Step action {action} executed for client {local_client_id}'})
 
 
 @app.route('/reset', methods=['POST'])
@@ -58,7 +60,7 @@ def reset():
         local_client_id = data.get('local_client_id')
         car = client_info[local_client_id].get("car", None)
         if car is not None:
-            obs, _ = car.reset()
+            obs = car.reset()
             return jsonify({"obs": obs.tolist(), "local_client_id": local_client_id})
         else:
             return jsonify({'error': 'Missing local_client_id or action'}), 400

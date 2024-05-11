@@ -83,7 +83,7 @@ class UAVWithMapEmpty(EmptyEnv):
         self.unvisited_tiles = set()
         self.battery = self.full_battery
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-        response = requests.post("http://127.0.0.1:%d/reset" % self.local_port,
+        response = requests.post("http://127.0.0.1/reset",
                                  json={"local_client_id": self.local_client_id})
         if response.status_code == 200:
             obs_ex = response.json()["obs"]
@@ -141,34 +141,40 @@ class UAVWithMapEmpty(EmptyEnv):
                     })
         return json_return
 
+    def _call_airsim_step(self, action):
+        response = requests.post("http://127.0.0.1/step",
+                                 json={"local_client_id": self.local_client_id,
+                                       "action": action})
+
     def step(self, action):
         # Record the agent's current position before executing the action
         self.prev_pos = np.copy(self.agent_pos)
 
         # Execute the agent's action
-        obs, reward, terminated, truncated, info = super().step(action)
-        # Update distance
 
-        if self.agent_pos == self.start_pos:
-            self.battery = self.full_battery
-        else:
-            self.battery -= 1
-
-        if self.battery <= 0:
-            truncated = True
-
-        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
-        reward = self._reward()
-        # Check if agent stepped on a path tile and update its color
-        # Ensure the agent has actually moved
-
-        # Check the game ending conditions
-        if not self.unvisited_tiles and terminated:
-            terminated = True
-        elif self.agent_pos != self.start_pos and terminated:
-            pass
-        else:
-            terminated = False
+        # obs, reward, terminated, truncated, info = super().step(action)
+        # # Update distance
+        #
+        # if self.agent_pos == self.start_pos:
+        #     self.battery = self.full_battery
+        # else:
+        #     self.battery -= 1
+        #
+        # if self.battery <= 0:
+        #     truncated = True
+        #
+        # self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
+        # reward = self._reward()
+        # # Check if agent stepped on a path tile and update its color
+        # # Ensure the agent has actually moved
+        #
+        # # Check the game ending conditions
+        # if not self.unvisited_tiles and terminated:
+        #     terminated = True
+        # elif self.agent_pos != self.start_pos and terminated:
+        #     pass
+        # else:
+        #     terminated = False
 
         return obs, reward, terminated, truncated, info
 

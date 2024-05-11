@@ -23,7 +23,7 @@ class CarConnector(object):
     def reset(self):
         self._setup_car()
         self.do_action(-1)
-        return self._get_obs(), {}
+        return self._get_obs()
 
     def _setup_car(self):
         self.car.reset()
@@ -51,6 +51,7 @@ class CarConnector(object):
 
         self.car.setCarControls(self.car_controls)
         time.sleep(1)
+        return self._get_obs()
 
     def transform_obs(self, response):
         img = Image.open(io.BytesIO(response))
