@@ -62,7 +62,7 @@ class UAVWithMapEmpty(EmptyEnv):
             return
         if tried >= 1:
             raise Exception
-        response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
+        response = requests.post("http://127.0.0.1/restart", json={})
         if response.status_code == 200:
             self.local_client_id = response.json()["local_client_id"]
         else:
@@ -70,7 +70,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.connect_local_airsim_server(tried)
 
     def kill_connect(self):
-        response = requests.post("http://127.0.0.1:%d/close/" % self.local_port,
+        response = requests.post("http://127.0.0.1/close/",
                                  json={"local_client_id": self.local_client_id})
         if response.status_code == 200:
             self.local_client_id = None
