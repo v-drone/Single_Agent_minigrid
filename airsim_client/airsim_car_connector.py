@@ -23,7 +23,7 @@ class CarConnector(object):
     def reset(self):
         self._setup_car()
         self.do_action(-1)
-        return self._get_obs()
+        return self._get_obs(), self._get_info()
 
     def _setup_car(self):
         self.car.reset()
@@ -34,24 +34,31 @@ class CarConnector(object):
     def do_action(self, action):
         if action == 0:
             self.car_controls.brake = 0
-            self.car_controls.throttle = 1
+            self.car_controls.throttle = 0.1
         elif action == 1:
-            self.car_controls.steering = 0
+            self.car_controls.brake = 0.5
+            self.car_controls.throttle = 0
         elif action == 2:
-            self.car_controls.steering = 0.5
+            self.car_controls.steering = 0
         elif action == 3:
-            self.car_controls.steering = -0.5
-        elif action == 4:
             self.car_controls.steering = 0.25
+        elif action == 4:
+            self.car_controls.steering = 0.5
         elif action == 5:
             self.car_controls.steering = -0.25
+        elif action == 6:
+            self.car_controls.steering = -0.5
         else:
+            self.car_controls.steering = 0
             self.car_controls.brake = 1
             self.car_controls.throttle = 0
 
         self.car.setCarControls(self.car_controls)
-        time.sleep(1)
-        return self._get_obs()
+        time.sleep(0.5)
+        return self._get_obs(), self._get_info()
+
+    def _get_info(self):
+        return self.car.getCarState()
 
     def transform_obs(self, response):
         img = Image.open(io.BytesIO(response))

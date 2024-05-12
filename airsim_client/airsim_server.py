@@ -2,7 +2,7 @@ import os
 import signal
 import subprocess
 import time
-
+import json
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -11,6 +11,10 @@ airsim_info = {
     0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar\\AirSimAssets.exe"},
     # 1: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_1\\AirSimAssets.exe"},
     # 2: {"port": 41451, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_2\\AirSimAssets.exe"},
+}
+
+map_info = {
+    0: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar\\map.json"}
 }
 
 used_ports = {}
@@ -68,6 +72,20 @@ def cleanup_port():
 
     else:
         return jsonify({'message': f'Port not found in used ports', 'code': 2})
+
+
+@app.route('/update_client', methods=['POST'])
+def reset_map_json():
+    data = request.json
+    if 'client_id' in data:
+        client_id = data['client_id']
+        map_dict = data["map"]
+        with open(map_info[client_id]["path"], "w") as f:
+            json.dump(map_dict, f)
+            return jsonify({'message': f'JSON file updated client_id {client_id}', 'code': 0})
+
+    else:
+        return jsonify({'message': f'client  not found in used ports', 'code': 2})
 
 
 if __name__ == '__main__':

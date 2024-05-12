@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import requests
-
 from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Goal
@@ -10,7 +8,9 @@ from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
 import numpy as np
+import requests
 import random
+import math
 
 mapper = {
     "lava": 1,
@@ -22,17 +22,18 @@ class UAVWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         # Turn left, turn right, move forward
-        forward = 0
-        steering_0 = 1
-        steering_left_50 = 2
-        steering_right_50 = 3
-        steering_left_25 = 4
+        throttle = 0
+        brake = 1
+        steering_0 = 2
+        steering_left_25 = 3
+        steering_left_50 = 4
         steering_right_25 = 5
-        stop = 6
+        steering_right_50 = 6
+        reset = 7
 
-    def __init__(self, size=40, max_steps=400, battery=100, agent_view_size=3,
+    def __init__(self, size=30, max_steps=400, battery=100, agent_view_size=3,
                  basic_coefficient=0.1, port=6000,
-                 render_mode="human", exist=0, **kwargs):
+                 render_mode="human", exist=0, render_rate=3, **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
                          render_mode=render_mode)
@@ -54,7 +55,7 @@ class UAVWithMapEmpty(EmptyEnv):
         self.local_client_id = None
         self.prev_transitions = None
         self.exist = exist
-        self.connect_local_airsim_server(0)
+        self.render_rate = render_rate
 
     def connect_local_airsim_server(self, tried):
         if self.exist == 1:
@@ -62,7 +63,7 @@ class UAVWithMapEmpty(EmptyEnv):
             return
         if tried >= 1:
             raise Exception
-        response = requests.post("http://127.0.0.1/restart", json={})
+        response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
         if response.status_code == 200:
             self.local_client_id = response.json()["local_client_id"]
         else:
@@ -70,53 +71,29 @@ class UAVWithMapEmpty(EmptyEnv):
             self.connect_local_airsim_server(tried)
 
     def kill_connect(self):
-        response = requests.post("http://127.0.0.1/close/",
+        response = requests.post("http://127.0.0.1:%d/close/" % self.local_port,
                                  json={"local_client_id": self.local_client_id})
         if response.status_code == 200:
             self.local_client_id = None
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         if self.local_client_id is None:
-            self.connect_local_airsim_server(1)
+            self.connect_local_airsim_server(0)
         obs, _ = super().reset()
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.battery = self.full_battery
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-        response = requests.post("http://127.0.0.1/reset",
-                                 json={"local_client_id": self.local_client_id})
+        response = requests.post("http://127.0.0.1:%d/reset" % self.local_port,
+                                 json={"local_client_id": self.local_client_id,
+                                       "map": self.to_json()})
         if response.status_code == 200:
             obs_ex = response.json()["obs"]
-            return obs, obs_ex
+            info = response.json()["info"]
+            obs = obs_ex
+            return obs, info
         else:
             raise Exception
-
-    def _gen_grid(self, width, height):
-        # Call the original _gen_grid method to generate the base grid
-        self.grid = Grid(width, height)
-
-        # Generate the surrounding walls
-        self.grid.wall_rect(0, 0, width, height)
-
-        if self.agent_start_pos is not None:
-            self.agent_pos = self.agent_start_pos
-            self.agent_dir = self.agent_start_dir
-        else:
-            self.place_agent()
-
-        # Random starting/goal point for the agent
-        start_x, start_y = random.randint(1, width - 2), random.randint(1, height - 2)
-        self.start_pos = (start_x, start_y)
-        self.agent_pos = self.start_pos
-        self.agent_dir = self._rand_int(0, 4)
-
-        #  Set goal
-        self.put_obj(Goal(), random.randint(1, width - 2), random.randint(1, height - 2))
-        # self.grid.set(start_x, start_y, Goal())
-
-    @staticmethod
-    def _gen_mission():
-        return "get to the green goal square"
 
     def to_json(self):
         json_return = {"mission": self.mission,
@@ -142,17 +119,23 @@ class UAVWithMapEmpty(EmptyEnv):
         return json_return
 
     def _call_airsim_step(self, action):
-        response = requests.post("http://127.0.0.1/step",
+        response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
                                  json={"local_client_id": self.local_client_id,
                                        "action": action})
+        return response.json()["obs"], response.json()["info"]
 
     def step(self, action):
         # Record the agent's current position before executing the action
         self.prev_pos = np.copy(self.agent_pos)
 
+        air_sim_obs, airsim_info = self._call_airsim_step(action)
+        self._update_grid(airsim_info)
+
+        obs, reward, terminated, truncated, info = air_sim_obs, {}, {}, {}, airsim_info
         # Execute the agent's action
 
         # obs, reward, terminated, truncated, info = super().step(action)
+
         # # Update distance
         #
         # if self.agent_pos == self.start_pos:
@@ -235,3 +218,43 @@ class UAVWithMapEmpty(EmptyEnv):
             return super()._reward() * self.basic_coefficient + 0.05 * len(self.visited_tiles)
         else:
             return 0
+
+    def _gen_grid(self, width, height):
+        # Call the original _gen_grid method to generate the base grid
+        self.grid = Grid(width, height)
+
+        # Generate the surrounding walls
+        self.grid.wall_rect(0, 0, width, height)
+
+        if self.agent_start_pos is not None:
+            self.agent_pos = self.agent_start_pos
+            self.agent_dir = self.agent_start_dir
+        else:
+            self.place_agent()
+
+        # Random starting/goal point for the agent
+        start_x, start_y = random.randint(1, width - 2), random.randint(1, height - 2)
+        self.start_pos = (start_x, start_y)
+        self.agent_pos = self.start_pos
+        self.agent_dir = self._rand_int(0, 4)
+
+        #  Set goal
+        self.put_obj(Goal(), random.randint(1, width - 2), random.randint(1, height - 2))
+        # self.grid.set(start_x, start_y, Goal())
+
+    def _update_grid(self, info):
+        print(info["position"]["x"], info["position"]["y"])
+        position = [int(info["position"]["x"]) / self.render_rate,
+                    int(info["position"]["y"]) / self.render_rate]
+        roll, pitch, yaw = info["orientation"]
+        if yaw < 0:
+            yaw += 2 * math.pi
+        # Divide the circle into 4 equal parts for directions: up, right, down, left
+        # 0: up, 1: right, 2: down, 3: left
+        quadrant = int((yaw / (2 * math.pi)) * 4) % 4
+        self.agent_pos = position
+        self.agent_dir = quadrant
+
+    @staticmethod
+    def _gen_mission():
+        return "get to the green goal square"
