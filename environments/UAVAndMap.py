@@ -252,12 +252,21 @@ class UAVWithMapEmpty(EmptyEnv):
         x = int(info["position"]["y"] / self.render_rate)
         self.agent_pos = [x, y]
         roll, pitch, yaw = info["orientation"]
-        if yaw < 0:
-            yaw += 2 * math.pi
-        # Divide the circle into 4 equal parts for directions: up, right, down, left
-        # 0: up, 1: right, 2: down, 3: left
-        quadrant = int((yaw / (2 * math.pi)) * 4) % 4
-        self.agent_dir = quadrant
+        yaw_degrees = math.degrees(yaw)
+
+        # Normalize the yaw to [0, 360)
+        if yaw_degrees < 0:
+            yaw_degrees += 360
+
+        # Divide the circle into 4 quadrants
+        if 45 <= yaw_degrees < 135:
+            self.agent_dir = 2  # West
+        elif 135 <= yaw_degrees < 225:
+            self.agent_dir = 1  # South
+        elif 225 <= yaw_degrees < 315:
+            self.agent_dir = 0  # East
+        else:
+            self.agent_dir = 3  # North
 
     @staticmethod
     def _gen_mission():
