@@ -11,11 +11,16 @@ import numpy as np
 import requests
 import random
 import math
+import json
 
 mapper = {
     "lava": 1,
     "goal": 2,
 }
+
+
+def _organize_obs(obs, grid, info):
+    obs_flatten = np.array(obs).flatten()
 
 
 class UAVWithMapEmpty(EmptyEnv):
@@ -36,7 +41,7 @@ class UAVWithMapEmpty(EmptyEnv):
                  render_mode="human", exist=0, render_rate=3, **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
-                         render_mode=render_mode)
+                         render_mode=render_mode, **kwargs)
         self.spec = EnvSpec("UAVWithMapEnv-v0", max_episode_steps=self.max_steps)
         # self.client = AirSimEnv()
         # To track tiles that are not yet visited by the agent
@@ -79,22 +84,19 @@ class UAVWithMapEmpty(EmptyEnv):
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         if self.local_client_id is None:
             self.connect_local_airsim_server(0)
-        obs, _ = super().reset()
+        super().reset()
+        self.agent_dir = 3
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.battery = self.full_battery
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-        requests.post("http://127.0.0.1:%d/update_client" % self.local_port,
-                                 json={"local_client_id": self.local_client_id,
-                                       "map": self.to_json()})
         response = requests.post("http://127.0.0.1:%d/reset" % self.local_port,
                                  json={"local_client_id": self.local_client_id,
                                        "map": self.to_json()})
         if response.status_code == 200:
-            obs_ex = response.json()["obs"]
-            info = response.json()["info"]
-            obs = obs_ex
-            return obs, info
+            view, info = response.json()["obs"], json.loads(response.json()["info"])
+            grid = self.get_frame(tile_size=self.tile_size)
+            return view, info
         else:
             raise Exception
 
@@ -125,7 +127,7 @@ class UAVWithMapEmpty(EmptyEnv):
         response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
                                  json={"local_client_id": self.local_client_id,
                                        "action": action})
-        return response.json()["obs"], response.json()["info"]
+        return response.json()["obs"], json.loads(response.json()["info"])
 
     def step(self, action):
         # Record the agent's current position before executing the action
@@ -246,16 +248,15 @@ class UAVWithMapEmpty(EmptyEnv):
         # self.grid.set(start_x, start_y, Goal())
 
     def _update_grid(self, info):
-        print(info["position"]["x"], info["position"]["y"])
-        position = [int(info["position"]["x"]) / self.render_rate,
-                    int(info["position"]["y"]) / self.render_rate]
+        y = int(- info["position"]["x"] / self.render_rate)
+        x = int(info["position"]["y"] / self.render_rate)
+        self.agent_pos = [x, y]
         roll, pitch, yaw = info["orientation"]
         if yaw < 0:
             yaw += 2 * math.pi
         # Divide the circle into 4 equal parts for directions: up, right, down, left
         # 0: up, 1: right, 2: down, 3: left
         quadrant = int((yaw / (2 * math.pi)) * 4) % 4
-        self.agent_pos = position
         self.agent_dir = quadrant
 
     @staticmethod

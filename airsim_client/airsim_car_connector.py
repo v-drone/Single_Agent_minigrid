@@ -33,28 +33,50 @@ class CarConnector(object):
 
     def do_action(self, action):
         if action == 0:
-            self.car_controls.brake = 0
             self.car_controls.throttle = 0.1
+            self.car.setCarControls(self.car_controls)
+            time.sleep(1)
         elif action == 1:
-            self.car_controls.brake = 0.5
             self.car_controls.throttle = 0
+            self.car.setCarControls(self.car_controls)
+            time.sleep(3)
         elif action == 2:
             self.car_controls.steering = 0
+            self.car.setCarControls(self.car_controls)
+            time.sleep(0.5)
         elif action == 3:
+            self.car_controls.throttle = 0.05
             self.car_controls.steering = 0.25
-        elif action == 4:
-            self.car_controls.steering = 0.5
-        elif action == 5:
-            self.car_controls.steering = -0.25
-        elif action == 6:
-            self.car_controls.steering = -0.5
-        else:
+            self.car.setCarControls(self.car_controls)
+            time.sleep(2)
             self.car_controls.steering = 0
-            self.car_controls.brake = 1
+            self.car.setCarControls(self.car_controls)
+        elif action == 4:
+            self.car_controls.throttle = 0.05
+            self.car_controls.steering = 0.5
+            self.car.setCarControls(self.car_controls)
+            time.sleep(2)
+            self.car_controls.steering = 0
+            self.car.setCarControls(self.car_controls)
+        elif action == 5:
+            self.car_controls.throttle = 0.05
+            self.car_controls.steering = -0.25
+            self.car.setCarControls(self.car_controls)
+            time.sleep(2)
+            self.car_controls.steering = 0
+            self.car.setCarControls(self.car_controls)
+        elif action == 6:
+            self.car_controls.throttle = 0.05
+            self.car_controls.steering = -0.5
+            self.car.setCarControls(self.car_controls)
+            time.sleep(2)
+            self.car_controls.steering = 0
+            self.car.setCarControls(self.car_controls)
+        else:
             self.car_controls.throttle = 0
-
-        self.car.setCarControls(self.car_controls)
-        time.sleep(0.5)
+            time.sleep(2)
+            self.car_controls.steering = 0
+            self.car.setCarControls(self.car_controls)
         return self._get_obs(), self._get_info()
 
     def _get_info(self):

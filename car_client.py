@@ -133,7 +133,6 @@ def step():
         else:
             car = client_info[local_client_id]["car"]
             obs, info = car.do_action(action)
-            print(info)
             info = _car_state_to_json(info)
             return jsonify({"obs": obs.tolist(),
                             "info": info,
@@ -155,9 +154,9 @@ def reset():
                 "client_id": remote_client_id,
                 "map": map_json
             })
+            time.sleep(2)
             obs, info = car.reset()
             info = _car_state_to_json(info)
-            print(info)
             return jsonify({"obs": obs.tolist(), "info": info, "local_client_id": local_client_id})
         else:
             return jsonify({'error': 'Missing local_client_id or action'}), 400
@@ -180,9 +179,7 @@ def close():
     else:
         local_client_id = data.get('local_client_id')
     client_id = client_info[int(local_client_id)]["client_id"]
-    print(client_id)
     client_info_data = requests.post(remote_address + "/cleanup_client", json={"client_id": client_id})
-    print(client_info_data.json())
     return client_info_data.json()
 
 
