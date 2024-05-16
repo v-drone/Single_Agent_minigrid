@@ -5,7 +5,7 @@ import requests
 from airsim_client.airsim_car_connector import CarConnector
 from flask import Flask, request, jsonify
 
-remote_ip = "127.0.0.1"
+remote_airsim_ip = "127.0.0.1"
 remote_address = "http://127.0.0.1:5000"
 client_info = {}
 
@@ -106,7 +106,7 @@ def restart_unity_environment():
         "local_client_id": local_client_id,
         "client_port": client_info_data["port"],
         "client_id": client_info_data["client_id"],
-        "car": CarConnector(remote_ip, int(client_info_data["port"]))
+        "car": CarConnector(remote_airsim_ip, int(client_info_data["port"]))
     }
     print(client_info[local_client_id])
     time.sleep(0.01)
@@ -154,7 +154,7 @@ def reset():
                 "client_id": remote_client_id,
                 "map": map_json
             })
-            time.sleep(2)
+            time.sleep(1)
             obs, info = car.reset()
             info = _car_state_to_json(info)
             return jsonify({"obs": obs.tolist(), "info": info, "local_client_id": local_client_id})
@@ -162,13 +162,21 @@ def reset():
             return jsonify({'error': 'Missing local_client_id or action'}), 400
 
 
-@app.route('/render', methods=['POST'])
-def render():
+@app.route('/info', methods=['POST'])
+def get_info():
     data = request.get_json()
     if not data:
         return jsonify({'error': 'Invalid input'}), 400
     else:
         local_client_id = data.get('local_client_id')
+        car = client_info[local_client_id].get("car", None)
+        remote_client_id = client_info[local_client_id].get("client_id", None)
+        if car is not None and remote_client_id is not None:
+            obs, info = car.get_info()
+            info = _car_state_to_json(info)
+            return jsonify({"obs": obs.tolist(), "info": info, "local_client_id": local_client_id})
+        else:
+            return jsonify({'error': 'Missing local_client_id or action'}), 400
 
 
 @app.route('/close/', methods=['POST'])
@@ -184,4 +192,4 @@ def close():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=6000)
+    app.run(host='127.0.0.1', port=6000)

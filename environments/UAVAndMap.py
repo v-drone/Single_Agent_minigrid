@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Goal
@@ -49,6 +48,7 @@ class UAVWithMapEmpty(EmptyEnv):
         self.action_space = spaces.Discrete(len(self.actions))
         self.full_battery = battery
         self.battery = battery
+        self.info = {}
         self.prev_pos = None
         self.basic_coefficient = basic_coefficient
         self.prev_distance = size * 2
@@ -86,6 +86,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.connect_local_airsim_server(0)
         super().reset()
         self.agent_dir = 3
+        self.info = {}
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.battery = self.full_battery
@@ -94,9 +95,8 @@ class UAVWithMapEmpty(EmptyEnv):
                                  json={"local_client_id": self.local_client_id,
                                        "map": self.to_json()})
         if response.status_code == 200:
-            view, info = response.json()["obs"], json.loads(response.json()["info"])
-            grid = self.get_frame(tile_size=self.tile_size)
-            return view, info
+            obs, info = self.get_info()
+            return obs, info
         else:
             raise Exception
 
@@ -123,48 +123,31 @@ class UAVWithMapEmpty(EmptyEnv):
                     })
         return json_return
 
-    def _call_airsim_step(self, action):
-        response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
-                                 json={"local_client_id": self.local_client_id,
-                                       "action": action})
-        return response.json()["obs"], json.loads(response.json()["info"])
+    def get_info(self):
+        obs, self.info = self._call_airsim_info()
+        self._update_grid()
+        return obs, self.info
 
     def step(self, action):
         # Record the agent's current position before executing the action
         self.prev_pos = np.copy(self.agent_pos)
-
-        air_sim_obs, airsim_info = self._call_airsim_step(action)
-        self._update_grid(airsim_info)
-
-        obs, reward, terminated, truncated, info = air_sim_obs, {}, {}, {}, airsim_info
+        # Update battery
+        self.battery -= 1
+        self.step_count += 1
         # Execute the agent's action
+        self._call_airsim_step(action)
+        # Update map
+        obs, self.info = self.get_info()
+        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
 
-        # obs, reward, terminated, truncated, info = super().step(action)
+        terminated = bool(self.info["gear"])
+        truncated = self._get_fail()
+        if terminated:
+            reward = self._reward()
+        else:
+            reward = 0
 
-        # # Update distance
-        #
-        # if self.agent_pos == self.start_pos:
-        #     self.battery = self.full_battery
-        # else:
-        #     self.battery -= 1
-        #
-        # if self.battery <= 0:
-        #     truncated = True
-        #
-        # self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
-        # reward = self._reward()
-        # # Check if agent stepped on a path tile and update its color
-        # # Ensure the agent has actually moved
-        #
-        # # Check the game ending conditions
-        # if not self.unvisited_tiles and terminated:
-        #     terminated = True
-        # elif self.agent_pos != self.start_pos and terminated:
-        #     pass
-        # else:
-        #     terminated = False
-
-        return obs, reward, terminated, truncated, info
+        return obs, reward, terminated, truncated, {}
 
     def get_map_render(self):
 
@@ -230,15 +213,8 @@ class UAVWithMapEmpty(EmptyEnv):
 
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
-
-        if self.agent_start_pos is not None:
-            self.agent_pos = self.agent_start_pos
-            self.agent_dir = self.agent_start_dir
-        else:
-            self.place_agent()
-
         # Random starting/goal point for the agent
-        start_x, start_y = random.randint(1, width - 2), random.randint(1, height - 2)
+        start_x, start_y = random.randint(10, width - 10), random.randint(10, height - 10)
         self.start_pos = (start_x, start_y)
         self.agent_pos = self.start_pos
         self.agent_dir = self._rand_int(0, 4)
@@ -247,11 +223,12 @@ class UAVWithMapEmpty(EmptyEnv):
         self.put_obj(Goal(), random.randint(1, width - 2), random.randint(1, height - 2))
         # self.grid.set(start_x, start_y, Goal())
 
-    def _update_grid(self, info):
-        y = int(- info["position"]["x"] / self.render_rate)
-        x = int(info["position"]["y"] / self.render_rate)
+    def _update_grid(self):
+        y = int(- self.info["position"]["x"] / self.render_rate)
+        x = int(self.info["position"]["y"] / self.render_rate)
         self.agent_pos = [x, y]
-        roll, pitch, yaw = info["orientation"]
+        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
+        roll, pitch, yaw = self.info["orientation"]
         yaw_degrees = math.degrees(yaw)
 
         # Normalize the yaw to [0, 360)
@@ -267,6 +244,31 @@ class UAVWithMapEmpty(EmptyEnv):
             self.agent_dir = 0  # East
         else:
             self.agent_dir = 3  # North
+
+    def _call_airsim_step(self, action):
+        response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
+                                 json={"local_client_id": self.local_client_id,
+                                       "action": action})
+        return response.json()["obs"], json.loads(response.json()["info"])
+
+    def _call_airsim_info(self):
+        response = requests.post("http://127.0.0.1:%d/info" % self.local_port,
+                                 json={"local_client_id": self.local_client_id})
+        return response.json()["obs"], json.loads(response.json()["info"])
+
+    # def _get_obs(self, air_sim_obs):
+    #     obs = [np.array(air_sim_obs).flatten().astype(np.uint8),
+    #            self.get_frame(tile_size=self.tile_size).flatten(),
+    #            ]
+
+    def _get_fail(self):
+        if self.battery <= 0:
+            return True
+        else:
+            if self.info["position"]["z"] > 10:
+                return True
+            else:
+                return False
 
     @staticmethod
     def _gen_mission():

@@ -23,13 +23,7 @@ class CarConnector(object):
     def reset(self):
         self._setup_car()
         self.do_action(-1)
-        return self._get_obs(), self._get_info()
-
-    def _setup_car(self):
-        self.car.reset()
-        self.car.enableApiControl(True)
-        self.car.armDisarm(True)
-        time.sleep(0.01)
+        return self.get_info()
 
     def do_action(self, action):
         if action == 0:
@@ -37,13 +31,11 @@ class CarConnector(object):
             self.car.setCarControls(self.car_controls)
             time.sleep(1)
         elif action == 1:
-            self.car_controls.throttle = -10
+            self.car_controls.throttle = -100
             self.car.setCarControls(self.car_controls)
-            time.sleep(0.5)
+            time.sleep(1)
             self.car_controls.throttle = 0
             self.car.setCarControls(self.car_controls)
-            time.sleep(0.5)
-
         elif action == 2:
             self.car_controls.throttle = 0.05
             self.car_controls.steering = 0.5
@@ -74,19 +66,20 @@ class CarConnector(object):
             self.car.setCarControls(self.car_controls)
         else:
             self.car_controls.throttle = 0
-            time.sleep(2)
+            time.sleep(1)
             self.car_controls.steering = 0
             self.car.setCarControls(self.car_controls)
-        return self._get_obs(), self._get_info()
-
-    def _get_info(self):
-        return self.car.getCarState()
+        return self.get_info()
 
     def transform_obs(self, response):
+
         img = Image.open(io.BytesIO(response))
         img_resized = img.resize((self.img_shape, self.img_shape))
         img_resized = np.array(img_resized, dtype=np.uint8)
         return img_resized.reshape([self.img_shape, self.img_shape, 3])
+
+    def get_info(self):
+        return self._get_obs(), self.car.getCarState()
 
     def _get_obs(self):
         responses = self.car.simGetImage('0', airsim.ImageType.Scene)
@@ -97,6 +90,12 @@ class CarConnector(object):
         self.state["collision"] = self.car.simGetCollisionInfo().has_collided
 
         return image
+
+    def _setup_car(self):
+        self.car.reset()
+        self.car.enableApiControl(True)
+        self.car.armDisarm(True)
+        time.sleep(0.01)
 
     def _get_ex_reward(self):
         pass
