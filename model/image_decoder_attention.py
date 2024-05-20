@@ -84,7 +84,7 @@ class AttentionCNN(DQNTorchModel):
         self.map_size = map_size
         self.view_size = view_size
         self.battery = battery
-        self.conv_layers = nn.Sequential(
+        self.map_layers = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1),  # Output: 45x45x32
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 23x23x64
@@ -95,12 +95,12 @@ class AttentionCNN(DQNTorchModel):
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),  # Output: 6x6x512
             nn.LeakyReLU(negative_slope=0.01),
-            SimpleAttention(512),
+            SimpleAttention(256),
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(1),
         )
         self.view_layers = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
+            nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
             nn.LeakyReLU(negative_slope=0.01),
@@ -110,12 +110,12 @@ class AttentionCNN(DQNTorchModel):
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),  # Output: 7x7x512
             nn.LeakyReLU(negative_slope=0.01),
-            SimpleAttention(512),
+            SimpleAttention(256),
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(1),
         )
-        self.front_attention = ValueAttention(feature_dim=256)
-        self.map_attention = ValueAttention(feature_dim=256)
+        self.map_attention = ValueAttention(256, value_dim=2)
+        self.front_attention = ValueAttention(256, value_dim=2)
 
     def import_from_h5(self, h5_file: str) -> None:
         pass
@@ -123,8 +123,8 @@ class AttentionCNN(DQNTorchModel):
     def process_conv(self, obs):
         batch_size, f = obs.shape
         bat = obs[:, -1]
-        speed = obs[: -2]
-        yaw = obs[: -3]
+        speed = obs[:, -2]
+        yaw = obs[:, -3]
         epsilon = 1e-65
         bat_prime = bat + epsilon
         bat_normalized = 1 - sigmoid(bat_prime, int(self.battery / 2), 0.1)
@@ -146,7 +146,7 @@ class AttentionCNN(DQNTorchModel):
 
         # map
         img = img.permute(0, 3, 1, 2)
-        img = self.conv_layers(img)
+        img = self.map_layers(img)
         img = img.view(batch_size, -1)
 
         # view
@@ -154,9 +154,8 @@ class AttentionCNN(DQNTorchModel):
         view = self.view_layers(view)
         view = view.view(batch_size, -1)
 
-        img = self.map_attention(img, torch.concat([yaw.unsqueeze(-1), bat.unsqueeze(-1)]))
-
-        view = self.front_attention(view, torch.concat([yaw.unsqueeze(-1), speed.unsqueeze(-1)]))
+        img = self.map_attention(img, torch.stack([yaw, bat], dim=1))
+        view = self.front_attention(view, torch.stack([yaw, speed], dim=1))
         logging.info(torch.concat([img, view], dim=-1).shape)
         return torch.concat([img, view], dim=-1), state
 
@@ -170,23 +169,22 @@ class WrappedModel(nn.Module):
         self.original_model = original_model
 
     def forward(self, obs):
-        map_img, view_img, bat, speed, yaw, batch_size = self.original_model.process_conv(obs)
+        img, view, bat, speed, yaw, batch_size = self.original_model.process_conv(obs)
 
-        # map_img
-        map_img = map_img.permute(0, 3, 1, 2)
-        map_img = self.original_model.conv_layers(map_img)
-        map_img = map_img.view(batch_size, -1)
+        # img
+        img = img.permute(0, 3, 1, 2)
+        img = self.original_model.map_layers(img)
+        img = img.view(batch_size, -1)
 
-        # view_img
-        view_img = view_img.permute(0, 3, 1, 2)
-        view_img = self.original_model.view_layers(view_img)
-        view_img = view_img.view(batch_size, -1)
+        # view
+        view = view.permute(0, 3, 1, 2)
+        view = self.original_model.view_layers(view)
+        view = view.view(batch_size, -1)
 
-        map_img = self.original_model.map_attention(map_img, torch.concat([yaw.unsqueeze(-1), bat.unsqueeze(-1)]))
+        img = self.original_model.map_attention(img, torch.stack([yaw, bat], dim=1))
+        view = self.original_model.front_attention(view, torch.stack([yaw, speed], dim=1))
 
-        view_img = self.original_model.front_attention(view_img, torch.concat([yaw.unsqueeze(-1), speed.unsqueeze(-1)]))
-
-        features = torch.concat([map_img, view_img], dim=-1)
+        features = torch.concat([img, view], dim=-1)
         action_scores = features.flatten(start_dim=1)  # Ensure no in-place modification
         advantage = self.original_model.advantage_module(action_scores)
         logit = torch.unsqueeze(torch.ones_like(action_scores), -1)  # No in-place modification here
@@ -206,17 +204,17 @@ class WrappedEmbedding(nn.Module):
         self.view_size = original_model.view_size
 
     def forward(self, obs):
-        map_img, view_img, bat, speed, yaw, batch_size = self.original_model.process_conv(obs)
-        # map_img
-        map_img = map_img.permute(0, 3, 1, 2)
-        map_img = self.original_model.conv_layers(map_img)
-        map_img = map_img.view(batch_size, -1)
+        img, view, bat, speed, yaw, batch_size = self.original_model.process_conv(obs)
+        # img
+        img = img.permute(0, 3, 1, 2)
+        img = self.original_model.map_layers(img)
+        img = img.view(batch_size, -1)
 
-        # view_img
-        view_img = view_img.permute(0, 3, 1, 2)
-        view_img = self.original_model.view_layers(view_img)
-        view_img = view_img.view(batch_size, -1)
+        # view
+        view = view.permute(0, 3, 1, 2)
+        view = self.original_model.view_layers(view)
+        view = view.view(batch_size, -1)
 
-        map_img = self.original_model.map_attention(map_img, torch.concat([yaw.unsqueeze(-1), bat.unsqueeze(-1)]))
-        view_img = self.original_model.front_attention(view_img, torch.concat([yaw.unsqueeze(-1), speed.unsqueeze(-1)]))
-        return torch.concat([map_img, view_img], dim=-1)
+        img = self.original_model.map_attention(img, torch.concat([yaw.unsqueeze(-1), bat.unsqueeze(-1)]))
+        view = self.original_model.front_attention(view, torch.concat([yaw.unsqueeze(-1), speed.unsqueeze(-1)]))
+        return torch.concat([img, view], dim=-1)

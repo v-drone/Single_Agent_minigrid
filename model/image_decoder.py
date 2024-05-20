@@ -48,7 +48,7 @@ class BasicCNN(DQNTorchModel):
         self.map_size = map_size
         self.view_size = view_size
         self.battery = battery
-        self.conv_layers = nn.Sequential(
+        self.map_layers = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1),  # Output: 50x50x32
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 25x25x64
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 13x13x128
@@ -95,7 +95,7 @@ class BasicCNN(DQNTorchModel):
 
         # map
         img = img.permute(0, 3, 1, 2)
-        img = self.conv_layers(img)
+        img = self.map_layers(img)
         img = img.view(batch_size, -1)
 
         # view
@@ -120,7 +120,7 @@ class WrappedModel(nn.Module):
 
         # map_img
         map_img = map_img.permute(0, 3, 1, 2)
-        map_img = self.original_model.conv_layers(map_img)
+        map_img = self.original_model.map_layers(map_img)
         map_img = map_img.view(batch_size, -1)
 
         # view_img
@@ -152,7 +152,7 @@ class WrappedEmbedding(nn.Module):
 
         # map_img
         map_img = map_img.permute(0, 3, 1, 2)
-        map_img = self.original_model.conv_layers(map_img)
+        map_img = self.original_model.map_layers(map_img)
         map_img = map_img.view(batch_size, -1)
 
         # view_img

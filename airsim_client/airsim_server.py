@@ -9,8 +9,8 @@ app = Flask(__name__)
 
 airsim_info = {
     0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_0\\AirSimAssets.exe"},
-    1: {"port": 41452, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_1\\AirSimAssets.exe"},
-    2: {"port": 41453, "path": "c:\\Users\\dawei\\Desktop\\airsimcar_2\\AirSimAssets.exe"},
+    1: {"port": 41452, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_1\\AirSimAssets.exe"},
+    2: {"port": 41453, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_2\\AirSimAssets.exe"},
 }
 
 map_info = {
@@ -30,6 +30,7 @@ def kill_airsim(port):
 
 
 def get_available_port():
+    print(used_ports)
     for info_id, info in airsim_info.items():
         if info['port'] not in used_ports:
             return info_id, info['port'], info['path']

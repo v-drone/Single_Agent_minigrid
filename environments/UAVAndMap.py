@@ -69,9 +69,8 @@ class UAVWithMapEmpty(EmptyEnv):
                 "mission": mission_space,
             }
         )
-        self.action_space
 
-    def connect_local_airsim_server(self, tried):
+    def connect_local_airsim_server(self, tried=2):
         if tried >= 1:
             raise Exception
         response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
