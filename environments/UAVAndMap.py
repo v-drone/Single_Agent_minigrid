@@ -215,11 +215,6 @@ class UAVWithMapEmpty(EmptyEnv):
                                  json={"local_client_id": self.local_client_id})
         return response.json()["obs"], json.loads(response.json()["info"])
 
-    # def _get_obs(self, air_sim_obs):
-    #     obs = [np.array(air_sim_obs).flatten().astype(np.uint8),
-    #            self.get_frame(tile_size=self.tile_size).flatten(),
-    #            ]
-
     def _get_fail(self):
         if self.battery <= 0:
             return True

@@ -57,7 +57,7 @@ def get_client():
     info_id, port, path = get_available_port()
     if info_id is not None and port is not None and path is not None:
         process = start_airsim(path)
-        time.sleep(5)
+        time.sleep(10)
         used_ports[port] = process.pid
         print(port)
         return jsonify({'port': port, 'client_id': info_id, 'message': 'AirSim Client started'})
