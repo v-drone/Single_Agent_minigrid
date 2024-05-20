@@ -3,24 +3,18 @@ import sys
 import gc
 import ray
 import yaml
-import gymnasium
 import numpy as np
 from gymnasium import spaces
 from mpu.ml import indices2one_hot
 from typing import Dict, Tuple, Union
 from minigrid.wrappers import ImgObsWrapper
 from gymnasium.wrappers import TimeLimit
-from environments.TrodByMapEnv import RouteByMapEnv
-from environments.MutilRoadWithTrodEnv import RouteWithTrodEnv
-from environments.MutilRoadEnv import RouteEnv
-from environments.ExtraInfoWrapper import ExtraInfoWrapper
-from environments.AddRewardRenderWrapper import AddRewardRenderWrapper
 from environments.SmallNegWrapper import SmallNegativeWrapper
 from environments.DistanceBouns import CloserWrapper
 from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
-from environments.HitTrodWrapper import HitTrodWrapper
-from environments.HitRouteWrapper import HitRouteWrapper
-from environments.TwoImgRGB import RGBImgObsWrapper
+from environments.UAVAndMap import UAVWithMapEmpty
+from environments.ExtraMapRGBWrapper import AddMapWrapper
+from environments.ExtraInfoWrapper import ExtraInfoWrapper
 
 agent_dir = {
     0: '>',
@@ -28,6 +22,10 @@ agent_dir = {
     2: '<',
     3: '^',
 }
+
+
+def split_list_into_n_parts(lst, n=10):
+    return [lst[i::n] for i in range(n)]
 
 
 def display_feature_map_info(model, obs):
@@ -50,34 +48,18 @@ def display_feature_map_info(model, obs):
         # Note: Directly measuring the receptive field is more complex and typically not done in this manner.
 
 
-def minigrid_env_creator(env_config):
-    if env_config["id"] in ["RouteWithTrod", "Route", "RouteByMapEnv"]:
-        if env_config["id"] == "RouteWithTrod":
-            env = RouteWithTrodEnv(**env_config)
-        elif env_config["id"] == "Route":
-            env = RouteEnv(**env_config)
-            if env_config.get("hit", False):
-                env = HitRouteWrapper(env, bonus=env_config["hit"])
-        elif env_config["id"] == "RouteByMapEnv":
-            env = RouteByMapEnv(**env_config)
-            if env_config.get("hit", False):
-                env = HitRouteWrapper(env, bonus=env_config["hit"])
-                env = HitTrodWrapper(env, bonus=env_config["hit"] * 2)
-        else:
-            raise NotImplementedError
-        env = SmallNegativeWrapper(env)
-        if env_config.get("closer", True):
-            env = CloserWrapper(env)
-        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"], shape=env_config["shape"])
+def env_creator(env_config):
+    if env_config["id"] == "UAVWithMapEnv":
+        env = UAVWithMapEmpty(**env_config)
+        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
         env = ImgObsWrapper(env)
-        env = AddRewardRenderWrapper(env)
-        env = ExtraInfoWrapper(env)
-        env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
+        env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))
     else:
-        env = gymnasium.make(env_config["id"], render_mode="rgb_array")
-        env = RGBImgObsWrapper(env, tile_size=env_config["tile_size"], shape=env_config["shape"])
-        env = ImgObsWrapper(env)
-        env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
+        raise NotImplementedError
+    if env_config.get("closer", True):
+        env = CloserWrapper(env)
+    env = SmallNegativeWrapper(env)
+    env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     if env_config.get("ride_model", None) is not None:
         env = SimpleRIDEWrapper(env, env_config.get("ride_model"),
                                 env_config.get("device", "cpu"))
@@ -127,7 +109,7 @@ def get_goal(array, agent):
 
 def to_numpy(grid, allow, agent, vis_mask=None):
     """
-    Produce a pretty string of the environment.txt's grid along with the agent.
+    Produce a pretty string of the environment. txt grid along with the agent.
     A grid cell is represented by 2-character string, the first one for
     the object and the second one for the color.
     """
@@ -206,8 +188,8 @@ def flatten_dict(d):
     flat_dict = {}
     for key, value in d.items():
         if isinstance(value, dict):
-            for subkey, subvalue in value.items():
-                flat_dict[subkey] = subvalue
+            for subkey, sub_value in value.items():
+                flat_dict[subkey] = sub_value
         else:
             flat_dict[key] = value
     return flat_dict

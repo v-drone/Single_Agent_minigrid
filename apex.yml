@@ -1,6 +1,6 @@
 mlflow:
   experiment: "SimpleRoad"
-  url: "http://10.56.238.20:9999"
+  url: "http://127.0.0.1:9999"
   user: "Local"
 hyper_parameters:
   hiddens: [ 256, 256, 128, 128 ]

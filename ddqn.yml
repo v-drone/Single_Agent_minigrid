@@ -1,34 +1,38 @@
 mlflow:
-  experiment: "BeamRider"
+  experiment: "SimpleRoad"
   url: "http://127.0.0.1:9999"
   user: "Local"
 hyper_parameters:
-  hiddens: [ 512 ]
+  hiddens: [ 256, 256, 128, 128 ]
   framework: torch
   double_q: true
-  dueling: false
+  dueling: true
   noisy: false
   adam_epsilon: .00015
   exploration_config:
-    epsilon_timesteps: 200000
+    epsilon_timesteps: 1000000
     final_epsilon: 0.01
   lr: 0.0001
-  n_step: 1
+  n_step: 5
   num_atoms: 1
   replay_buffer_config:
     capacity: 1000000
     prioritized_replay_alpha: 0.5
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
-  resources:
-    num_gpus: 1
+  num_gpus: 1
+  num_gpus_per_worker: 0.5
+  num_envs_per_worker: 3
+  num_workers: 1
   num_steps_sampled_before_learning_starts: 20000
-  target_network_update_freq: 8000
-  rollout_fragment_length: 4
+  rollout_fragment_length: 32
+  target_network_update_freq: 50000
   train_batch_size: 64
-  min_sample_timesteps_per_iteration: 10000
+  min_sample_timesteps_per_iteration: 20000
+  always_attach_evaluation_results: True
 log:
-  save_file: "/home/seventheli/logging/simple_env"
-  save_checkout: "/home/seventheli/checkpoints/simple_env"
+  save_file: "/home/seventheli/data/logging/simple_env"
+  save_checkout: "/home/seventheli/data/checkpoints/simple_env"
   max_time: 360000
-  log: 5
+  max_run: 5000
+  log: 1

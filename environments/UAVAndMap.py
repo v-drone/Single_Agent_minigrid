@@ -3,6 +3,7 @@ from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import Goal
 from minigrid.core.actions import IntEnum
+from minigrid.core.mission import MissionSpace
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
@@ -18,54 +19,59 @@ mapper = {
 }
 
 
-def _organize_obs(obs, grid, info):
-    obs_flatten = np.array(obs).flatten()
-
-
 class UAVWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         # Turn left, turn right, move forward
         throttle = 0
         brake = 1
-        steering_0 = 2
-        steering_left_25 = 3
-        steering_left_50 = 4
-        steering_right_25 = 5
-        steering_right_50 = 6
-        reset = 7
+        steering_right_half = 2
+        steering_right_full = 3
+        steering_left_half = 4
+        steering_left_full = 5
+        reset_car = 6
 
-    def __init__(self, size=30, max_steps=400, battery=100, agent_view_size=3,
-                 basic_coefficient=0.1, port=6000,
-                 render_mode="human", exist=0, render_rate=3, **kwargs):
+    def __init__(self, size=30, max_steps=400, battery=100,
+                 agent_view_size=3, port=6000, camera=100,
+                 render_mode="human", render_rate=3, **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
-                         render_mode=render_mode, **kwargs)
+                         render_mode=render_mode, tile_size=kwargs.get("tile_size", 5))
+
         self.spec = EnvSpec("UAVWithMapEnv-v0", max_episode_steps=self.max_steps)
-        # self.client = AirSimEnv()
-        # To track tiles that are not yet visited by the agent
+        self.size = size
         self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
         self.full_battery = battery
         self.battery = battery
         self.info = {}
         self.prev_pos = None
-        self.basic_coefficient = basic_coefficient
-        self.prev_distance = size * 2
-        self.current_distance = size * 2
+        self.camera = camera
         self.walked = np.zeros(shape=[size, size], dtype=np.uint8)
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.local_port = port
         self.local_client_id = None
         self.prev_transitions = None
-        self.exist = exist
         self.render_rate = render_rate
+        self.goal = [0, 0]
+        image_space = spaces.Box(
+            low=0,
+            high=255,
+            shape=np.array([self.camera, self.camera, 3]),
+            dtype="uint8",
+        )
+        mission_space = MissionSpace(mission_func=self._gen_mission)
+        self.observation_space = spaces.Dict(
+            {
+                "image": image_space,
+                "direction": spaces.Discrete(4),
+                "mission": mission_space,
+            }
+        )
+        self.action_space
 
     def connect_local_airsim_server(self, tried):
-        if self.exist == 1:
-            self.local_client_id = 0
-            return
         if tried >= 1:
             raise Exception
         response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
@@ -95,10 +101,40 @@ class UAVWithMapEmpty(EmptyEnv):
                                  json={"local_client_id": self.local_client_id,
                                        "map": self.to_json()})
         if response.status_code == 200:
-            obs, info = self.get_info()
-            return obs, info
+            obs = self._get_info()
+            return obs, self.info
         else:
             raise Exception
+
+    def step(self, action):
+        # Record the agent's current position before executing the action
+        self.prev_pos = np.copy(self.agent_pos)
+        # Update battery
+        self.battery -= 1
+        self.step_count += 1
+        # Execute the agent's action
+        self._call_airsim_step(action)
+        # Update map
+        obs = self._get_info()
+        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
+
+        terminated = bool(self.info["gear"])
+        truncated = self._get_fail()
+        if terminated:
+            reward = self._reward()
+        else:
+            reward = 0
+
+        return obs, reward, terminated, truncated, {}
+
+    def render(self):
+        view_obs, self.info = self._call_airsim_info()
+        self._update_grid()
+        return np.array(view_obs)
+
+    def close(self):
+        self.kill_connect()
+        super().close()
 
     def to_json(self):
         json_return = {"mission": self.mission,
@@ -123,94 +159,16 @@ class UAVWithMapEmpty(EmptyEnv):
                     })
         return json_return
 
-    def get_info(self):
-        obs, self.info = self._call_airsim_info()
+    def _get_info(self):
+        view_obs, self.info = self._call_airsim_info()
         self._update_grid()
-        return obs, self.info
+        obs = {"image": np.array(view_obs, dtype=np.uint8), "direction": self.agent_dir, "mission": self.mission}
 
-    def step(self, action):
-        # Record the agent's current position before executing the action
-        self.prev_pos = np.copy(self.agent_pos)
-        # Update battery
-        self.battery -= 1
-        self.step_count += 1
-        # Execute the agent's action
-        self._call_airsim_step(action)
-        # Update map
-        obs, self.info = self.get_info()
-        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
-
-        terminated = bool(self.info["gear"])
-        truncated = self._get_fail()
-        if terminated:
-            reward = self._reward()
-        else:
-            reward = 0
-
-        return obs, reward, terminated, truncated, {}
-
-    def get_map_render(self):
-
-        _, vis_mask = self.gen_obs_grid()
-
-        # Compute the world coordinates of the bottom-left corner
-        # of the agent's view area
-        f_vec = self.dir_vec
-        r_vec = self.right_vec
-        top_left = (
-                self.agent_pos
-                + f_vec * (self.agent_view_size - 1)
-                - r_vec * (self.agent_view_size // 2)
-        )
-
-        # Mask of which cells to highlight
-        highlight_mask = np.zeros(shape=(self.width, self.height), dtype=bool)
-
-        # For each cell in the visibility mask
-        for vis_j in range(0, self.agent_view_size):
-            for vis_i in range(0, self.agent_view_size):
-                # If this cell is not visible, don't highlight it
-                if not vis_mask[vis_i, vis_j]:
-                    continue
-
-                # Compute the world coordinates of this cell
-                abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
-
-                if abs_i < 0 or abs_i >= self.width:
-                    continue
-                if abs_j < 0 or abs_j >= self.height:
-                    continue
-
-                # Mark this cell to be highlighted
-                highlight_mask[abs_i, abs_j] = True
-
-        img = self.grid.render(
-            100,
-            (999, 999),
-            None,
-            highlight_mask=highlight_mask if True else None,
-        )
-        return img
-
-    def reward_breakdown(self):
-        return (super()._reward() * self.basic_coefficient,
-                super()._reward() * self.basic_coefficient + 0.05 * len(self.visited_tiles))
-
-    def distance_to_closest_blue(self, pos):
-        # Calculate the Manhattan distance to the closest blue tile
-        return min(abs(pos[0] - x) + abs(pos[1] - y) for (x, y) in self.unvisited_tiles)
-
-    def _reward(self) -> float:
-        if not self.unvisited_tiles and self.agent_pos == self.start_pos:
-            # Provide a positive reward for completing the task
-            return super()._reward() * self.basic_coefficient + 0.05 * len(self.visited_tiles)
-        else:
-            return 0
+        return obs
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
         self.grid = Grid(width, height)
-
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
         # Random starting/goal point for the agent
@@ -218,10 +176,10 @@ class UAVWithMapEmpty(EmptyEnv):
         self.start_pos = (start_x, start_y)
         self.agent_pos = self.start_pos
         self.agent_dir = self._rand_int(0, 4)
-
-        #  Set goal
-        self.put_obj(Goal(), random.randint(1, width - 2), random.randint(1, height - 2))
-        # self.grid.set(start_x, start_y, Goal())
+        # Set goal
+        goal = [random.randint(2, width - 3), random.randint(2, height - 3)]
+        self.goal = goal
+        self.put_obj(Goal(), goal[0], goal[1])
 
     def _update_grid(self):
         y = int(- self.info["position"]["x"] / self.render_rate)
@@ -234,7 +192,7 @@ class UAVWithMapEmpty(EmptyEnv):
         # Normalize the yaw to [0, 360)
         if yaw_degrees < 0:
             yaw_degrees += 360
-
+        self.info["yaw_degrees"] = yaw_degrees
         # Divide the circle into 4 quadrants
         if 45 <= yaw_degrees < 135:
             self.agent_dir = 2  # West
