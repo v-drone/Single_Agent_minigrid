@@ -206,7 +206,7 @@ class UAVWithMapEmpty(EmptyEnv):
     def _call_airsim_step(self, action):
         response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
                                  json={"local_client_id": self.local_client_id,
-                                       "action": action})
+                                       "action": int(action)})
         return response.json()["obs"], json.loads(response.json()["info"])
 
     def _call_airsim_info(self):
