@@ -15,6 +15,7 @@ from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
 from environments.UAVAndMap import UAVWithMapEmpty
 from environments.ExtraMapRGBWrapper import AddMapWrapper
 from environments.ExtraInfoWrapper import ExtraInfoWrapper
+from environments.RecordingWrapper import RecordingWrapper
 
 agent_dir = {
     0: '>',
@@ -63,6 +64,8 @@ def env_creator(env_config):
     if env_config.get("ride_model", None) is not None:
         env = SimpleRIDEWrapper(env, env_config.get("ride_model"),
                                 env_config.get("device", "cpu"))
+    if env_config.get("file_name", None) is not None:
+        env = RecordingWrapper(env, env_config.get("file_name"))
     return env
 
 

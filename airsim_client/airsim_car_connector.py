@@ -31,7 +31,7 @@ class CarConnector(object):
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)
         elif action == 1:
-            self.car_controls.brake = -0.1
+            self.car_controls.brake = -0.15
             self.car_controls.throttle = 0
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)

@@ -219,7 +219,7 @@ class UAVWithMapEmpty(EmptyEnv):
         if self.battery <= 0:
             return True
         else:
-            if self.info["position"]["z"] > 10 or self.agent_pos[0] == 29 or self.agent_pos[0] == 0 or \
+            if self.info["position"]["z"] > 100 or self.agent_pos[0] == 29 or self.agent_pos[0] == 0 or \
                     self.agent_pos[1] == 29 or self.agent_pos[1] == 0:
                 return True
             else:
