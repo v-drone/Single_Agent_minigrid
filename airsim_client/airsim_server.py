@@ -8,7 +8,7 @@ from flask import Flask, jsonify, request
 app = Flask(__name__)
 
 airsim_info = {
-    0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_41451\\AirSimAssets.exe"},
+    0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_41451\\AirSimAssets_41451.exe"},
     1: {"port": 41452, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_41452\\AirSimAssets_41452.exe"},
     2: {"port": 41453, "path": "c:\\Users\\Administrator\\Documents\\airsimcar_41453\\AirSimAssets_41453.exe"},
 }
