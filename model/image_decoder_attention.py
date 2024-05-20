@@ -156,7 +156,6 @@ class AttentionCNN(DQNTorchModel):
 
         img = self.map_attention(img, torch.stack([yaw, bat], dim=1))
         view = self.front_attention(view, torch.stack([yaw, speed], dim=1))
-        logging.info(torch.concat([img, view], dim=-1).shape)
         return torch.concat([img, view], dim=-1), state
 
     def value_function(self):
