@@ -183,8 +183,8 @@ class UAVWithMapEmpty(EmptyEnv):
     def _update_grid(self):
         y = int(- self.info["position"]["x"] / self.render_rate)
         x = int(self.info["position"]["y"] / self.render_rate)
-        x = max(0, min(x, self.width -1))
-        y = max(0, min(y, self.height -1))
+        x = max(0, min(x, self.width - 1))
+        y = max(0, min(y, self.height - 1))
         self.agent_pos = [x, y]
         self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
         roll, pitch, yaw = self.info["orientation"]
@@ -224,7 +224,8 @@ class UAVWithMapEmpty(EmptyEnv):
         if self.battery <= 0:
             return True
         else:
-            if self.info["position"]["z"] > 10:
+            if self.info["position"]["z"] > 10 or self.agent_pos[0] == 29 or self.agent_pos[0] == 0 or \
+                    self.agent_pos[1] == 29 or self.agent_pos[1] == 29:
                 return True
             else:
                 return False
