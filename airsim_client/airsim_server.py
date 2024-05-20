@@ -14,9 +14,12 @@ airsim_info = {
 }
 
 map_info = {
-    0: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_Data\\StreamingAssets\\Test1.json"},
-    1: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar41452\\AirSimAssets_Data\\StreamingAssets\\Test1.json"},
-    2: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar41453\\AirSimAssets_Data\\StreamingAssets\\Test1.json"}
+    0: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar41451"
+                "\\AirSimAssets_41451_Data\\StreamingAssets\\Test1.json"},
+    1: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar41452"
+                "\\AirSimAssets_41452_Data\\StreamingAssets\\Test1.json"},
+    2: {"path": "c:\\Users\\Administrator\\Documents\\airsimcar41453"
+                "\\AirSimAssets_41453_Data\\StreamingAssets\\Test1.json"}
 
 }
 
