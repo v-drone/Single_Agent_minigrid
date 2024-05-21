@@ -67,7 +67,6 @@ async def get_client():
         # FastAPI can handle async operations but subprocess.Popen here is synchronous.
         used_ports[port] = process.pid
         await asyncio.sleep(1)
-        print(process.pid)
         return {'port': port, 'client_id': info_id, 'message': 'AirSim Client started'}
     else:
         raise HTTPException(status_code=404, detail="No available AirSim environment")

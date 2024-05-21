@@ -18,8 +18,12 @@ app = FastAPI()
 
 class ActionData(BaseModel):
     local_client_id: int
-    action: Optional[str] = None
-    map: Optional[dict] = None
+    action: int = None
+
+
+class MapData(BaseModel):
+    local_client_id: int
+    map: dict = None
 
 
 class RestartRequest(BaseModel):
@@ -120,32 +124,46 @@ async def get_client_from_remote():
             raise HTTPException(status_code=exc.response.status_code, detail=str(exc))
 
 
+async def get_client_info(local_client_id, client_info_data):
+    client_info[local_client_id] = {
+        "local_client_id": local_client_id,
+        "client_port": client_info_data["port"],
+        "client_id": client_info_data["client_id"],
+    }
+    client_info[local_client_id]["car"] = CarConnector(remote_airsim_ip, int(client_info_data["port"]))
+    return {
+        "local_client_id": local_client_id,
+        "client_port": client_info_data["port"],
+        "client_id": client_info_data["client_id"],
+    }
+
+
 @app.post('/restart')
 async def restart_unity_environment(request: Request):
     body = await request.json()
     local_client_id = body.get("local_client_id", len(client_info))
     client_info_data = await get_client_from_remote()
-
-    client_info[local_client_id] = {
-        "local_client_id": local_client_id,
-        "client_port": client_info_data["port"],
-        "client_id": client_info_data["client_id"],
-        "car": CarConnector(remote_airsim_ip, int(client_info_data["port"]))
-    }
-    return client_info[local_client_id]
+    info = await get_client_info(local_client_id, client_info_data)
+    print(info)
+    return JSONResponse(info)
 
 
 @app.post('/step')
 async def step(data: ActionData):
-    if data.local_client_id not in client_info or not data.action:
+    print(data.local_client_id, data.action)
+    if data.local_client_id not in client_info:
         raise HTTPException(status_code=404, detail='Client or action not found')
     car = client_info[data.local_client_id]["car"]
     obs, info = car.do_action(data.action)
-    return JSONResponse({"obs": obs.tolist(), "info": info})
+    return JSONResponse({
+        "obs": obs.tolist(),
+        "info": _car_state_to_json(info),
+        "local_client_id": data.local_client_id
+    })
 
 
 @app.post('/reset')
-async def reset(data: ActionData):
+async def reset(data: MapData):
     if data.local_client_id not in client_info:
         raise HTTPException(status_code=404, detail='Client not found')
     car = client_info[data.local_client_id].get("car")
