@@ -1,6 +1,7 @@
 import os
 import json
 import signal
+import asyncio
 import subprocess
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
@@ -53,7 +54,7 @@ def get_available_port():
 async def start_airsim(path):
     if os.path.isfile(path) and os.access(path, os.X_OK):
         command = [path]
-        subprocess.Popen(command)
+        return subprocess.Popen(command)
     else:
         raise Exception(f"Unity executable not found or not executable: {path}")
 
@@ -63,9 +64,10 @@ async def get_client():
     info_id, port, path = get_available_port()
     if info_id is not None:
         process = await start_airsim(path)
-        print(process)
         # FastAPI can handle async operations but subprocess.Popen here is synchronous.
         used_ports[port] = process.pid
+        await asyncio.sleep(1)
+        print(process.pid)
         return {'port': port, 'client_id': info_id, 'message': 'AirSim Client started'}
     else:
         raise HTTPException(status_code=404, detail="No available AirSim environment")
