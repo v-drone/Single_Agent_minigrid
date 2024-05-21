@@ -7,7 +7,6 @@ from airsim_client.airsim_car_connector import CarConnector
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional
 
 remote_airsim_ip = "127.0.0.1"
 remote_address = "http://127.0.0.1:5000"
@@ -130,6 +129,7 @@ async def get_client_info(local_client_id, client_info_data):
         "client_port": client_info_data["port"],
         "client_id": client_info_data["client_id"],
     }
+    print(client_info[local_client_id])
     client_info[local_client_id]["car"] = CarConnector(remote_airsim_ip, int(client_info_data["port"]))
     return {
         "local_client_id": local_client_id,
@@ -144,7 +144,6 @@ async def restart_unity_environment(request: Request):
     local_client_id = body.get("local_client_id", len(client_info))
     client_info_data = await get_client_from_remote()
     info = await get_client_info(local_client_id, client_info_data)
-    print(info)
     return JSONResponse(info)
 
 

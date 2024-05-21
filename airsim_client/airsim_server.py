@@ -9,9 +9,12 @@ from fastapi import FastAPI, HTTPException
 app = FastAPI()
 
 airsim_info = {
-    0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_41451.exe"},
-    1: {"port": 41452, "path": "c:\\Users\\Administrator\\Documents\\airsimcar41452\\AirSimAssets_41452.exe"},
-    2: {"port": 41453, "path": "c:\\Users\\Administrator\\Documents\\airsimcar41453\\AirSimAssets_41453.exe"},
+    0: {"port": 41451, "path": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_41451.exe",
+        "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41451\\settings.json'"},
+    1: {"port": 41452, "path": "c:\\Users\\Administrator\\Documents\\airsimcar41452\\AirSimAssets_41452.exe",
+        "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41452\\settings.json'"},
+    2: {"port": 41453, "path": "c:\\Users\\Administrator\\Documents\\airsimcar41453\\AirSimAssets_41453.exe",
+        "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41453\\settings.json'"},
 }
 
 map_info = {
@@ -47,13 +50,13 @@ def kill_airsim(port):
 def get_available_port():
     for info_id, info in airsim_info.items():
         if info['port'] not in used_ports:
-            return info_id, info['port'], info['path']
-    return None, None, None
+            return info_id, info['port'], info['path'], info['setting']
+    return None, None, None, None
 
 
-async def start_airsim(path):
+async def start_airsim(path, setting):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = [path]
+        command = [path, setting]
         return subprocess.Popen(command)
     else:
         raise Exception(f"Unity executable not found or not executable: {path}")
@@ -61,9 +64,9 @@ async def start_airsim(path):
 
 @app.get("/get_client")
 async def get_client():
-    info_id, port, path = get_available_port()
+    info_id, port, path, setting = get_available_port()
     if info_id is not None:
-        process = await start_airsim(path)
+        process = await start_airsim(path, setting)
         # FastAPI can handle async operations but subprocess.Popen here is synchronous.
         used_ports[port] = process.pid
         await asyncio.sleep(1)
