@@ -1,5 +1,6 @@
 import json
 import math
+import httpx
 import requests
 import asyncio
 from airsim_client.airsim_car_connector import CarConnector
@@ -19,6 +20,10 @@ class ActionData(BaseModel):
     local_client_id: int
     action: Optional[str] = None
     map: Optional[dict] = None
+
+
+class RestartRequest(BaseModel):
+    local_client_id: int = None
 
 
 def _vector3r_to_dict(vector3r):
@@ -105,18 +110,29 @@ def _car_state_to_json(car_state):
     return json_result
 
 
+async def get_client_from_remote():
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(remote_address + "/get_client")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=exc.response.status_code, detail=str(exc))
+
+
 @app.post('/restart')
 async def restart_unity_environment(request: Request):
-    client_info_data = requests.get(remote_address + "/get_client").json()
     body = await request.json()
     local_client_id = body.get("local_client_id", len(client_info))
+    client_info_data = await get_client_from_remote()
+
     client_info[local_client_id] = {
         "local_client_id": local_client_id,
         "client_port": client_info_data["port"],
         "client_id": client_info_data["client_id"],
         "car": CarConnector(remote_airsim_ip, int(client_info_data["port"]))
     }
-    return JSONResponse(client_info[local_client_id])
+    return client_info[local_client_id]
 
 
 @app.post('/step')

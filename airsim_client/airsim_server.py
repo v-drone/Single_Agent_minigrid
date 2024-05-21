@@ -50,7 +50,7 @@ def get_available_port():
     return None, None, None
 
 
-def start_airsim(path):
+async def start_airsim(path):
     if os.path.isfile(path) and os.access(path, os.X_OK):
         command = [path]
         return subprocess.Popen(command)
@@ -62,7 +62,7 @@ def start_airsim(path):
 async def get_client():
     info_id, port, path = get_available_port()
     if info_id is not None:
-        process = start_airsim(path)
+        process = await start_airsim(path)
         # FastAPI can handle async operations but subprocess.Popen here is synchronous.
         used_ports[port] = process.pid
         return {'port': port, 'client_id': info_id, 'message': 'AirSim Client started'}
