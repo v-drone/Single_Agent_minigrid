@@ -168,7 +168,7 @@ async def reset(data: MapData):
     car = client_info[data.local_client_id].get("car")
     remote_client_id = client_info[data.local_client_id].get("client_id")
     if car is None or remote_client_id is None:
-        raise HTTPException(status_code=400, detail='Missing car or remote client ID')
+        raise HTTPException(status_code=400, detail='Missing car or remote client.yml ID')
 
     if data.map:
         # Post the map to the remote server
@@ -193,7 +193,7 @@ async def get_info(data: ActionData):
         raise HTTPException(status_code=404, detail='Client not found')
     car = client_info[data.local_client_id].get("car")
     if car is None:
-        raise HTTPException(status_code=400, detail='Car instance not found for the given client ID')
+        raise HTTPException(status_code=400, detail='Car instance not found for the given client.yml ID')
 
     # Get current state information from the car
     obs, info = car.get_info()
