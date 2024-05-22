@@ -14,7 +14,7 @@ class AirSimClient:
         self.car_connector = None
 
     async def start_airsim(self):
-        self.pid = await start_airsim(self.config["path"], self.config["setting"])
+        self.pid = start_airsim(self.config["path"], self.config["setting"])
         await asyncio.sleep(5)  # simulate startup time asynchronously
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
 
