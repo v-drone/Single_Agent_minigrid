@@ -90,7 +90,6 @@ class UAVWithMapEmpty(EmptyEnv):
         self.unvisited_tiles = set()
         self.battery = self.full_battery
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-        print(self.to_json())
         response = requests.post("http://127.0.0.1:%d/reset" % self.local_port,
                                  json={"map": self.to_json()})
         if response.status_code == 200:

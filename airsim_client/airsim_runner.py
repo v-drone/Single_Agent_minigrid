@@ -54,7 +54,6 @@ async def get_airsim_client():
 @app.post('/reset')
 async def reset(data: MapData, client: AirSimClient = Depends(get_airsim_client)):
     if not data.map:
-        print("CDT")
         raise HTTPException(status_code=500, detail="Map data not provided")
     try:
         with open(client.config["map"], "w") as f:
