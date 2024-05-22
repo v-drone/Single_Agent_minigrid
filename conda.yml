@@ -1,4 +1,8 @@
 name: drone
+channels:
+  - conda-forge
+  - defaults
+  - nvidia
 dependencies:
   - pip
   - python=3.9
