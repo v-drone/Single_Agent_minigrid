@@ -2,9 +2,9 @@ import json
 import time
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse
-from airsim_client.airsim_utils import ActionData, MapData
-from airsim_client.airsim_car_connector import CarConnector
-from airsim_client.airsim_utils import car_state_to_json, start_airsim, kill_airsim
+from airsim_utils import ActionData, MapData
+from airsim_car_connector import CarConnector
+from airsim_utils import car_state_to_json, start_airsim, kill_airsim
 
 
 class AirSimClient:
