@@ -32,7 +32,9 @@ class AirSimClient:
 airsim_config = {
     "port": 41451,
     "path": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_41451.exe",
-    "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41451\\settings.json'"
+    "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41451\\settings.json'",
+    "map": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_41451_Data\\StreamingAssets\\Test1"
+           ".json"
 }
 
 app = FastAPI()
@@ -52,9 +54,10 @@ async def get_airsim_client():
 @app.post('/reset')
 async def reset(data: MapData, client: AirSimClient = Depends(get_airsim_client)):
     if not data.map:
+        print("CDT")
         raise HTTPException(status_code=500, detail="Map data not provided")
     try:
-        with open(client.config["setting"], "w") as f:
+        with open(client.config["map"], "w") as f:
             json.dump(data.map, f)
         await asyncio.sleep(0.5)  # simulate map reset delay
         obs, info = client.car_connector.reset()
