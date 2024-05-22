@@ -117,19 +117,19 @@ async def get_client_from_remote():
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(remote_address + "/get_client")
+            await asyncio.sleep(10)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as exc:
             raise HTTPException(status_code=exc.response.status_code, detail=str(exc))
 
 
-async def get_client_info(local_client_id, client_info_data):
+def get_client_info(local_client_id, client_info_data):
     client_info[local_client_id] = {
         "local_client_id": local_client_id,
         "client_port": client_info_data["port"],
         "client_id": client_info_data["client_id"],
     }
-    print(client_info[local_client_id])
     client_info[local_client_id]["car"] = CarConnector(remote_airsim_ip, int(client_info_data["port"]))
     return {
         "local_client_id": local_client_id,
@@ -143,15 +143,15 @@ async def restart_unity_environment(request: Request):
     body = await request.json()
     local_client_id = body.get("local_client_id", len(client_info))
     client_info_data = await get_client_from_remote()
-    info = await get_client_info(local_client_id, client_info_data)
+    info = get_client_info(local_client_id, client_info_data)
     return JSONResponse(info)
 
 
 @app.post('/step')
 async def step(data: ActionData):
-    print(data.local_client_id, data.action)
     if data.local_client_id not in client_info:
         raise HTTPException(status_code=404, detail='Client or action not found')
+    print(data.local_client_id, data.action)
     car = client_info[data.local_client_id]["car"]
     obs, info = car.do_action(data.action)
     return JSONResponse({

@@ -4,52 +4,8 @@ import tqdm
 import torch
 import pickle
 import subprocess
-from ray.tune.registry import register_env
-from ray.tune.logger import JsonLogger
-from replay_buffer.mpber import MultiAgentPrioritizedBlockReplayBuffer
-from utils import minigrid_env_creator, convert_np_arrays, check_path
-from model.image_decoder import WrappedModel, WrappedEmbedding
-
-
-def set_hyper_parameters(setting, checkpoint_path, env_name):
-    # Build env
-    hyper_parameters = setting.hyper_parameters.to_dict()
-    hyper_parameters["logger_config"] = {"type": JsonLogger, "logdir": checkpoint_path}
-    hyper_parameters["env_config"] = {
-        "id": env_name,
-        "size": 12,
-        "routes": (2, 4),
-        "max_steps": 300,
-        "battery": 100,
-        "img_size": 100,
-        "tile_size": 20,
-        "render_mode": "rgb_array",
-        "agent_pov": False,
-        "basic_coefficient": 0.5,
-        "shape": [[100, 100], [64, 64]]
-    }
-
-    env_example = minigrid_env_creator(hyper_parameters["env_config"])
-    obs, _ = env_example.reset()
-    register_env("example", minigrid_env_creator)
-
-    # Set BER
-    sub_buffer_size = hyper_parameters["rollout_fragment_length"]
-    replay_buffer_config = {
-        **hyper_parameters["replay_buffer_config"],
-        "type": MultiAgentPrioritizedBlockReplayBuffer,
-        "capacity": hyper_parameters["replay_buffer_config"]["capacity"],
-        "obs_space": env_example.observation_space,
-        "action_space": env_example.action_space,
-        "sub_buffer_size": sub_buffer_size,
-        "worker_side_prioritization": False,
-        "replay_buffer_shards_colocated_with_driver": True,
-        "rollout_fragment_length": hyper_parameters["rollout_fragment_length"]
-    }
-    hyper_parameters["replay_buffer_config"] = replay_buffer_config
-    hyper_parameters["train_batch_size"] = int(hyper_parameters["train_batch_size"] / sub_buffer_size)
-
-    return hyper_parameters, env_example
+from utils import convert_np_arrays, check_path
+from model.image_decoder import WrappedEmbedding
 
 
 def train_loop(trainer, env_example, run_name, setting, checkpoint_path, log_path):

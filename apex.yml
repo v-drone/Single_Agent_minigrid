@@ -10,7 +10,7 @@ hyper_parameters:
   noisy: false
   adam_epsilon: .00015
   exploration_config:
-    epsilon_timesteps: 1000000
+    epsilon_timesteps: 100000
     final_epsilon: 0.01
   lr: 0.0001
   n_step: 5
@@ -22,18 +22,18 @@ hyper_parameters:
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
   num_cpus_per_worker: 4
-  num_gpus_per_worker: 0
-  num_envs_per_worker: 3
-  num_workers: 5
+  num_gpus_per_worker: 0.1
+  num_envs_per_worker: 1
+  num_workers: 1
   num_steps_sampled_before_learning_starts: 20000
-  rollout_fragment_length: 32
+  rollout_fragment_length: 8
   target_network_update_freq: 50000
-  train_batch_size: 1024
+  train_batch_size: 128
   min_sample_timesteps_per_iteration: 20000
   always_attach_evaluation_results: True
 log:
   save_file: "/home/seventheli/data/logging/simple_env"
   save_checkout: "/home/seventheli/data/checkpoints/simple_env"
   max_time: 360000
-  max_run: 5000
+  max_run: 50000
   log: 1

@@ -32,7 +32,7 @@ class UAVWithMapEmpty(EmptyEnv):
         reset_car = 6
 
     def __init__(self, size=30, max_steps=400, battery=100,
-                 agent_view_size=3, port=6000, camera=100,
+                 agent_view_size=3, port=5000, camera=100,
                  render_mode="human", render_rate=3, **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
@@ -51,7 +51,6 @@ class UAVWithMapEmpty(EmptyEnv):
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.local_port = port
-        self.local_client_id = None
         self.prev_transitions = None
         self.render_rate = render_rate
         self.goal = [0, 0]
@@ -70,25 +69,19 @@ class UAVWithMapEmpty(EmptyEnv):
             }
         )
 
-    def connect_local_airsim_server(self, tried=2):
+    def reset_airsim_win(self, tried=2):
         if tried >= 1:
-            raise Exception
+            return False
         response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
         if response.status_code == 200:
-            self.local_client_id = response.json()["local_client_id"]
+            return True
         else:
             tried += 1
-            self.connect_local_airsim_server(tried)
-
-    def kill_connect(self):
-        response = requests.post("http://127.0.0.1:%d/close/" % self.local_port,
-                                 json={"local_client_id": self.local_client_id})
-        if response.status_code == 200:
-            self.local_client_id = None
+            self.reset_airsim_win(tried)
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
         if self.local_client_id is None:
-            self.connect_local_airsim_server(0)
+            self.reset_airsim_win(0)
         super().reset()
         self.agent_dir = 3
         self.info = {}
@@ -97,13 +90,12 @@ class UAVWithMapEmpty(EmptyEnv):
         self.battery = self.full_battery
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
         response = requests.post("http://127.0.0.1:%d/reset" % self.local_port,
-                                 json={"local_client_id": self.local_client_id,
-                                       "map": self.to_json()})
+                                 json={"map": self.to_json()})
         if response.status_code == 200:
             obs = self._get_info()
             return obs, self.info
-        else:
-            raise Exception
+        elif response.status_code == 500:
+            self.reset_airsim_win(2)
 
     def step(self, action):
         # Record the agent's current position before executing the action
@@ -112,7 +104,9 @@ class UAVWithMapEmpty(EmptyEnv):
         self.battery -= 1
         self.step_count += 1
         # Execute the agent's action
-        self._call_airsim_step(action)
+        _, _, exception = self._call_airsim_step(action)
+        if exception:
+            self.reset()
         # Update map
         obs = self._get_info()
         self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
@@ -130,10 +124,6 @@ class UAVWithMapEmpty(EmptyEnv):
         view_obs, self.info = self._call_airsim_info()
         self._update_grid()
         return np.array(view_obs)
-
-    def close(self):
-        self.kill_connect()
-        super().close()
 
     def to_json(self):
         json_return = {"mission": self.mission,
@@ -159,7 +149,7 @@ class UAVWithMapEmpty(EmptyEnv):
         return json_return
 
     def _get_info(self):
-        view_obs, self.info = self._call_airsim_info()
+        view_obs, self.info, exception = self._call_airsim_info()
         self._update_grid()
         obs = {"image": np.array(view_obs, dtype=np.uint8), "direction": self.agent_dir, "mission": self.mission}
 
@@ -208,12 +198,20 @@ class UAVWithMapEmpty(EmptyEnv):
         response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
                                  json={"local_client_id": self.local_client_id,
                                        "action": int(action)})
-        return response.json()["obs"], json.loads(response.json()["info"])
+        if response.status_code == 200:
+            return response.json()["obs"], json.loads(response.json()["info"]), False
+        elif response.status_code == 500:
+            self.reset_airsim_win(2)
+            return {}, {}, True
 
     def _call_airsim_info(self):
         response = requests.post("http://127.0.0.1:%d/info" % self.local_port,
                                  json={"local_client_id": self.local_client_id})
-        return response.json()["obs"], json.loads(response.json()["info"])
+        if response.status_code == 200:
+            return response.json()["obs"], json.loads(response.json()["info"]), False
+        elif response.status_code == 500:
+            self.reset_airsim_win(2)
+            return {}, {}, True
 
     def _get_fail(self):
         if self.battery <= 0:

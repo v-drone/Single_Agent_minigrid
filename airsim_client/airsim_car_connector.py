@@ -8,7 +8,7 @@ from airsim import CarClient
 
 class CarConnector(object):
     def __init__(self, ip, port):
-        self.car = CarClient(ip, port=port)
+        self.car = CarClient(ip, port=port, timeout_value=60)
         self.car.confirmConnection()
         self.car_controls = airsim.CarControls()
         self.state = {
@@ -35,42 +35,32 @@ class CarConnector(object):
             self.car_controls.throttle = 0
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)
-            self.car_controls.brake = 0
-            self.car_controls.throttle = 0
-            self.car.setCarControls(self.car_controls)
         elif action == 2:
             self.car_controls.throttle = 0.05
             self.car_controls.steering = 0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)
-            self.car_controls.steering = 0
-            self.car.setCarControls(self.car_controls)
         elif action == 3:
             self.car_controls.throttle = 0.05
             self.car_controls.steering = 1
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)
-            self.car_controls.steering = 0
-            self.car.setCarControls(self.car_controls)
         elif action == 4:
             self.car_controls.throttle = 0.05
             self.car_controls.steering = -0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)
-            self.car_controls.steering = 0
-            self.car.setCarControls(self.car_controls)
         elif action == 5:
             self.car_controls.throttle = 0.05
             self.car_controls.steering = -1
             self.car.setCarControls(self.car_controls)
             time.sleep(0.05)
-            self.car_controls.steering = 0
-            self.car.setCarControls(self.car_controls)
         else:
             self.car_controls.throttle = 0
-            time.sleep(0.05)
             self.car_controls.steering = 0
             self.car.setCarControls(self.car_controls)
+            time.sleep(0.05)
+
         return self.get_info()
 
     def get_info(self):
