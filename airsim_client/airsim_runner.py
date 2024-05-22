@@ -39,15 +39,14 @@ app = FastAPI()
 client_instance = AirSimClient(airsim_config)
 
 
-async def get_airsim_client():
-    client = AirSimClient(airsim_config)
-    await client.start_airsim()
-    return client
-
-
 @app.on_event("startup")
 async def startup_event():
-    app.state.client_instance = await get_airsim_client()
+    app.state.airsim_client = AirSimClient(airsim_config)
+    await app.state.airsim_client.start_airsim()
+
+
+async def get_airsim_client():
+    return app.state.airsim_client
 
 
 @app.post('/reset')
@@ -79,7 +78,7 @@ async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsi
         raise HTTPException(status_code=500, detail=f"Action failed: {str(exc)}")
 
 
-@app.post('/restart')
+@app.get('/restart')
 async def cleanup(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
         await airsim_client.restart()

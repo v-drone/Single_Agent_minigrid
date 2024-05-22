@@ -72,7 +72,7 @@ class UAVWithMapEmpty(EmptyEnv):
     def reset_airsim_win(self, tried=2):
         if tried >= 1:
             return False
-        response = requests.post("http://127.0.0.1:%d/restart" % self.local_port, json={})
+        response = requests.get("http://127.0.0.1:%d/restart" % self.local_port)
         if response.status_code == 200:
             return True
         else:
@@ -80,11 +80,10 @@ class UAVWithMapEmpty(EmptyEnv):
             self.reset_airsim_win(tried)
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
-        response = requests.post("http://127.0.0.1:%d/ping" % self.local_port, json={})
+        obs, _ = super().reset()
+        response = requests.get("http://127.0.0.1:%d/ping" % self.local_port)
         if response.status_code != 200:
             self.reset_airsim_win(2)
-        print(response)
-        super().reset()
         self.agent_dir = 3
         self.info = {}
         self.visited_tiles = set()
@@ -198,8 +197,7 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _call_airsim_step(self, action):
         response = requests.post("http://127.0.0.1:%d/step" % self.local_port,
-                                 json={"local_client_id": self.local_client_id,
-                                       "action": int(action)})
+                                 json={"action": int(action)})
         if response.status_code == 200:
             return response.json()["obs"], json.loads(response.json()["info"]), False
         elif response.status_code == 500:
@@ -207,8 +205,7 @@ class UAVWithMapEmpty(EmptyEnv):
             return {}, {}, True
 
     def _call_airsim_info(self):
-        response = requests.post("http://127.0.0.1:%d/info" % self.local_port,
-                                 json={"local_client_id": self.local_client_id})
+        response = requests.get("http://127.0.0.1:%d/info" % self.local_port)
         if response.status_code == 200:
             return response.json()["obs"], json.loads(response.json()["info"]), False
         elif response.status_code == 500:
