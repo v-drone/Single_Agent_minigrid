@@ -1,7 +1,7 @@
 import json
-import time
+import asyncio
 from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from airsim_utils import ActionData, MapData
 from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, start_airsim, kill_airsim
@@ -10,13 +10,13 @@ from airsim_utils import car_state_to_json, start_airsim, kill_airsim
 class AirSimClient:
     def __init__(self, config):
         self.config = config
-        self.pid = self.start_airsim()
-        self.car_connector = CarConnector("127.0.0.1", config["port"])
+        self.pid = None
+        self.car_connector = None
 
-    def start_airsim(self):
-        _ = start_airsim(self.config["path"], self.config["setting"])
-        time.sleep(10)
-        return _
+    async def start_airsim(self):
+        self.pid = await start_airsim(self.config["path"], self.config["setting"])
+        await asyncio.sleep(5)  # simulate startup time asynchronously
+        self.car_connector = CarConnector("127.0.0.1", self.config["port"])
 
     def kill_airsim(self):
         if self.pid:
@@ -24,10 +24,9 @@ class AirSimClient:
             self.pid = None
             self.car_connector = None
 
-    def restart(self):
+    async def restart(self):
         self.kill_airsim()
-        self.pid = self.start_airsim()
-        self.car_connector = CarConnector("127.0.0.1", self.config["port"])
+        await self.start_airsim()
 
 
 airsim_config = {
@@ -40,32 +39,26 @@ app = FastAPI()
 client_instance = AirSimClient(airsim_config)
 
 
-def get_airsim_client():
-    global client_instance
-    return client_instance
+async def get_airsim_client():
+    client = AirSimClient(airsim_config)
+    await client.start_airsim()
+    return client
 
 
 @app.on_event("startup")
 async def startup_event():
-    global client_instance
-    client_instance = AirSimClient(airsim_config)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    global client_instance
-    if client_instance:
-        client_instance.kill_airsim()
+    app.state.client_instance = await get_airsim_client()
 
 
 @app.post('/reset')
-async def reset(data: MapData, airsim_client: AirSimClient = Depends(get_airsim_client)):
+async def reset(data: MapData, client: AirSimClient = Depends(get_airsim_client)):
     if not data.map:
         raise HTTPException(status_code=500, detail="Map data not provided")
     try:
-        with open(airsim_config["setting"], "w") as f:
+        with open(client.config["setting"], "w") as f:
             json.dump(data.map, f)
-        obs, info = airsim_client.car_connector.reset()
+        await asyncio.sleep(0.5)  # simulate map reset delay
+        obs, info = client.car_connector.reset()
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
@@ -89,7 +82,7 @@ async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsi
 @app.post('/restart')
 async def cleanup(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
-        airsim_client.restart()
+        await airsim_client.restart()
         obs, info = airsim_client.car_connector.reset()
         return JSONResponse({
             "obs": obs.tolist(),
@@ -109,9 +102,6 @@ async def get_info(airsim_client: AirSimClient = Depends(get_airsim_client)):
         })
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Info retrieval failed: {str(exc)}")
-
-
-from fastapi.responses import PlainTextResponse
 
 
 @app.get('/ping')

@@ -80,8 +80,10 @@ class UAVWithMapEmpty(EmptyEnv):
             self.reset_airsim_win(tried)
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
-        if self.local_client_id is None:
-            self.reset_airsim_win(0)
+        response = requests.post("http://127.0.0.1:%d/ping" % self.local_port, json={})
+        if response.status_code != 200:
+            self.reset_airsim_win(2)
+        print(response)
         super().reset()
         self.agent_dir = 3
         self.info = {}
