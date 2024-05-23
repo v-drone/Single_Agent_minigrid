@@ -8,7 +8,7 @@ app = FastAPI()
 
 class AirSimManager:
     def __init__(self):
-        self.available_ports = [41451, 41452, 41453]
+        self.available_ports = [5000, 5001, 5002]
         self.active_connections = {}
 
     def get_available_port(self):
