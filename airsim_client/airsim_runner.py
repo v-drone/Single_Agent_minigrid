@@ -1,6 +1,7 @@
 import json
 import asyncio
 import uvicorn
+import argparse
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse, PlainTextResponse
 from airsim_utils import ActionData, MapData
@@ -30,7 +31,10 @@ class AirSimClient:
         await self.start_airsim()
 
 
-airsim_config = load_config("airsim_config.json")
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--config", dest="config", type=int)
+
+airsim_config = load_config(parser.parse_args().config)
 
 app = FastAPI()
 client_instance = AirSimClient(airsim_config)

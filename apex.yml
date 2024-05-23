@@ -28,7 +28,7 @@ hyper_parameters:
   num_steps_sampled_before_learning_starts: 20000
   rollout_fragment_length: 8
   target_network_update_freq: 50000
-  train_batch_size: 128
+  train_batch_size: 64
   min_sample_timesteps_per_iteration: 20000
   always_attach_evaluation_results: True
 log:
