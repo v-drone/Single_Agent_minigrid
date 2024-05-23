@@ -49,6 +49,7 @@ class UAVWithMapEmpty(EmptyEnv):
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
+        self.manager_port = port
         self.local_port = requests.get("http://127.0.0.1:%d/handshake" % port).json()["port"]
         self.prev_transitions = None
         self.render_rate = render_rate
@@ -193,6 +194,10 @@ class UAVWithMapEmpty(EmptyEnv):
             self.agent_dir = 0  # East
         else:
             self.agent_dir = 3  # North
+
+    def close(self):
+        requests.post("http://127.0.0.1:%d/release" % self.manager_port, json={"port": self.local_port})
+        super().close()
 
     def _call_airsim_step(self, action):
         response = requests.post("http://127.0.0.1:%d/step" % self.local_port,

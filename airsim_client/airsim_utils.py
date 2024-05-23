@@ -12,6 +12,10 @@ class ActionData(BaseModel):
     action: int
 
 
+class PortData(BaseModel):
+    port: int
+
+
 class MapData(BaseModel):
     map: dict
 

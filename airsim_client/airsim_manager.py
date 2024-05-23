@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from airsim_utils import PortData
 import uvicorn
 
 app = FastAPI()
@@ -34,11 +36,21 @@ async def handshake():
     port = airsim_manager.get_available_port()
     if port:
         if airsim_manager.register_connection(port):
-            return {"message": "Connection successful", "port": port}
+            return JSONResponse({"message": "Connection successful", "port": port})
         else:
             raise HTTPException(status_code=500, detail="Failed to register connection")
     else:
         raise HTTPException(status_code=404, detail="No available AirSim instances")
+
+
+@app.post("/release")
+async def release(data: PortData):
+    try:
+        airsim_manager.release_connection(data.port)
+        print(airsim_manager.available_ports)
+        return JSONResponse({"message": "Release successful", "port": data.port})
+    except Exception:
+        raise HTTPException(status_code=500, detail="Release Failed")
 
 
 if __name__ == "__main__":
