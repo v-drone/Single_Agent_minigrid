@@ -32,7 +32,7 @@ class AirSimClient:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--config", dest="config", type=int)
+parser.add_argument("-f", "--config", dest="config", type=str)
 
 airsim_config = load_config(parser.parse_args().config)
 
