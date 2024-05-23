@@ -93,8 +93,6 @@ class AttentionCNN(DQNTorchModel):
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 6x6x256
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),  # Output: 6x6x512
-            nn.LeakyReLU(negative_slope=0.01),
             SimpleAttention(256),
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(1),
@@ -108,13 +106,11 @@ class AttentionCNN(DQNTorchModel):
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 7x7x256
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),  # Output: 7x7x512
-            nn.LeakyReLU(negative_slope=0.01),
             SimpleAttention(256),
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(1),
         )
-        self.map_attention = ValueAttention(256, value_dim=2)
+        self.map_attention = ValueAttention(256, value_dim=1)
         self.front_attention = ValueAttention(256, value_dim=2)
 
     def import_from_h5(self, h5_file: str) -> None:
@@ -154,7 +150,7 @@ class AttentionCNN(DQNTorchModel):
         view = self.view_layers(view)
         view = view.view(batch_size, -1)
 
-        img = self.map_attention(img, torch.stack([yaw, bat], dim=1))
+        img = self.map_attention(img, torch.stack([bat], dim=1))
         view = self.front_attention(view, torch.stack([yaw, speed], dim=1))
         return torch.concat([img, view], dim=-1), state
 
@@ -180,7 +176,7 @@ class WrappedModel(nn.Module):
         view = self.original_model.view_layers(view)
         view = view.view(batch_size, -1)
 
-        img = self.original_model.map_attention(img, torch.stack([yaw, bat], dim=1))
+        img = self.original_model.map_attention(img, torch.stack([bat], dim=1))
         view = self.original_model.front_attention(view, torch.stack([yaw, speed], dim=1))
 
         features = torch.concat([img, view], dim=-1)

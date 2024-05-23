@@ -32,25 +32,24 @@ class UAVWithMapEmpty(EmptyEnv):
         reset_car = 6
 
     def __init__(self, size=30, max_steps=400, battery=100,
-                 agent_view_size=3, port=5000, camera=100,
+                 agent_view_size=3, port=7575, camera=100,
                  render_mode="human", render_rate=3, **kwargs):
 
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
                          render_mode=render_mode, tile_size=kwargs.get("tile_size", 5))
-
         self.spec = EnvSpec("UAVWithMapEnv-v0", max_episode_steps=self.max_steps)
-        self.size = size
-        self.actions = self.Actions
         self.action_space = spaces.Discrete(len(self.actions))
+        self.actions = self.Actions
+        self.size = size
         self.full_battery = battery
         self.battery = battery
         self.info = {}
         self.prev_pos = None
         self.camera = camera
-        self.walked = np.zeros(shape=[size, size], dtype=np.uint8)
         self.visited_tiles = set()
         self.unvisited_tiles = set()
-        self.local_port = port
+        self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
+        self.local_port = requests.get("http://127.0.0.1:%d/handshake" % port).json()["port"]
         self.prev_transitions = None
         self.render_rate = render_rate
         self.goal = [0, 0]

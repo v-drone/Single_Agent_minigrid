@@ -60,7 +60,7 @@ def env_creator(env_config):
     if env_config.get("closer", True):
         env = CloserWrapper(env)
     env = SmallNegativeWrapper(env)
-    # env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
+    env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     if env_config.get("ride_model", None) is not None:
         env = SimpleRIDEWrapper(env, env_config.get("ride_model"),
                                 env_config.get("device", "cpu"))

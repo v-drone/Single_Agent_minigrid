@@ -22,6 +22,11 @@ class ClientConfig(BaseModel):
     setting: str
 
 
+def load_config(path):
+    with open(path, "r") as file:
+        return json.load(file)
+
+
 def vector3r_to_dict(vector3r):
     return {
         'x_val': vector3r.x_val,  # Make sure these fields match your actual object structure

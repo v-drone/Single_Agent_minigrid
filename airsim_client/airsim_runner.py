@@ -1,10 +1,11 @@
 import json
 import asyncio
+import uvicorn
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse, PlainTextResponse
 from airsim_utils import ActionData, MapData
 from airsim_car_connector import CarConnector
-from airsim_utils import car_state_to_json, start_airsim, kill_airsim
+from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
 
 
 class AirSimClient:
@@ -29,13 +30,7 @@ class AirSimClient:
         await self.start_airsim()
 
 
-airsim_config = {
-    "port": 41451,
-    "path": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_41451.exe",
-    "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41451\\settings.json'",
-    "map": "c:\\Users\\Administrator\\Documents\\airsimcar41451\\AirSimAssets_41451_Data\\StreamingAssets\\Test1"
-           ".json"
-}
+airsim_config = load_config("airsim_config.json")
 
 app = FastAPI()
 client_instance = AirSimClient(airsim_config)
@@ -108,16 +103,12 @@ async def get_info(airsim_client: AirSimClient = Depends(get_airsim_client)):
 @app.get('/ping')
 async def ping(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
-        status = airsim_client.car_connector.get_info()
-        if status:
-            return PlainTextResponse("Pong! CarConnector is active.", status_code=200)
-        else:
-            return PlainTextResponse("Pong! CarConnector is inactive.", status_code=503)
+        airsim_client.car_connector.get_info()
+        return PlainTextResponse("Pong! CarConnector is active.", status_code=200)
     except Exception as e:
+        # Log the error here if possible
         return PlainTextResponse(f"Pong! Failed to connect to CarConnector: {str(e)}", status_code=503)
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=airsim_config["server_port"])
