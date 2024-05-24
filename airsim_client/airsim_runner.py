@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
 
 airsim_config = load_config(parser.parse_args().config)
-
+print(airsim_config)
 app = FastAPI()
 client_instance = AirSimClient(airsim_config)
 
