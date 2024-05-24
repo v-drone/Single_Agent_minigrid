@@ -1,0 +1,7 @@
+{
+  "port": 41458,
+  "path": "c:\\Users\\Administrator\\Documents\\airsimcar41458\\AirSimAssets.exe",
+  "setting": "-settings='c:\\Users\\Administrator\\Documents\\airsimcar41458\\settings.json'",
+  "map": "c:\\Users\\Administrator\\Documents\\airsimcar41458\\AirSimAssets_Data\\StreamingAssets\\Test1.json",
+  "server_port": 5008
+}

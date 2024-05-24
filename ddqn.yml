@@ -22,7 +22,7 @@ hyper_parameters:
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
   num_gpus_per_worker: 0.5
-  num_envs_per_worker: 1
+  num_envs_per_worker: 3
   num_workers: 1
   num_steps_sampled_before_learning_starts: 10000
   rollout_fragment_length: 32

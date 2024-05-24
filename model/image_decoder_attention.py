@@ -139,12 +139,15 @@ class AttentionCNN(DQNTorchModel):
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"].float()
         img, view, bat, speed, yaw, batch_size = self.process_conv(obs)
-
-        # map
-        img = img.permute(0, 3, 1, 2)
-        img = self.map_layers(img)
-        img = img.view(batch_size, -1)
-
+        try:
+            # map
+            img = img.permute(0, 3, 1, 2)
+            img = self.map_layers(img)
+            img = img.view(batch_size, -1)
+        except Exception:
+            print(img.shape)
+            print(img)
+            raise Exception
         # view
         view = view.permute(0, 3, 1, 2)
         view = self.view_layers(view)
