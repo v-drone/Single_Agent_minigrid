@@ -107,11 +107,13 @@ async def get_info(airsim_client: AirSimClient = Depends(get_airsim_client)):
 @app.get('/ping')
 async def ping(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
-        airsim_client.car_connector.get_info()
-        return PlainTextResponse("Pong! CarConnector is active.", status_code=200)
+        if airsim_client.car_connector.ping():
+            return PlainTextResponse("Pong! CarConnector is active.", status_code=200)
+        else:
+            raise HTTPException(status_code=500, detail=f"Pong! Failed to connect to CarConnector", )
     except Exception as e:
         # Log the error here if possible
-        return PlainTextResponse(f"Pong! Failed to connect to CarConnector: {str(e)}", status_code=503)
+        raise HTTPException(status_code=500, detail=f"Pong! Failed to connect to CarConnector, {str(e)}")
 
 
 if __name__ == "__main__":

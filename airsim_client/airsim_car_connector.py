@@ -66,6 +66,9 @@ class CarConnector(object):
     def get_info(self):
         return self._get_obs(), self.car.getCarState()
 
+    def ping(self):
+        return self.car.ping()
+
     def _get_obs(self):
         responses = self.car.simGetImage('0', airsim.ImageType.Scene)
         image = self._transform_obs(responses)
