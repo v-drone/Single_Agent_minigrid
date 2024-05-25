@@ -22,6 +22,12 @@ mapper = {
 }
 
 
+def setup_logging(port):
+    logging.basicConfig(filename=f'./airsim_logging/logfile_{port}.log', level=logging.DEBUG,
+                        filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+    print(logging.getLogger())
+
+
 class UAVWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
@@ -54,11 +60,8 @@ class UAVWithMapEmpty(EmptyEnv):
         self.local_port = requests.get(f"http://127.0.0.1:{port}/handshake").json()["port"]
 
         # Logging setup
+        setup_logging(port)  # Make sure logging is set up before using it
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=f'./airsim_logging/logfile_{self.local_port}.log', level=logging.DEBUG,
-                            filemode='a',
-                            format='%(asctime)s - %(levelname)s - %(message)s')
-
         self.logger.debug(f"Initialized UAVWithMapEmpty with local_port: {self.local_port}")
         self.prev_transitions = None
         self.render_rate = render_rate
@@ -79,6 +82,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._call_airsim_reset()
+            return self._get_info(), {}
         except AirSimError as e:
             self.logger.error(f"Ping failed: {str(e)}")
             self._reset_airsim_win(5)
@@ -135,7 +139,9 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _get_info(self):
         view_obs, self.info = self._call_airsim_info()
+        self.info = json.loads(self.info)
         self._update_grid()
+
         obs = {"image": np.array(view_obs, dtype=np.uint8), "direction": self.agent_dir, "mission": self.mission}
         return obs
 
@@ -229,7 +235,7 @@ class UAVWithMapEmpty(EmptyEnv):
             response = requests.get(f"http://127.0.0.1:{self.local_port}/info")
             response.raise_for_status()
             data = response.json()
-            return data.get("obs"), data.get("info")
+            return data.get("obs"), json.loads(data.get("info"))
         except Exception as e:
             self.logger.error(f"Failed to retrieve information from AirSim: {str(e)}")
             raise AirSimResponseError(f"Failed to retrieve information from AirSim: {str(e)}")

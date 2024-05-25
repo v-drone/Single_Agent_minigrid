@@ -51,14 +51,15 @@ async def get_airsim_client():
 
 
 @app.post('/reset')
-async def reset(data: MapData, client: AirSimClient = Depends(get_airsim_client)):
+async def reset(data: MapData, airsim_client: AirSimClient = Depends(get_airsim_client)):
     if not data.map:
         raise HTTPException(status_code=500, detail="Map data not provided")
     try:
-        with open(client.config["map"], "w") as f:
+        with open(airsim_client.config["map"], "w") as f:
             json.dump(data.map, f)
         await asyncio.sleep(0.5)  # simulate map reset delay
-        obs, info = client.car_connector.reset()
+        airsim_client.car_connector.reset()
+        obs, info = airsim_client.car_connector.get_info()
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
@@ -70,7 +71,8 @@ async def reset(data: MapData, client: AirSimClient = Depends(get_airsim_client)
 @app.post('/step')
 async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
-        obs, info = airsim_client.car_connector.do_action(data.action)
+        airsim_client.car_connector.do_action(data.action)
+        obs, info = airsim_client.car_connector.get_info()
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
@@ -83,7 +85,8 @@ async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsi
 async def cleanup(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
         await airsim_client.restart()
-        obs, info = airsim_client.car_connector.reset()
+        airsim_client.car_connector.reset()
+        obs, info = airsim_client.car_connector.get_info()
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
