@@ -6,7 +6,7 @@ REM 设置进入项目目录并运行Python脚本的命令
 set PYTHON_CMD="cd C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid && python airsim_client\airsim_runner.py"
 
 REM 初始化命令字符串
-set START_CMD=
+set START_CMD= ""
 
 REM 循环遍历airsim_configs目录下的所有配置文件
 for %%f in (C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\*.json) do (
