@@ -27,7 +27,7 @@ class CarConnector(object):
 
     def do_action(self, action):
         if action == 0:
-            self.car_controls.throttle = 0.02
+            self.car_controls.throttle = 0.05
             self.car.setCarControls(self.car_controls)
             time.sleep(0.02)
         elif action == 1:
@@ -36,22 +36,22 @@ class CarConnector(object):
             self.car.setCarControls(self.car_controls)
             time.sleep(0.02)
         elif action == 2:
-            self.car_controls.brake = -0.005
+            self.car_controls.brake = 0
             self.car_controls.steering = 0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(0.02)
         elif action == 3:
-            self.car_controls.brake = -0.005
+            self.car_controls.brake = 0
             self.car_controls.steering = 1
             self.car.setCarControls(self.car_controls)
             time.sleep(0.02)
         elif action == 4:
-            self.car_controls.brake = -0.005
+            self.car_controls.brake = 0
             self.car_controls.steering = -0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(0.02)
         elif action == 5:
-            self.car_controls.brake = -0.005
+            self.car_controls.brake = 0
             self.car_controls.steering = -1
             self.car.setCarControls(self.car_controls)
             time.sleep(0.02)
