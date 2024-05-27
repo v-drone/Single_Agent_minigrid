@@ -1,11 +1,8 @@
 import json
-import asyncio
-import uvicorn
+import time
 import argparse
 import logging
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import JSONResponse, PlainTextResponse
-from airsim_utils import ActionData, MapData
+from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
 
@@ -20,9 +17,9 @@ class AirSimClient:
         self.car_connector = None
         logging.info("AirSimClient initialized with config.")
 
-    async def start_airsim(self):
+    def start_airsim(self):
         self.pid = start_airsim(self.config["path"], self.config["setting"])
-        await asyncio.sleep(5)  # simulate startup time asynchronously
+        time.sleep(5)  # simulate startup time synchronously
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
 
@@ -32,106 +29,99 @@ class AirSimClient:
         self.pid = None
         self.car_connector = None
 
-    async def restart(self):
+    def restart(self):
         logging.info("Restarting Airsim.")
         self.kill_airsim()
-        await self.start_airsim()
+        self.start_airsim()
 
 
+app = Flask(__name__)
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
-
 airsim_config = load_config(parser.parse_args().config)
+airsim_client = AirSimClient(airsim_config)
 logging.info(f"Configuration loaded: {airsim_config}")
-app = FastAPI()
+airsim_client.start_airsim()
 
 
-@app.on_event("startup")
-async def startup_event():
-    app.state.airsim_client = AirSimClient(airsim_config)
-    await app.state.airsim_client.start_airsim()
-
-
-async def get_airsim_client():
-    return app.state.airsim_client
-
-
-@app.post('/reset')
-async def reset(data: MapData, airsim_client: AirSimClient = Depends(get_airsim_client)):
-    if not data.map:
-        raise HTTPException(status_code=500, detail="Map data not provided")
+@app.route('/reset', methods=['POST'])
+def reset():
+    data = request.get_json()
+    if not data or not data.get('map'):
+        abort(500, "Map data not provided")
     try:
         with open(airsim_client.config["map"], "w") as f:
-            json.dump(data.map, f)
-        await asyncio.sleep(0.5)  # simulate map reset delay
+            json.dump(data['map'], f)
+        time.sleep(0.5)  # simulate map reset delay
         airsim_client.car_connector.reset()
         obs, info = airsim_client.car_connector.get_info()
         logging.info("Map reset successfully.")
-        return JSONResponse({
+        return jsonify({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
         logging.error(f"Reset failed: {str(exc)}")
-        raise HTTPException(status_code=500, detail=f"Reset failed: {str(exc)}")
+        abort(500, f"Reset failed: {str(exc)}")
 
 
-@app.post('/step')
-async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsim_client)):
+@app.route('/step', methods=['POST'])
+def step():
+    data = request.get_json()
     try:
-        airsim_client.car_connector.do_action(data.action)
+        airsim_client.car_connector.do_action(data['action'])
         obs, info = airsim_client.car_connector.get_info()
-        return JSONResponse({
+        return jsonify({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
         logging.error(f"Action failed: {str(exc)}")
-        raise HTTPException(status_code=500, detail=f"Action failed: {str(exc)}")
+        abort(500, f"Action failed: {str(exc)}")
 
 
-@app.get('/restart')
-async def restart(airsim_client: AirSimClient = Depends(get_airsim_client)):
+@app.route('/restart', methods=['GET'])
+def restart():
     try:
-        await airsim_client.restart()
+        airsim_client.restart()
         airsim_client.car_connector.reset()
         obs, info = airsim_client.car_connector.get_info()
         logging.info("AirSim restarted successfully.")
-        return JSONResponse({
+        return jsonify({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
         logging.error(f"Restart failed: {str(exc)}")
-        raise HTTPException(status_code=500, detail=f"Restart failed: {str(exc)}")
+        abort(500, f"Restart failed: {str(exc)}")
 
 
-@app.get('/info')
-async def get_info(airsim_client: AirSimClient = Depends(get_airsim_client)):
+@app.route('/info', methods=['GET'])
+def get_info():
     try:
         obs, info = airsim_client.car_connector.get_info()
         logging.info("Information retrieved successfully.")
-        return JSONResponse({
+        return jsonify({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
         logging.error(f"Info retrieval failed: {str(exc)}")
-        raise HTTPException(status_code=500, detail=f"Info retrieval failed: {str(exc)}")
+        abort(500, f"Info retrieval failed: {str(exc)}")
 
 
-@app.get('/ping')
-async def ping(airsim_client: AirSimClient = Depends(get_airsim_client)):
+@app.route('/ping', methods=['GET'])
+def ping():
     try:
         if airsim_client.car_connector.ping():
             logging.info("Ping successful.")
-            return PlainTextResponse("Pong! CarConnector is active.", status_code=200)
+            return "Pong! CarConnector is active.", 200
         else:
-            raise HTTPException(status_code=500, detail="Failed to connect to CarConnector")
+            abort(500, "Failed to connect to CarConnector")
     except Exception as e:
         logging.error(f"Ping failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Ping failed: {str(e)}")
+        abort(500, f"Ping failed: {str(e)}")
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=airsim_config["server_port"])
+    app.run(host="0.0.0.0", port=airsim_config["server_port"])
