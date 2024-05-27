@@ -22,14 +22,6 @@ mapper = {
 }
 
 
-def setup_logging(port):
-    # 配置日志记录所有信息
-    logging.basicConfig(filename=f'./airsim_logs/logfile_{port}.log',
-                        level=logging.DEBUG,
-                        filemode='a',
-                        format='%(asctime)s - %(levelname)s - %(message)s')
-
-
 class UAVWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
@@ -63,7 +55,8 @@ class UAVWithMapEmpty(EmptyEnv):
 
         # Logging setup
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=f'./airsim_logs/logfile_{str(self.local_port)}.log', level=logging.DEBUG,
+        logging.basicConfig(filename=f'/home/seventheli/research/Single_Agent_minigrid/'
+                                     f'airsim_logs/logfile_{str(self.local_port)}.log', level=logging.DEBUG,
                             filemode='a',
                             format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -91,7 +84,7 @@ class UAVWithMapEmpty(EmptyEnv):
             return self._update_info(*self._call_airsim_info()), {}
         except AirSimError as e:
             self.logger.error(f"Ping failed: {str(e)}")
-            self._reset_airsim_win(5)
+            self._call_airsim_restart(5)
             self.reset()
 
     def step(self, action):
@@ -189,7 +182,7 @@ class UAVWithMapEmpty(EmptyEnv):
         else:
             self.agent_dir = 3  # North
 
-    def _reset_airsim_win(self, tried=2):
+    def _call_airsim_restart(self, tried=2):
         if tried <= 0:
             self.logger.error("Maximum retries reached for resetting AirSim window.")
             raise AirSimRestartFailed(f"Failed to reset AirSim window on try {3 - tried}")
@@ -199,7 +192,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self._check_airsim()
         except requests.RequestException or AirSimConnectionError as e:
             self.logger.error(f"Failed to reset AirSim window on try {3 - tried}: {str(e)}")
-            self._reset_airsim_win(tried - 1)
+            self._call_airsim_restart(tried - 1)
         except AirSimRestartFailed as e:
             raise e
 

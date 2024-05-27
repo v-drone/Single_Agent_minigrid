@@ -21,10 +21,9 @@ class AirSimClient:
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
 
     def kill_airsim(self):
-        if self.pid:
-            kill_airsim(self.pid)
-            self.pid = None
-            self.car_connector = None
+        kill_airsim(self.pid)
+        self.pid = None
+        self.car_connector = None
 
     async def restart(self):
         self.kill_airsim()
@@ -37,7 +36,6 @@ parser.add_argument("-f", "--config", dest="config", type=str)
 airsim_config = load_config(parser.parse_args().config)
 print(airsim_config)
 app = FastAPI()
-client_instance = AirSimClient(airsim_config)
 
 
 @app.on_event("startup")
@@ -82,7 +80,7 @@ async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsi
 
 
 @app.get('/restart')
-async def cleanup(airsim_client: AirSimClient = Depends(get_airsim_client)):
+async def restart(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
         await airsim_client.restart()
         airsim_client.car_connector.reset()

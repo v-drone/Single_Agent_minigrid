@@ -89,6 +89,9 @@ class CarConnector(object):
         self.car.reset()
         self.car.enableApiControl(True)
         self.car.armDisarm(True)
+        self.car_controls.throttle = 0
+        self.car_controls.steering = 0
+        self.car.setCarControls(self.car_controls)
         time.sleep(0.01)
 
     def _get_ex_reward(self):
