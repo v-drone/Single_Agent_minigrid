@@ -128,7 +128,7 @@ def start_airsim(bat_file):
     try:
         process = subprocess.Popen(bat_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         logging.info(f"AirSim is running with PID {process.pid}")
-        return process.pid
+        return process
     except Exception as e:
         logging.exception("Failed to execute batch script.")
         return None
