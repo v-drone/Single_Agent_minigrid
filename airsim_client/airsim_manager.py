@@ -14,7 +14,7 @@ class AirSimManager:
 
     def get_available_port(self):
         for port in self.available_ports:
-            if port not in self.active_connections or port not in self.died_port:
+            if port not in self.active_connections and port not in self.died_port:
                 return port
         return None
 
