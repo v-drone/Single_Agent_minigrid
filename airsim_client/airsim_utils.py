@@ -125,21 +125,21 @@ def kill_airsim(process_id):
 
 def start_airsim(path, setting):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = f"{path} {setting}"  # Command as a single string
-        logging.info(f"Executing command: {command}")  # Corrected logging format
+        command = f'"{path}" "{setting}"'
+        logging.info(f"Executing command: {command}")
 
         try:
-            # Removed shell=True for better security and control
-            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            time.sleep(5)  # Allow some time for the process to potentially fail or stabilize
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       cwd=os.path.dirname(path))
 
-            # Check if the process has not terminated
+            time.sleep(10)
             if process.poll() is None:
                 return process.pid
             else:
-                # Capture stderr to get more insight into why the process might have terminated
                 _, stderr = process.communicate()
-                raise Exception(f"Process terminated prematurely with error: {stderr.decode().strip()}")
+                error_message = stderr.decode().strip()
+                logging.error(f"Process error output: {error_message}")
+                raise Exception(f"Process terminated prematurely with error: {error_message}")
 
         except Exception as e:
             raise Exception(f"Failed to start process: {str(e)}")
