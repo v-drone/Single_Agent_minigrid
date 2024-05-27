@@ -248,8 +248,9 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _set_local_port_died(self):
         self.logger.info(f"Port {self.local_port} Died")
-        self.local_port = requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
-                                        json={"port": self.local_port}, timeout=5).json()["port"]
+        requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
+                      json={"port": self.local_port}, timeout=5)
+        self._set_local_port()
         self.logger.info(f"Set New Local Port {self.local_port}")
 
     def _set_local_port(self):
