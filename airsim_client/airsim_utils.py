@@ -125,8 +125,9 @@ def kill_airsim(process_id):
 
 def start_airsim(path, setting):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = [path, " ", setting, " "]
-        logging.info("Executing command:", command)  # Debugging output
+        command = f'"{path}" "{setting}"'
+        logging.info(f"Executing command: {command}")
+
         try:
             process = subprocess.Popen(command, shell=True)  # Adjust according to need
             time.sleep(10)
