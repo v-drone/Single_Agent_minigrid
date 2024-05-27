@@ -123,12 +123,18 @@ def kill_airsim(process_id):
         return "Process not found"
 
 
-def start_airsim(bat_file):
-    logging.info(f"Executing batch file: {bat_file}")
-    try:
-        process = subprocess.Popen(bat_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"AirSim is running with PID {process.pid}")
-        return process
-    except Exception as e:
-        logging.exception("Failed to execute batch script.")
-        return None
+def start_airsim(path, setting):
+    if os.path.isfile(path) and os.access(path, os.X_OK):
+        command = [path, " ", setting, " "]
+        logging.info("Executing command:", command)  # Debugging output
+        try:
+            process = subprocess.Popen(command, shell=True)  # Adjust according to need
+            time.sleep(10)
+            if process.poll() is None:  # Check if the process has not terminated
+                return process.pid
+            else:
+                raise Exception("Process terminated prematurely")
+        except Exception as e:
+            raise Exception(f"Failed to start process: {str(e)}")
+    else:
+        raise Exception(f"Unity executable not found or not executable: {path}")

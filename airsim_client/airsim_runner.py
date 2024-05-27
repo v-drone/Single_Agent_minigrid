@@ -13,20 +13,19 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 class AirSimClient:
     def __init__(self, config):
         self.config = config
-        self.process = None
+        self.pid = None
         self.car_connector = None
         logging.info("AirSimClient initialized with config.")
 
     def start_airsim(self):
-        self.process = start_airsim(self.config["path"])
-        time.sleep(10)  # simulate startup time synchronously
+        self.pid = start_airsim(self.config["path"], self.config["setting"])
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
-        logging.info(f"Airsim started with PID: {self.process.pid}")
+        logging.info(f"Airsim started with PID: {self.pid}")
 
     def kill_airsim(self):
-        kill_airsim(self.process.pid)
-        logging.info(f"Airsim killed with PID: {self.process.pid}")
-        self.process = None
+        kill_airsim(self.pid)
+        logging.info(f"Airsim killed with PID: {self.pid}")
+        self.pid = None
         self.car_connector = None
 
     def restart(self):

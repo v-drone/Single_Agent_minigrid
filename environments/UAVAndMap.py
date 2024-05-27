@@ -51,7 +51,8 @@ class UAVWithMapEmpty(EmptyEnv):
         self.unvisited_tiles = set()
         self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
         self.manager_port = port
-        self.local_port = requests.get(f"http://127.0.0.1:{port}/handshake", timeout=5).json()["port"]
+        self.local_port = None
+        self._set_local_port()
 
         # Logging setup
         self.logger = logging.getLogger(__name__)
@@ -97,7 +98,6 @@ class UAVWithMapEmpty(EmptyEnv):
             self.logger.error(f"Exception during AirSim step call: {str(e)}")
             self.reset()
             obs, reward, terminated, truncated, _ = self.prev_transitions
-            truncated = True
         return obs, reward, terminated, truncated, {}
 
     def render(self):
@@ -201,21 +201,6 @@ class UAVWithMapEmpty(EmptyEnv):
             self.logger.error(f"Failed to reset environment state: {str(e)}")
             raise AirSimConnectionError(f"Failed to reset environment state: {str(e)}")
 
-    def _check_airsim(self):
-        try:
-            self.logger.debug("Sending ping to check AirSim status...")
-            response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=5)
-            response.raise_for_status()
-            if response.status_code == 200:
-                self.logger.debug("AirSim is active and responding.")
-            else:
-                self.logger.error(f"AirSim ping failed")
-                raise AirSimConnectionError("AirSim ping failed.")
-        except Exception as e:
-            self.logger.error(f"Request to AirSim ping: {str(e)}")
-            if self._call_airsim_restart(5):
-                raise AirSimRestartFailed()
-
     def _call_airsim_step(self, action):
         try:
             response = requests.post(f"http://127.0.0.1:{self.local_port}/step", timeout=5
@@ -246,6 +231,29 @@ class UAVWithMapEmpty(EmptyEnv):
                 return True
             else:
                 return False
+
+    def _check_airsim(self):
+        try:
+            response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=5)
+            response.raise_for_status()
+            if not response.status_code == 200:
+                self.logger.error(f"AirSim ping failed")
+                raise AirSimConnectionError("AirSim ping failed.")
+        except Exception as e:
+            self.logger.error(f"Request to AirSim ping: {str(e)}")
+            self._set_local_port_died()
+            # if self._call_airsim_restart(5):
+            #     raise AirSimRestartFailed()
+
+    def _set_local_port_died(self):
+        self.logger.info(f"Port {self.local_port} Died")
+        self.local_port = requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
+                                        json={"port": self.local_port}, timeout=5).json()["port"]
+        self.logger.info(f"Set New Local Port {self.local_port}")
+
+    def _set_local_port(self):
+        self.local_port = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=5).json()["port"]
+        self.logger.info(f"Set New Local Port {self.local_port}")
 
     @staticmethod
     def _gen_mission():
