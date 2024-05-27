@@ -2,11 +2,15 @@ import json
 import asyncio
 import uvicorn
 import argparse
+import logging
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse, PlainTextResponse
 from airsim_utils import ActionData, MapData
 from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class AirSimClient:
@@ -14,18 +18,22 @@ class AirSimClient:
         self.config = config
         self.pid = None
         self.car_connector = None
+        logging.info("AirSimClient initialized with config.")
 
     async def start_airsim(self):
         self.pid = start_airsim(self.config["path"], self.config["setting"])
         await asyncio.sleep(5)  # simulate startup time asynchronously
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
+        logging.info(f"Airsim started with PID: {self.pid}")
 
     def kill_airsim(self):
         kill_airsim(self.pid)
+        logging.info(f"Airsim killed with PID: {self.pid}")
         self.pid = None
         self.car_connector = None
 
     async def restart(self):
+        logging.info("Restarting Airsim.")
         self.kill_airsim()
         await self.start_airsim()
 
@@ -34,7 +42,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
 
 airsim_config = load_config(parser.parse_args().config)
-print(airsim_config)
+logging.info(f"Configuration loaded: {airsim_config}")
 app = FastAPI()
 
 
@@ -58,11 +66,13 @@ async def reset(data: MapData, airsim_client: AirSimClient = Depends(get_airsim_
         await asyncio.sleep(0.5)  # simulate map reset delay
         airsim_client.car_connector.reset()
         obs, info = airsim_client.car_connector.get_info()
+        logging.info("Map reset successfully.")
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
+        logging.error(f"Reset failed: {str(exc)}")
         raise HTTPException(status_code=500, detail=f"Reset failed: {str(exc)}")
 
 
@@ -76,6 +86,7 @@ async def step(data: ActionData, airsim_client: AirSimClient = Depends(get_airsi
             "info": car_state_to_json(info)
         })
     except Exception as exc:
+        logging.error(f"Action failed: {str(exc)}")
         raise HTTPException(status_code=500, detail=f"Action failed: {str(exc)}")
 
 
@@ -85,12 +96,13 @@ async def restart(airsim_client: AirSimClient = Depends(get_airsim_client)):
         await airsim_client.restart()
         airsim_client.car_connector.reset()
         obs, info = airsim_client.car_connector.get_info()
+        logging.info("AirSim restarted successfully.")
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
-        print(str(exc))
+        logging.error(f"Restart failed: {str(exc)}")
         raise HTTPException(status_code=500, detail=f"Restart failed: {str(exc)}")
 
 
@@ -98,11 +110,13 @@ async def restart(airsim_client: AirSimClient = Depends(get_airsim_client)):
 async def get_info(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
         obs, info = airsim_client.car_connector.get_info()
+        logging.info("Information retrieved successfully.")
         return JSONResponse({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
         })
     except Exception as exc:
+        logging.error(f"Info retrieval failed: {str(exc)}")
         raise HTTPException(status_code=500, detail=f"Info retrieval failed: {str(exc)}")
 
 
@@ -110,12 +124,13 @@ async def get_info(airsim_client: AirSimClient = Depends(get_airsim_client)):
 async def ping(airsim_client: AirSimClient = Depends(get_airsim_client)):
     try:
         if airsim_client.car_connector.ping():
+            logging.info("Ping successful.")
             return PlainTextResponse("Pong! CarConnector is active.", status_code=200)
         else:
-            raise HTTPException(status_code=500, detail=f"Pong! Failed to connect to CarConnector", )
+            raise HTTPException(status_code=500, detail="Failed to connect to CarConnector")
     except Exception as e:
-        # Log the error here if possible
-        raise HTTPException(status_code=501, detail=f"Pong! Failed to connect to CarConnector, {str(e)}")
+        logging.error(f"Ping failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ping failed: {str(e)}")
 
 
 if __name__ == "__main__":
