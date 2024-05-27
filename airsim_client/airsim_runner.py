@@ -90,6 +90,7 @@ async def restart(airsim_client: AirSimClient = Depends(get_airsim_client)):
             "info": car_state_to_json(info)
         })
     except Exception as exc:
+        print(str(exc))
         raise HTTPException(status_code=500, detail=f"Restart failed: {str(exc)}")
 
 
@@ -114,7 +115,7 @@ async def ping(airsim_client: AirSimClient = Depends(get_airsim_client)):
             raise HTTPException(status_code=500, detail=f"Pong! Failed to connect to CarConnector", )
     except Exception as e:
         # Log the error here if possible
-        raise HTTPException(status_code=500, detail=f"Pong! Failed to connect to CarConnector, {str(e)}")
+        raise HTTPException(status_code=501, detail=f"Pong! Failed to connect to CarConnector, {str(e)}")
 
 
 if __name__ == "__main__":
