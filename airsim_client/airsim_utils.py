@@ -127,16 +127,8 @@ def start_airsim(bat_file):
     logging.info(f"Executing batch file: {bat_file}")
     try:
         process = subprocess.Popen(bat_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
-
-        if process.returncode == 0:
-            logging.info("AirSim started successfully.")
-            return "AirSim started successfully."
-        else:
-            error_message = stderr.decode().strip()
-            logging.error(f"AirSim failed to start with error: {error_message}")
-            return f"Failed to start AirSim: {error_message}"
-
+        logging.info(f"AirSim is running with PID {process.pid}")
+        return process
     except Exception as e:
         logging.exception("Failed to execute batch script.")
-        return f"Exception occurred: {str(e)}"
+        return None
