@@ -1,3 +1,4 @@
+import logging
 import os
 import math
 import json
@@ -124,16 +125,23 @@ def kill_airsim(process_id):
 
 def start_airsim(path, setting):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = [path, " ", setting, " "]
-        print("Executing command:", command)  # Debugging output
+        command = f"{path} {setting}"  # Command as a single string
+        logging.info(f"Executing command: {command}")  # Corrected logging format
+
         try:
-            process = subprocess.Popen(command, shell=True)  # Adjust according to need
-            time.sleep(5)
-            if process.poll() is None:  # Check if the process has not terminated
+            # Removed shell=True for better security and control
+            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            time.sleep(5)  # Allow some time for the process to potentially fail or stabilize
+
+            # Check if the process has not terminated
+            if process.poll() is None:
                 return process.pid
             else:
-                raise Exception("Process terminated prematurely")
+                # Capture stderr to get more insight into why the process might have terminated
+                _, stderr = process.communicate()
+                raise Exception(f"Process terminated prematurely with error: {stderr.decode().strip()}")
+
         except Exception as e:
             raise Exception(f"Failed to start process: {str(e)}")
     else:
-        raise Exception(f"Unity executable not found or not executable: {path}")
+        raise Exception(f"Executable not found or not executable: {path}")

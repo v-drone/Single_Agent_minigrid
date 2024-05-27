@@ -181,7 +181,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.logger.error("Maximum retries reached for resetting AirSim window.")
             raise AirSimRestartFailed(f"Maximum retries reached for resetting AirSim window.")
         try:
-            response = requests.get(f"http://127.0.0.1:{self.local_port}/restart", timeout=5)
+            response = requests.get(f"http://127.0.0.1:{self.local_port}/restart", timeout=20)
             response.raise_for_status()
             failed = False
         except requests.RequestException or AirSimConnectionError as e:
