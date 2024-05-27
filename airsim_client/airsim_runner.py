@@ -18,7 +18,7 @@ class AirSimClient:
         logging.info("AirSimClient initialized with config.")
 
     def start_airsim(self):
-        self.pid = start_airsim(self.config["path"], self.config["setting"])
+        self.pid = start_airsim(self.config["path"])
         time.sleep(5)  # simulate startup time synchronously
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")

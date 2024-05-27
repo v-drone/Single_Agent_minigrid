@@ -123,25 +123,20 @@ def kill_airsim(process_id):
         return "Process not found"
 
 
-def start_airsim(path, setting):
-    if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = f'"{path}" "{setting}"'
-        logging.info(f"Executing command: {command}")
+def start_airsim(bat_file):
+    logging.info(f"Executing batch file: {bat_file}")
+    try:
+        process = subprocess.Popen(bat_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
 
-        try:
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                       cwd=os.path.dirname(path))
+        if process.returncode == 0:
+            logging.info("AirSim started successfully.")
+            return "AirSim started successfully."
+        else:
+            error_message = stderr.decode().strip()
+            logging.error(f"AirSim failed to start with error: {error_message}")
+            return f"Failed to start AirSim: {error_message}"
 
-            time.sleep(10)
-            if process.poll() is None:
-                return process.pid
-            else:
-                _, stderr = process.communicate()
-                error_message = stderr.decode().strip()
-                logging.error(f"Process error output: {error_message}")
-                raise Exception(f"Process terminated prematurely with error: {error_message}")
-
-        except Exception as e:
-            raise Exception(f"Failed to start process: {str(e)}")
-    else:
-        raise Exception(f"Executable not found or not executable: {path}")
+    except Exception as e:
+        logging.exception("Failed to execute batch script.")
+        return f"Exception occurred: {str(e)}"
