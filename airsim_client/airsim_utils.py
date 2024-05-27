@@ -124,9 +124,16 @@ def kill_airsim(process_id):
 
 def start_airsim(path, setting):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = [path, setting]
-        process = subprocess.Popen(command)
-        time.sleep(5)
-        return process.pid
+        command = [path, " ", setting, " "]
+        print("Executing command:", command)  # Debugging output
+        try:
+            process = subprocess.Popen(command, shell=True)  # Adjust according to need
+            time.sleep(5)
+            if process.poll() is None:  # Check if the process has not terminated
+                return process.pid
+            else:
+                raise Exception("Process terminated prematurely")
+        except Exception as e:
+            raise Exception(f"Failed to start process: {str(e)}")
     else:
         raise Exception(f"Unity executable not found or not executable: {path}")

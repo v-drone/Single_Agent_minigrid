@@ -77,9 +77,9 @@ class UAVWithMapEmpty(EmptyEnv):
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._call_airsim_reset()
             return self._update_info(*self._call_airsim_info()), {}
-        except AirSimError as e:
-            self.logger.error(f"Ping failed: {str(e)}")
-            self.reset()
+        except AirSimRestartFailed as e:
+            self.logger.error(f"Whole Restart failed: {str(e)}")
+            self.close()
 
     def step(self, action):
         self.prev_pos = np.copy(self.agent_pos)
@@ -179,7 +179,7 @@ class UAVWithMapEmpty(EmptyEnv):
     def _call_airsim_restart(self, tried=2, failed=True):
         if tried <= 0:
             self.logger.error("Maximum retries reached for resetting AirSim window.")
-            raise AirSimRestartFailed(f"Failed to reset AirSim window on try {tried}")
+            raise AirSimRestartFailed(f"Maximum retries reached for resetting AirSim window.")
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/restart", timeout=5)
             response.raise_for_status()
