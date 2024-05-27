@@ -7,7 +7,7 @@ from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
 
 # Setup logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class AirSimClient:

@@ -50,13 +50,14 @@ class UAVWithMapEmpty(EmptyEnv):
         self.visited_tiles = set()
         self.unvisited_tiles = set()
         self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
-        self.manager_port = port
-        self.local_port = None
-        self._set_local_port()
 
         # Logging setup
         self.logger = logging.getLogger(__name__)
-        self.logger.debug(f"Initialized UAVWithMapEmpty with local_port: {str(self.local_port)}")
+        self.logger.debug(f"Initialized UAVWithMapEmpty")
+
+        self.manager_port = port
+        self.local_port = None
+        self._set_local_port()
 
         self.prev_transitions = None
         self.render_rate = render_rate
