@@ -10,23 +10,23 @@ class AirSimManager:
     def __init__(self):
         self.available_ports = [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 5009]
         self.died_port = {}
-        self.active_connections = {}
+        self.active_port = {}
 
     def get_available_port(self):
         for port in self.available_ports:
-            if port not in self.active_connections and port not in self.died_port:
+            if port not in self.active_port and port not in self.died_port:
                 return port
         return None
 
     def register_connection(self, port):
         if port in self.available_ports and port not in self.died_port:
-            self.active_connections[port] = 'gym'
+            self.active_port[port] = 'gym'
             return True
         return False
 
     def release_connection(self, port):
-        if port in self.active_connections:
-            del self.active_connections[port]
+        if port in self.active_port:
+            del self.active_port[port]
         if port in self.died_port:
             del self.died_port[port]
 
@@ -53,7 +53,6 @@ async def handshake():
 async def release(data: PortData):
     try:
         airsim_manager.release_connection(data.port)
-        print(airsim_manager.available_ports)
         return JSONResponse({"message": "Release successful", "port": data.port})
     except Exception:
         raise HTTPException(status_code=500, detail="Release Failed")
@@ -63,8 +62,20 @@ async def release(data: PortData):
 async def set_died(data: PortData):
     try:
         airsim_manager.set_died(data.port)
-        print(airsim_manager.available_ports)
         return JSONResponse({"message": "Set Died successful", "port": data.port})
+    except Exception:
+        raise HTTPException(status_code=500, detail="Release Failed")
+
+
+@app.get("/info")
+async def get_info():
+    try:
+        response = {
+            "died": airsim_manager.died_port,
+            "live": airsim_manager.active_port
+        }
+        print(response)
+        return JSONResponse(response)
     except Exception:
         raise HTTPException(status_code=500, detail="Release Failed")
 
