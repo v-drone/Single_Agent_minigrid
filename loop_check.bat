@@ -17,6 +17,12 @@ for /f "delims=" %%a in ('type server_ports.json ^| python -c "import sys, json;
 REM 清空todo_ports列表
 python -c "import json; data = json.load(open('server_ports.json')); data['todo_ports'] = []; json.dump(data, open('server_ports.json', 'w'), indent=4)"
 
-REM 等待一段时间再次执行
-timeout /t 30
+REM 提供退出选项
+echo Press 'N' to stop or any other key to continue...
+choice /C YN /N /D Y /T 30
+if errorlevel 2 goto endloop
+
 goto loop
+
+:endloop
+echo Stopped by user.
