@@ -32,6 +32,7 @@ class AirSimManager:
 
     def set_died(self, port):
         self.died_port[port] = 'gym'
+        self.available_ports.remove(port)
         del self.active_port[port]
 
     def add_new(self, port):
