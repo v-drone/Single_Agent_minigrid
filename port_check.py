@@ -14,15 +14,14 @@ def check_server(port):
 
 def manage_servers(filename='./server_ports.json'):
     # 读取或初始化端口信息
+    active_ports = requests.get(f"http://127.0.0.1:7575/info").json()["available"]
     try:
         with open(filename, 'r') as file:
             data = json.load(file)
-            active_ports = data['active_ports']
             backup_ports = data['backup_ports']
             todo_ports = data.get('todo_ports', [])
     except FileNotFoundError:
         # 初始端口配置
-        active_ports = [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007]
         backup_ports = [5008, 5009, 5010, 5011, 5012, 5013, 5014, 5015, 5016, 5017, 5018, 5019]
         todo_ports = []
 
