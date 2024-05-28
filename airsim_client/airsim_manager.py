@@ -33,6 +33,9 @@ class AirSimManager:
     def set_died(self, port):
         self.died_port[port] = 'gym'
 
+    def add_new(self, port):
+        self.available_ports.append(port)
+
 
 airsim_manager = AirSimManager()
 
@@ -78,6 +81,15 @@ async def get_info():
         return JSONResponse(response)
     except Exception:
         raise HTTPException(status_code=500, detail="Release Failed")
+
+
+@app.get("/add")
+async def add(data: PortData):
+    try:
+        airsim_manager.add_new(data.port)
+        return JSONResponse({"message": "Add successful", "port": data.port})
+    except Exception:
+        raise HTTPException(status_code=500, detail="Add. Failed")
 
 
 if __name__ == "__main__":

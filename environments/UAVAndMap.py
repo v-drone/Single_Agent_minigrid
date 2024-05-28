@@ -1,5 +1,4 @@
 from __future__ import annotations
-from environments.AirSimException import AirSimError
 from environments.AirSimException import AirSimResponseError, AirSimConnectionError, AirSimRestartFailed
 from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
@@ -195,8 +194,8 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _call_airsim_reset(self):
         try:
-            reset_response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=5
-                                           , json={"map": self.to_json()})
+            reset_response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=5,
+                                           json={"map": self.to_json()})
             reset_response.raise_for_status()
         except Exception as e:
             self.logger.error(f"Failed to reset environment state: {str(e)}")
@@ -204,8 +203,8 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _call_airsim_step(self, action):
         try:
-            response = requests.post(f"http://127.0.0.1:{self.local_port}/step", timeout=5
-                                     , json={"action": int(action)})
+            response = requests.post(f"http://127.0.0.1:{self.local_port}/step", timeout=5,
+                                     json={"action": int(action)})
             response.raise_for_status()
             data = response.json()
             return np.array(data.get("obs")), data.get("info")

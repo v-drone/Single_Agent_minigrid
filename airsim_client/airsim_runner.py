@@ -122,5 +122,14 @@ def ping():
         abort(500, f"Ping failed: {str(e)}")
 
 
+@app.route('/exit', methods=['GET'])
+def out():
+    try:
+        airsim_client.car_connector.reset()
+    except Exception as e:
+        logging.error(f"Kill Airsim failed: {str(e)}")
+    exit()
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=airsim_config["server_port"])
