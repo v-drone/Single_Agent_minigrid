@@ -22,8 +22,8 @@ def manage_servers(filename='./server_ports.json'):
             todo_ports = data.get('todo_ports', [])
     except FileNotFoundError:
         # 初始端口配置
-        active_ports = [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008]
-        backup_ports = [5009, 5010, 5011, 5012, 5013, 5014, 5015, 5016, 5017, 5018, 5019]
+        active_ports = [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007]
+        backup_ports = [5008, 5009, 5010, 5011, 5012, 5013, 5014, 5015, 5016, 5017, 5018, 5019]
         todo_ports = []
 
     # 检查活跃端口并更新列表
