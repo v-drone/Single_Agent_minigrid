@@ -86,7 +86,7 @@ async def get_info():
         raise HTTPException(status_code=500, detail="Release Failed")
 
 
-@app.get("/add")
+@app.post("/add")
 async def add(data: PortData):
     try:
         airsim_manager.add_new(data.port)
