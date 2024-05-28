@@ -6,16 +6,13 @@ REM 运行Python脚本更新端口信息
 python port_check.py
 
 REM 读取待启动的端口列表
-for /f "delims=" %%a in ('type server_ports.json ^| python -c "import sys, json; print('\n'.join(str(port) for port in json.load(sys.stdin).get('todo_ports', [])))"') do (
+for /f %%a in (todo_ports.txt) do (
     REM 启动新的服务实例
     echo Starting server on port %%a...
     start wt new-tab --title "Run AirSim with %%a" cmd /c "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.bat C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\%%a.json"
-    REM 添加端口到管理服务池，确保服务启动成功后执行
-    python -c "import requests; requests.post('http://127.0.0.1:7575/add', json={'port': %%a})"
 )
 
-REM 清空todo_ports列表
-python -c "import json; data = json.load(open('server_ports.json')); data['todo_ports'] = []; json.dump(data, open('server_ports.json', 'w'), indent=4)"
+echo. > todo_ports.txt
 
 REM 提供退出选项
 echo Press 'N' to stop or any other key to continue...
