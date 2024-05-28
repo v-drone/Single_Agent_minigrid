@@ -12,7 +12,7 @@ def check_server(port):
         return False
 
 
-def manage_servers(filename='server_ports.json'):
+def manage_servers(filename='./server_ports.json'):
     # 读取或初始化端口信息
     try:
         with open(filename, 'r') as file:
