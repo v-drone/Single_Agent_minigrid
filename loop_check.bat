@@ -3,7 +3,7 @@ CALL C:\ProgramData\miniconda3\Scripts\activate.bat C:\Users\Administrator\.cond
 
 :loop
 REM 运行Python脚本更新端口信息
-python airsim_client\airsim_check.py
+python port_check.py
 
 REM 读取待启动的端口列表
 for /f "delims=" %%a in ('type server_ports.json ^| python -c "import sys, json; print('\n'.join(str(port) for port in json.load(sys.stdin).get('todo_ports', [])))"') do (
