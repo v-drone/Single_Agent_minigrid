@@ -76,7 +76,8 @@ async def get_info():
     try:
         response = {
             "died": airsim_manager.died_port,
-            "live": airsim_manager.active_port
+            "live": airsim_manager.active_port,
+            "available": airsim_manager.available_ports,
         }
         print(response)
         return JSONResponse(response)
