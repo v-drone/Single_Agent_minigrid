@@ -1,5 +1,7 @@
+import os
 import json
 import time
+import signal
 import argparse
 import logging
 from flask import Flask, request, jsonify, abort
@@ -125,10 +127,11 @@ def ping():
 @app.route('/exit', methods=['GET'])
 def out():
     try:
-        airsim_client.car_connector.reset()
+        airsim_client.kill_airsim()
     except Exception as e:
         logging.error(f"Kill Airsim failed: {str(e)}")
-    exit()
+    finally:
+        os.kill(os.getpid(), signal.SIGINT)
 
 
 if __name__ == "__main__":
