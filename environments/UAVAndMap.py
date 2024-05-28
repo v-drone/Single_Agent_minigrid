@@ -95,7 +95,7 @@ class UAVWithMapEmpty(EmptyEnv):
             truncated = self._get_fail()
             reward = self._reward() if terminated else 0
             self.prev_transitions = (obs, reward, terminated, truncated, {})
-        except AirSimError as e:
+        except Exception as e:
             self.logger.error(f"Exception during AirSim step call: {str(e)}")
             self.reset()
             obs, reward, terminated, truncated, _ = self.prev_transitions
@@ -188,7 +188,7 @@ class UAVWithMapEmpty(EmptyEnv):
         except requests.RequestException or AirSimConnectionError as e:
             self.logger.error(f"Failed to reset AirSim window on try {tried}: {str(e)}")
             self._call_airsim_restart(tried - 1, failed)
-        except AirSimRestartFailed as e:
+        except Exception as e:
             raise e
         finally:
             return failed
@@ -198,7 +198,7 @@ class UAVWithMapEmpty(EmptyEnv):
             reset_response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=5
                                            , json={"map": self.to_json()})
             reset_response.raise_for_status()
-        except requests.RequestException as e:
+        except Exception as e:
             self.logger.error(f"Failed to reset environment state: {str(e)}")
             raise AirSimConnectionError(f"Failed to reset environment state: {str(e)}")
 
@@ -251,7 +251,6 @@ class UAVWithMapEmpty(EmptyEnv):
         requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                       json={"port": self.local_port}, timeout=5)
         self._set_local_port()
-        self.logger.info(f"Set New Local Port {self.local_port}")
 
     def _set_local_port(self):
         self.local_port = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=5).json()["port"]
