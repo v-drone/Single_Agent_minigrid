@@ -3,7 +3,7 @@ CALL C:\ProgramData\miniconda3\Scripts\activate.bat C:\Users\Administrator\.cond
 
 :loop
 REM 运行Python脚本更新端口信息
-python port_check.py
+python airsim_check.py
 
 REM 读取待启动的端口列表
 for /f %%a in (todo_ports.txt) do (
