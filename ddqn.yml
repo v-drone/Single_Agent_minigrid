@@ -21,6 +21,7 @@ hyper_parameters:
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
+  num_cpus_per_worker: 4
   num_gpus_per_worker: 0.5
   num_envs_per_worker: 6
   num_workers: 1
@@ -34,5 +35,5 @@ log:
   save_file: "/home/seventheli/data/logging/simple_env"
   save_checkout: "/home/seventheli/data/checkpoints/simple_env"
   max_time: 360000
-  max_run: 5000
+  max_run: 50000
   log: 1
