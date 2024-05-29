@@ -1,7 +1,3 @@
-mlflow:
-  experiment: "SimpleRoad"
-  url: "http://127.0.0.1:9999"
-  user: "Local"
 hyper_parameters:
   hiddens: [ 256, 256, 128, 128 ]
   framework: torch
@@ -22,8 +18,8 @@ hyper_parameters:
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
   num_cpus_per_worker: 4
-  num_gpus_per_worker: 0.5
-  num_envs_per_worker: 6
+  num_gpus_per_worker: 0
+  num_envs_per_worker: 1
   num_workers: 1
   num_steps_sampled_before_learning_starts: 5000
   rollout_fragment_length: 16
