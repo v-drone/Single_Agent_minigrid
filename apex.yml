@@ -1,7 +1,3 @@
-mlflow:
-  experiment: "SimpleRoad"
-  url: "http://127.0.0.1:9999"
-  user: "Local"
 hyper_parameters:
   hiddens: [ 256, 256, 128, 128 ]
   framework: torch

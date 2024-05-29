@@ -81,6 +81,7 @@ class UAVWithMapEmpty(EmptyEnv):
         except Exception as e:
             self.logger.error(f"Whole Restart failed: {str(e)}")
             self.close()
+            self.reset()
 
     def step(self, action):
         self.prev_pos = np.copy(self.agent_pos)
