@@ -78,7 +78,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._call_airsim_reset()
             return self._update_info(*self._call_airsim_info()), {}
-        except AirSimRestartFailed as e:
+        except Exception as e:
             self.logger.error(f"Whole Restart failed: {str(e)}")
             self.close()
 
