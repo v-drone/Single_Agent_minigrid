@@ -11,7 +11,6 @@ echo Ports backup completed.
 REM 等待10秒
 timeout /t 10
 
-REM 执行 loop_check.bat
 call airsim_check.bat
 
 echo Script completed.

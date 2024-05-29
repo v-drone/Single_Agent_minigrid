@@ -72,7 +72,7 @@ def step():
     try:
         airsim_client.car_connector.do_action(data['action'])
         obs, info = airsim_client.car_connector.get_info()
-        logging.info("Action: %d" % data['cation'])
+        logging.info("Action: %d" % data['action'])
         return jsonify({
             "obs": obs.tolist(),
             "info": car_state_to_json(info)
