@@ -31,6 +31,7 @@ class UAVWithMapEmpty(EmptyEnv):
         steering_left_half = 4
         steering_left_full = 5
         reset_car = 6
+        wait = 7
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
