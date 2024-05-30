@@ -13,5 +13,4 @@ timeout /t 10
 
 call airsim_check.bat
 
-echo Script completed.
 pause

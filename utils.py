@@ -57,8 +57,6 @@ def env_creator(env_config):
         env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))
     else:
         raise NotImplementedError
-    if env_config.get("closer", True):
-        env = CloserWrapper(env)
     env = SmallNegativeWrapper(env)
     env = TimeLimit(env, max_episode_steps=env_config["max_steps"])
     if env_config.get("ride_model", None) is not None:

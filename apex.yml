@@ -1,4 +1,5 @@
 hyper_parameters:
+  seed: 879562
   hiddens: [ 256, 256, 128, 128 ]
   framework: torch
   double_q: true
@@ -6,7 +7,9 @@ hyper_parameters:
   noisy: false
   adam_epsilon: .00015
   exploration_config:
+    type: EpsilonGreedy
     epsilon_timesteps: 1000000
+    initial_epsilon: 1
     final_epsilon: 0.01
   lr: 0.0001
   n_step: 3
@@ -17,14 +20,14 @@ hyper_parameters:
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
-  num_cpus_per_worker: 3
+  num_cpus_per_worker: 2
   num_gpus_per_worker: 0
   num_envs_per_worker: 1
-  num_workers: 6
-  num_steps_sampled_before_learning_starts: 50000
-  rollout_fragment_length: 16
+  num_workers: 8
+  num_steps_sampled_before_learning_starts: 30000
+  rollout_fragment_length: 32
   target_network_update_freq: 20000
-  train_batch_size: 256
+  train_batch_size: 1024
   min_sample_timesteps_per_iteration: 10000
   always_attach_evaluation_results: True
 log:

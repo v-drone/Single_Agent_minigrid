@@ -2,6 +2,7 @@ from ray.rllib.utils.typing import EnvCreator
 from ray.rllib.algorithms.apex_dqn import ApexDQN
 from ray.rllib.utils.metrics import NUM_ENV_STEPS_TRAINED, NUM_AGENT_STEPS_TRAINED
 from ray.rllib.utils.typing import AlgorithmConfigDict
+from ray.rllib.utils.exploration.random import Random
 
 
 class ApexDDQNWithDPBER(ApexDQN):

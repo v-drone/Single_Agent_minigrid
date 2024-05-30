@@ -119,7 +119,7 @@ def ping():
             logging.info("Ping successful.")
             return "Pong! CarConnector is active.", 200
         else:
-            abort(500, "Failed to connect to CarConnector")
+            abort(503, "Failed to connect to CarConnector")
     except Exception as e:
         logging.error(f"Ping failed: {str(e)}")
         abort(500, f"Ping failed: {str(e)}")
