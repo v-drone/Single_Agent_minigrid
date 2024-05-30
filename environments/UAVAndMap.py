@@ -70,9 +70,17 @@ class UAVWithMapEmpty(EmptyEnv):
         self.observation_space = spaces.Dict(
             {"image": image_space, "direction": spaces.Discrete(4), "mission": mission_space})
 
-    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5, e=None):
         obs, _ = super().reset()
         self.action_space.seed(np.random.randint(1000))
+        if retry <= 0:
+            self.close()
+            self._set_local_port(10)
+            retry = 5
+            if e is not None:
+                self.logger.error(
+                    f"Restarted at {str(self.local_port)}, Exception {str(e)},"
+                    f" {traceback.format_exc()}")
         try:
             self._check_airsim()
             self.agent_dir = 3
@@ -83,17 +91,14 @@ class UAVWithMapEmpty(EmptyEnv):
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._call_airsim_reset()
             return self._update_info(*self._call_airsim_info()), {}
-        except AirSimConnectionError or AirSimResponseError or RequestException as e:
-            self.logger.error(
-                f"Restart: {str(self.local_port)}, AirSim Exception {str(e)}, {traceback.format_exc()}, {traceback.format_exc()}")
-            self.close()
+        except AirSimConnectionError or AirSimResponseError or requests.exceptions.HTTPError as e:
+            retry -= 1
             time.sleep(2)
-            return self.reset()
+            return self.reset(retry=retry, e=e)
         except Exception as e:
-            self.logger.error(f"Restart: {str(self.local_port)}, Unknown Exception {str(e)}, {traceback.format_exc()}")
-            self.close()
+            retry -= 1
             time.sleep(2)
-            return self.reset()
+            return self.reset(retry=retry, e=e)
 
     def step(self, action):
         self.prev_pos = np.copy(self.agent_pos)
@@ -108,11 +113,15 @@ class UAVWithMapEmpty(EmptyEnv):
             reward = self._reward() if terminated else 0
             self.prev_transitions = (obs, reward, terminated, truncated, {})
         except AirSimConnectionError or AirSimResponseError or RequestException as e:
-            self.logger.error(f"Airsim/Network Exception during AirSim step call: {str(e)}, {traceback.format_exc()}")
+            self.logger.error(f"Airsim/Network Exception during AirSim step call: {str(e)},"
+                              f" {traceback.format_exc()}")
+            time.sleep(10)
             self.reset()
             obs, reward, terminated, truncated, _ = self.prev_transitions
         except Exception as e:
-            self.logger.error(f"Unknown Exception during AirSim step call: {str(e)}, {traceback.format_exc()}")
+            self.logger.error(f"Unknown Exception during AirSim step call: {str(e)},"
+                              f" {traceback.format_exc()}")
+            time.sleep(10)
             self.reset()
             obs, reward, terminated, truncated, _ = self.prev_transitions
         return obs, reward, terminated, truncated, {}
@@ -146,6 +155,7 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def close(self):
         requests.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
+        self.local_port = None
         super().close()
 
     def _update_info(self, obs, info):
@@ -244,8 +254,11 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _check_airsim(self, retry=5):
         if retry <= 0:
-            self._set_local_port_died()
-            raise AirSimResponseError(f"Failed to ping AirSim, {self.local_port}")
+            try:
+                self._set_local_port_died()
+                raise AirSimResponseError(f"Failed to ping AirSim, {self.local_port}")
+            except Exception as e:
+                raise e
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
             response.raise_for_status()
@@ -265,7 +278,6 @@ class UAVWithMapEmpty(EmptyEnv):
             self.logger.info(f"Port {self.local_port} Died")
             requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                           json={"port": self.local_port}, timeout=10)
-            return self._set_local_port()
         except Exception as e:
             _ = e
             retry -= 1
