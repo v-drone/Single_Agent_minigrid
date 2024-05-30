@@ -8,7 +8,7 @@ from airsim import CarClient
 
 class CarConnector(object):
     def __init__(self, ip, port):
-        self.car = CarClient(ip, port=port, timeout_value=60)
+        self.car = CarClient(ip, port=port, timeout_value=5)
         self.car.confirmConnection()
         self.car_controls = airsim.CarControls()
         self.state = {
