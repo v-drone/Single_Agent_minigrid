@@ -217,9 +217,10 @@ class UAVWithMapEmpty(EmptyEnv):
         if retry <= 0:
             raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
         try:
-            reset_response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
-                                           json={"map": self.to_json()})
-            reset_response.raise_for_status()
+            response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
+                                     json={"map": self.to_json()})
+            if not response.status_code == 200:
+                raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
         except Exception as e:
             _ = e
             retry -= 1
@@ -231,7 +232,6 @@ class UAVWithMapEmpty(EmptyEnv):
         try:
             response = requests.post(f"http://127.0.0.1:{self.local_port}/step", timeout=10,
                                      json={"action": int(action)})
-            response.raise_for_status()
             data = response.json()
             return np.array(data.get("obs")), data.get("info")
         except Exception as e:
@@ -244,7 +244,6 @@ class UAVWithMapEmpty(EmptyEnv):
             raise AirSimResponseError(f"Failed to retrieve information failed, {self.local_port}")
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
-            response.raise_for_status()
             data = response.json()
             return data.get("obs"), data.get("info")
         except Exception as e:
@@ -261,11 +260,8 @@ class UAVWithMapEmpty(EmptyEnv):
                 raise e
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
-            response.raise_for_status()
-            _ = response.status_code
             if not response.status_code == 200:
-                self.logger.error(f"Failed to ping AirSim, status code, {_}")
-                raise AirSimConnectionError(f"Failed to ping AirSim, status code, {_}")
+                raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
         except Exception as e:
             _ = e
             retry -= 1
@@ -275,9 +271,9 @@ class UAVWithMapEmpty(EmptyEnv):
         if retry <= 0:
             raise AirSimResponseError(f"Failed to set died AirSim, {self.local_port}")
         try:
-            self.logger.info(f"Port {self.local_port} Died")
             requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                           json={"port": self.local_port}, timeout=10)
+            self.logger.info(f"Set Port {self.local_port} Died")
         except Exception as e:
             _ = e
             retry -= 1
@@ -285,7 +281,8 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _set_local_port(self, retry=5):
         if retry <= 0:
-            raise AirSimResponseError(f"Failed to set Local Port, {self.local_port}")
+            self.logger.error(f"Failed to set Local Port")
+            raise AirSimResponseError(f"Failed to set Local Port")
         try:
             response = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake",
                                     timeout=10)

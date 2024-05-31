@@ -16,7 +16,9 @@ def load_ports_from_file(filename):
 
 
 def manage_servers():
-    active_ports = requests.get("http://127.0.0.1:7575/info").json()["available"]
+    data = requests.get("http://127.0.0.1:7575/info").json()
+    active_ports = data["available"]
+    died = data["died"]
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
     if len(active_ports) < 10:
@@ -27,6 +29,8 @@ def manage_servers():
 
     save_ports_to_file(backup_ports, './backup_ports.txt')
     save_ports_to_file(todo_ports, './todo_ports.txt')
+    with open("./died_ports.txt", "w") as f:
+        f.write("\n".join(str(i) for i in died))
 
 
 if __name__ == '__main__':
