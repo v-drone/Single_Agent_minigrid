@@ -4,7 +4,7 @@ CALL C:\ProgramData\miniconda3\Scripts\activate.bat C:\Users\Administrator\.cond
 
 REM 创建并覆盖 backup_ports.txt 文件
 echo Writing to backup_ports.txt
-(for /l %%j in (5000,1,5020) do echo %%j) > backup_ports.txt
+(for /l %%j in (5000,1,5300) do echo %%j) > backup_ports.txt
 
 echo Ports backup completed.
 
