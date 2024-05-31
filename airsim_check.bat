@@ -16,7 +16,7 @@ for /f %%a in (todo_ports.txt) do (
 )
 
 for /f %%b in (died_ports.txt) do (
-    REM 停止并删除对应端口的Docker容器
+    REM 停止 对应端口的Docker容器
     echo Stopping and removing Docker container for port %%b...
     docker stop "%%b"
 )
