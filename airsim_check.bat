@@ -23,8 +23,8 @@ for /f %%b in (died_ports.txt) do (
 
 :check
 REM 清空todo_ports.txt和died_ports.txt
-echo . > todo_ports.txt
-echo . > died_ports.txt
+echo. > todo_ports.txt
+echo. > died_ports.txt
 
 REM 提供退出选项
 echo Press 'N' to stop or any other key to continue...
