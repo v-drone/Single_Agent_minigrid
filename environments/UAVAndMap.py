@@ -10,7 +10,6 @@ from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
 import numpy as np
-import traceback
 import logging
 import requests
 import random
@@ -77,10 +76,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.close()
             self._set_local_port(10)
             retry = 5
-            if e is not None:
-                self.logger.error(
-                    f"Restarted at {str(self.local_port)}, Exception {str(e)},"
-                    f" {traceback.format_exc()}")
+            self.logger.error(f"Restarted at {str(self.local_port)}, {str(e)}")
         try:
             self._check_airsim()
             self.agent_dir = 3
@@ -113,14 +109,12 @@ class UAVWithMapEmpty(EmptyEnv):
             reward = self._reward() if terminated else 0
             self.prev_transitions = (obs, reward, terminated, truncated, {})
         except AirSimConnectionError or AirSimResponseError or RequestException as e:
-            self.logger.error(f"Airsim/Network Exception during AirSim step call: {str(e)},"
-                              f" {traceback.format_exc()}")
+            self.logger.error(f"Airsim/Network Exception during AirSim step call: ``{str(e)}``")
             time.sleep(10)
             self.reset()
             obs, reward, terminated, truncated, _ = self.prev_transitions
         except Exception as e:
-            self.logger.error(f"Unknown Exception during AirSim step call: {str(e)},"
-                              f" {traceback.format_exc()}")
+            self.logger.error(f"Unknown Exception during AirSim step call: {str(e)}")
             time.sleep(10)
             self.reset()
             obs, reward, terminated, truncated, _ = self.prev_transitions
