@@ -69,14 +69,14 @@ class UAVWithMapEmpty(EmptyEnv):
         self.observation_space = spaces.Dict(
             {"image": image_space, "direction": spaces.Discrete(4), "mission": mission_space})
 
-    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5, e=None):
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
         obs, _ = super().reset()
         self.action_space.seed(np.random.randint(1000))
         if retry <= 0:
             self.close()
             self._set_local_port(10)
             retry = 5
-            self.logger.error(f"Restarted at {str(self.local_port)}, {str(e)}")
+            self.logger.error(f"Restarted at {str(self.local_port)}")
         try:
             self._check_airsim()
             self.agent_dir = 3
@@ -88,13 +88,15 @@ class UAVWithMapEmpty(EmptyEnv):
             self._call_airsim_reset()
             return self._update_info(*self._call_airsim_info()), {}
         except AirSimConnectionError or AirSimResponseError or requests.exceptions.HTTPError as e:
+            _ = e
             retry -= 1
             time.sleep(2)
-            return self.reset(retry=retry, e=e)
+            return self.reset(retry=retry)
         except Exception as e:
+            _ = e
             retry -= 1
             time.sleep(2)
-            return self.reset(retry=retry, e=e)
+            return self.reset(retry=retry)
 
     def step(self, action):
         self.prev_pos = np.copy(self.agent_pos)
