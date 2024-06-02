@@ -28,7 +28,7 @@ echo. > died_ports.txt
 
 REM 提供退出选项
 echo Press 'N' to stop or any other key to continue...
-choice /C YN /N /D Y /T 30
+choice /C YN /N /D Y /T 10
 if errorlevel 2 goto endloop
 
 goto loop
