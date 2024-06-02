@@ -8,8 +8,8 @@ from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)  # 设置为ERROR，只记录错误信息
 
 
 class AirSimClient:
