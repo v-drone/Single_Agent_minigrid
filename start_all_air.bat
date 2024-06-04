@@ -8,8 +8,8 @@ echo Writing to backup_ports.txt
 
 echo Ports backup completed.
 
-REM 等待10秒
-timeout /t 10
+REM 等待3秒
+timeout /t 3
 
 call airsim_check.bat
 
