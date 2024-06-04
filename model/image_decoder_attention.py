@@ -85,13 +85,13 @@ class AttentionCNN(DQNTorchModel):
         self.view_size = view_size
         self.battery = battery
         self.map_layers = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1),  # Output: 45x45x32
+            nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1),  # Output: 60x60x32
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 23x23x64
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # Output: 30x30x64
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 11x11x128
+            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # Output: 15x15x128
             nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 6x6x256
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),  # Output: 8x8x256
             nn.LeakyReLU(negative_slope=0.01),
             SimpleAttention(256),
             nn.AdaptiveMaxPool2d((1, 1)),

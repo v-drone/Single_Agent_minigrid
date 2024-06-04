@@ -25,7 +25,7 @@ hyper_parameters:
   num_workers: 12
   num_steps_sampled_before_learning_starts: 100000
   rollout_fragment_length: 16
-  target_network_update_freq: 50000
+  target_network_update_freq: 30000
   train_batch_size: 512
   min_sample_timesteps_per_iteration: 10000
 log:
