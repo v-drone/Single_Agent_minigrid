@@ -63,7 +63,7 @@ class CarConnector(object):
             self.car_controls.throttle = 0
             self.car_controls.steering = 0
             self.car.setCarControls(self.car_controls)
-        time.sleep(0.1)
+        time.sleep(np.random.randint(10, 30) / 100)
         self.car_controls.brake = 0
         self.car_controls.throttle = 0
         self.car_controls.steering = 0
