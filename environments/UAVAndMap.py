@@ -80,8 +80,6 @@ class UAVWithMapEmpty(EmptyEnv):
             self._check_airsim()
             self.agent_dir = 3
             self.info = {}
-            self.visited_tiles = set()
-            self.unvisited_tiles = set()
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._call_airsim_reset()
