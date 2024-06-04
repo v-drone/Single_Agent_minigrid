@@ -57,7 +57,7 @@ def reset():
     try:
         with open(airsim_client.config["map"], "w") as f:
             json.dump(data['map'], f)
-        time.sleep(2)  # simulate map reset delay
+        time.sleep(1)  # simulate map reset delay
         airsim_client.car_connector.reset()
         obs, info = airsim_client.car_connector.get_info()
         logging.info("Map reset successfully.")
