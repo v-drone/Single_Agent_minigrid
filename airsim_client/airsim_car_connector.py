@@ -54,7 +54,7 @@ class CarConnector(object):
             self.car_controls.brake = -0.05
             self.car_controls.throttle = 0.05
             self.car.setCarControls(self.car_controls)
-        time.sleep(0.2)
+        time.sleep(0.1)
         self.car_controls.brake = 0
         self.car_controls.throttle = 0
         self.car.setCarControls(self.car_controls)
