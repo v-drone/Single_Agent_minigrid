@@ -21,7 +21,7 @@ def manage_servers():
     died = data["died"]
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
-    if len(active_ports) < 14:
+    if len(active_ports) < 20:
         if backup_ports:
             new_port = backup_ports.pop(0)
             todo_ports.append(new_port)
