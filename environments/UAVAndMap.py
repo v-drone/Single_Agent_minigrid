@@ -27,13 +27,11 @@ class UAVWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         throttle = 0
-        brake = 1
-        steering_right_half = 2
-        steering_right_full = 3
-        steering_left_half = 4
-        steering_left_full = 5
-        reset_car = 6
-        wait = 7
+        steering_right_half = 1
+        steering_right_full = 2
+        steering_left_half = 3
+        steering_left_full = 4
+        brake = 5
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
