@@ -31,27 +31,27 @@ class CarConnector(object):
             self.car.setCarControls(self.car_controls)
             time.sleep(0.2)
         elif action == 1:
-            self.car_controls.brake = -0.05
+            self.car_controls.brake = -0.025
             self.car_controls.throttle = 0
             self.car.setCarControls(self.car_controls)
             time.sleep(0.2)
         elif action == 2:
-            self.car_controls.brake = -0.01
+            self.car_controls.brake = 0
             self.car_controls.steering = 0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(0.2)
         elif action == 3:
-            self.car_controls.brake = -0.01
+            self.car_controls.brake = 0
             self.car_controls.steering = 1
             self.car.setCarControls(self.car_controls)
             time.sleep(0.2)
         elif action == 4:
-            self.car_controls.brake = -0.01
+            self.car_controls.brake = 0
             self.car_controls.steering = -0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(0.2)
         elif action == 5:
-            self.car_controls.brake = -0.01
+            self.car_controls.brake = 0
             self.car_controls.steering = -1
             self.car.setCarControls(self.car_controls)
             time.sleep(0.2)

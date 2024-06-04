@@ -270,6 +270,7 @@ class UAVWithMapEmpty(EmptyEnv):
             requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                           json={"port": self.local_port}, timeout=10)
             self.logger.info(f"Set Port {self.local_port} Died")
+            return
         except Exception as e:
             _ = e
             retry -= 1

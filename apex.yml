@@ -14,7 +14,7 @@ hyper_parameters:
   n_step: 5
   num_atoms: 1
   replay_buffer_config:
-    capacity: 2000000
+    capacity: 1500000
     prioritized_replay_alpha: 0.5
     prioritized_replay_beta: 1
     type: MultiAgentPrioritizedReplayBuffer
@@ -26,7 +26,7 @@ hyper_parameters:
   num_steps_sampled_before_learning_starts: 100000
   rollout_fragment_length: 16
   target_network_update_freq: 50000
-  train_batch_size: 1024
+  train_batch_size: 512
   min_sample_timesteps_per_iteration: 10000
 log:
   save_file: "/home/seventheli/data/logging/simple_env"

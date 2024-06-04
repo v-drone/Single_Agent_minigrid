@@ -9,7 +9,7 @@ from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
 
 log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)  # 设置为ERROR，只记录错误信息
+log.setLevel(logging.ERROR)
 
 
 class AirSimClient:
@@ -56,7 +56,7 @@ def reset():
     try:
         with open(airsim_client.config["map"], "w") as f:
             json.dump(data['map'], f)
-        time.sleep(0.5)  # simulate map reset delay
+        time.sleep(2)  # simulate map reset delay
         airsim_client.car_connector.reset()
         obs, info = airsim_client.car_connector.get_info()
         logging.info("Map reset successfully.")
