@@ -44,7 +44,8 @@ airsim_client = AirSimClient(airsim_config)
 logging.info(f"Configuration loaded: {airsim_config}")
 try:
     airsim_client.start_airsim()
-except:
+except Exception as ex:
+    _ = ex
     exit()
 
 
