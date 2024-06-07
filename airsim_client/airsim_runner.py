@@ -21,7 +21,7 @@ class AirSimClient:
 
     def start_airsim(self):
         self.pid = start_airsim(self.config["path"], self.config["setting"])
-        self.car_connector = CarConnector("172.24.139.188", self.config["port"])
+        self.car_connector = CarConnector("172.24.128.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
 
     def kill_airsim(self):
