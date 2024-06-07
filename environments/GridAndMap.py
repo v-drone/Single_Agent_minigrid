@@ -50,7 +50,7 @@ class GridWithMapEmpty(EmptyEnv):
         self.manager_port = port
         self.local_port = None
         self.info = {
-            "yaw_degrees" : 0,
+            "yaw_degrees": 0,
             "speed": 1,
         }
         self.prev_transitions = None

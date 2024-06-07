@@ -65,7 +65,7 @@ def decompress_sample_batch(ma_batch):
     return data
 
 
-@ray.remote(num_cpus=24, max_calls=50, num_returns=1)
+@ray.remote(num_cpus=2, max_calls=50, num_returns=1)
 def compress_sample_batch_loop(samples, store):
     _ = []
     for each in samples:
