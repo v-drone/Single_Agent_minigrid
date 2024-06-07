@@ -42,11 +42,8 @@ parser.add_argument("-f", "--config", dest="config", type=str)
 airsim_config = load_config(parser.parse_args().config)
 airsim_client = AirSimClient(airsim_config)
 logging.info(f"Configuration loaded: {airsim_config}")
-try:
-    airsim_client.start_airsim()
-except Exception as ex:
-    _ = ex
-    exit()
+airsim_client.start_airsim()
+
 
 
 @app.route('/reset', methods=['POST'])
