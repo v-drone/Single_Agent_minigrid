@@ -11,6 +11,6 @@ echo Ports backup completed.
 REM 等待3秒
 timeout /t 3
 
-call airsim_check.bat
+call C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_check.bat
 
 pause
