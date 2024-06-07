@@ -125,7 +125,7 @@ def kill_airsim(process_id):
 
 def start_airsim(path, setting):
     if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = f'cmd.exe "{path}" "{setting}"'
+        command = f'cmd.exe /C "cd C:\\ && {path} {setting}"'
         logging.info(f"Executing command: {command}")
 
         try:
