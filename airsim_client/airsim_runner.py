@@ -21,7 +21,7 @@ class AirSimClient:
 
     def start_airsim(self):
         self.pid = start_airsim(self.config["path"], self.config["setting"])
-        self.car_connector = CarConnector("172.24.128.1", self.config["port"])
+        self.car_connector = CarConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
 
     def kill_airsim(self):
@@ -42,8 +42,11 @@ parser.add_argument("-f", "--config", dest="config", type=str)
 airsim_config = load_config(parser.parse_args().config)
 airsim_client = AirSimClient(airsim_config)
 logging.info(f"Configuration loaded: {airsim_config}")
-airsim_client.start_airsim()
-
+try:
+    airsim_client.start_airsim()
+except Exception as ex:
+    _ = ex
+    exit()
 
 
 @app.route('/reset', methods=['POST'])

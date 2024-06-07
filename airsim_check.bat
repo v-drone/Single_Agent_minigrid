@@ -11,9 +11,10 @@ for /f %%a in (todo_ports.txt) do (
     docker start "%%a"
     REM 启动新的服务实例
     echo Starting server on port %%a...
-    wt new-tab --title "Run AirSim with %%a" cmd /c "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.bat C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\%%a.json"
+    start /b cmd /c "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.bat C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\%%a.json"
     timeout /t 5 /nobreak
 )
+
 
 for /f %%b in (died_ports.txt) do (
     REM 停止 对应端口的Docker容器

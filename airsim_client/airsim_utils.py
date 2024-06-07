@@ -4,7 +4,6 @@ import math
 import json
 import signal
 import subprocess
-import traceback
 import time
 
 from pydantic import BaseModel
@@ -125,16 +124,18 @@ def kill_airsim(process_id):
 
 
 def start_airsim(path, setting):
-    command = f'cmd.exe /C "{path} {setting}"'
-    print(command)
-    logging.info(f"Executing command: {command}")
-    try:
-        process = subprocess.Popen(command, shell=True)  # Adjust according to need
-        time.sleep(10)
-        if process.poll() is None:  # Check if the process has not terminated
-            return process.pid
-        else:
-            raise Exception("Process terminated prematurely")
-    except Exception as e:
-        print(traceback.format_exc())
-        raise Exception(f"Failed to start process: {str(e)}")
+    if os.path.isfile(path) and os.access(path, os.X_OK):
+        command = f'"{path}" "{setting}"'
+        logging.info(f"Executing command: {command}")
+
+        try:
+            process = subprocess.Popen(command, shell=True)  # Adjust according to need
+            time.sleep(10)
+            if process.poll() is None:  # Check if the process has not terminated
+                return process.pid
+            else:
+                raise Exception("Process terminated prematurely")
+        except Exception as e:
+            raise Exception(f"Failed to start process: {str(e)}")
+    else:
+        raise Exception(f"Unity executable not found or not executable: {path}")
