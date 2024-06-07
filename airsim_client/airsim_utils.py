@@ -4,6 +4,7 @@ import math
 import json
 import signal
 import subprocess
+import traceback
 import time
 
 from pydantic import BaseModel
@@ -138,4 +139,5 @@ def start_airsim(path, setting):
         except Exception as e:
             raise Exception(f"Failed to start process: {str(e)}")
     else:
+        print(traceback.format_exc())
         raise Exception(f"Unity executable not found or not executable: {path}")
