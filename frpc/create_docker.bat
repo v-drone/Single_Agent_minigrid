@@ -13,7 +13,7 @@ for /L %%i in (0, 1, 400) do (
     set "containerName=!containerNum!"
 
     REM 设置卷映射路径
-    set "hostPath=C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\frpc\frpc_%%containerNum.toml"
+    set "hostPath=C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\frpc\frpc_!containerNum!.toml"
     set "containerPath=/etc/frp/frpc.toml"
 
     REM 创建 Docker 容器并映射卷
