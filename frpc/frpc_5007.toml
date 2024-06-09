@@ -1,0 +1,10 @@
+
+serverAddr = "192.168.0.104"
+serverPort = 7007
+
+[[proxies]]
+name = "5007"
+type = "tcp"
+localIP = "192.168.0.103"
+localPort = 5007
+remotePort = 5007
