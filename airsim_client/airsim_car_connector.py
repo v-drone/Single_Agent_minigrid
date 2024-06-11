@@ -44,28 +44,28 @@ class CarConnector(object):
             # 50% brake left steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
-            self.car_controls.steering = 0.5
+            self.car_controls.steering = 0.25
             self.car.setCarControls(self.car_controls)
             time.sleep(np.random.randint(15, 20) / 100)
         elif action == 3:
             # 100% brake left steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
-            self.car_controls.steering = 1
+            self.car_controls.steering = 0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(np.random.randint(15, 20) / 100)
         elif action == 4:
             # 50%  brake right steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
-            self.car_controls.steering = -0.5
+            self.car_controls.steering = -0.25
             self.car.setCarControls(self.car_controls)
             time.sleep(np.random.randint(15, 20) / 100)
         elif action == 5:
             # 100% brake right steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
-            self.car_controls.steering = -1
+            self.car_controls.steering = -0.5
             self.car.setCarControls(self.car_controls)
             time.sleep(np.random.randint(15, 20) / 100)
         else:
