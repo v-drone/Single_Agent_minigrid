@@ -16,22 +16,8 @@ def load_ports_from_file(filename):
 
 
 def manage_servers():
-    # double check
     data = requests.get("http://192.168.0.104:7575/info").json()
     active_ports = data["available"]
-    for each in active_ports:
-        try:
-            response = requests.get("http://127.0.0.1:%d/ping" % each)
-            response.raise_for_status()
-            if response.status_code != 200:
-                raise Exception
-        except Exception as e:
-            _ = e
-            requests.post(f"http://192.168.0.104:7575/set_died",
-                          json={"port": each}, timeout=10)
-    data = requests.get("http://192.168.0.104:7575/info").json()
-    active_ports = data["available"]
-
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
 
