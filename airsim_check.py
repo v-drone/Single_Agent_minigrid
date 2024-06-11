@@ -20,8 +20,13 @@ def manage_servers():
     data = requests.get("http://192.168.0.104:7575/info").json()
     active_ports = data["available"]
     for each in active_ports:
-        response = requests.get("http://127.0.0.1:%d/ping" % each)
-        if response.status_code != 200:
+        try:
+            response = requests.get("http://127.0.0.1:%d/ping" % each)
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise Exception
+        except Exception as e:
+            _ = e
             requests.post(f"http://192.168.0.104:7575/set_died",
                           json={"port": each}, timeout=10)
     data = requests.get("http://192.168.0.104:7575/info").json()
