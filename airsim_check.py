@@ -43,9 +43,6 @@ def manage_servers():
 
     save_ports_to_file(backup_ports, './backup_ports.txt')
     save_ports_to_file(todo_ports, './todo_ports.txt')
-    with open("./died_ports.txt", "w") as f:
-        f.write("\n".join(str(i) for i in died))
-
 
 if __name__ == '__main__':
     manage_servers()
