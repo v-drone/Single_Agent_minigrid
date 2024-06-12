@@ -41,9 +41,16 @@ do
     Clear-Content todo_ports.txt
     Clear-Content died_ports.txt
 
-    # 提供退出选项
-    Write-Host "Press 'N' to stop or any other key to continue..."
-    $choice = $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-} while ($choice.Character -ne 'N')
+    # 等待10秒或直到按键被按下
+    Write-Host "Waiting for 10 seconds. Press any key to exit."
+    $startTime = Get-Date
+    while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 10 -and -not [Console]::KeyAvailable) {
+        Start-Sleep -Milliseconds 500
+    }
+    if ([Console]::KeyAvailable) {
+        $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+        break
+    }
+} while ($true)
 
 Write-Host "Stopped by user."
