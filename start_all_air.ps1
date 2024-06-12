@@ -25,7 +25,7 @@ do
         docker start "$port"
 
         Write-Host "Starting server on port $port..."
-        Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" -NoNewWindow
+        Start-Process -FilePath "cmd" -ArgumentList "/c", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.bat C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" -NoNewWindow
 
         Start-Sleep -Seconds 5
     }
