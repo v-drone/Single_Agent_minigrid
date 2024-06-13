@@ -16,8 +16,12 @@ do
         docker start "$port"
 
         Write-Host "Starting server on port $port..."
-        # Correct usage in PowerShell
-        Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log" -NoNewWindow
+        # 使用 PowerShell Jobs 启动服务
+        $scriptBlock = {
+            param($port)
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" > "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
+        }
+        Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
         Start-Sleep -Seconds 5
     }
