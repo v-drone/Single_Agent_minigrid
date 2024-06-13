@@ -85,11 +85,6 @@ class UAVWithMapEmpty(EmptyEnv):
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._call_airsim_reset()
             return self._update_info(*self._call_airsim_info()), {}
-        except AirSimConnectionError or AirSimResponseError or requests.exceptions.HTTPError as e:
-            _ = e
-            retry -= 1
-            time.sleep(2)
-            return self.reset(retry=retry)
         except Exception as e:
             _ = e
             retry -= 1
@@ -207,7 +202,7 @@ class UAVWithMapEmpty(EmptyEnv):
             else:
                 return False
 
-    def _call_airsim_reset(self, retry=5):
+    def _call_airsim_reset(self, retry=3):
         if retry <= 0:
             raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
         try:
