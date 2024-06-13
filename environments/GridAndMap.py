@@ -98,7 +98,7 @@ class GridWithMapEmpty(EmptyEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
         # Random starting/goal point for the agent
-        start_x, start_y = random.randint(10, width - 10), random.randint(10, height - 10)
+        start_x, start_y = random.randint(10, width - 5), random.randint(10, height - 5)
         self.start_pos = (start_x, start_y)
         self.agent_pos = self.start_pos
         self.agent_dir = self._rand_int(0, 4)
