@@ -19,7 +19,7 @@ do
         # 使用 PowerShell Jobs 启动服务
         $scriptBlock = {
             param($port)
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" > "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
         }
         Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
