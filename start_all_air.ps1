@@ -16,10 +16,12 @@ do
         docker start "$port"
 
         Write-Host "Starting server on port $port..."
-        # 使用 PowerShell Jobs 启动服务
+        # 使用 PowerShell Jobs 正确地传递参数
         $scriptBlock = {
             param($port)
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
+            $configPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json"
+            $logPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" $configPath $logPath
         }
         Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
