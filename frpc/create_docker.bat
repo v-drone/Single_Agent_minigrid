@@ -5,7 +5,7 @@ REM 设置镜像 ID
 set "imageID=25efb285a557"
 
 REM 循环创建容器和映射卷
-for /L %%i in (0, 1, 400) do (
+for /L %%i in (0, 1, 399) do (
     REM 计算容器编号
     set /a "containerNum=5000 + %%i"
 
