@@ -9,6 +9,7 @@ from minigrid.core.mission import MissionSpace
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
+import traceback
 import numpy as np
 import logging
 import requests
@@ -244,10 +245,10 @@ class UAVWithMapEmpty(EmptyEnv):
             retry -= 1
             return self._call_airsim_info(retry)
 
-    def _check_airsim(self, retry=5):
+    def _check_airsim(self):
         if retry <= 0:
             try:
-                self._set_local_port_died()
+                print(retry)
                 raise AirSimResponseError(f"Failed to ping AirSim, {self.local_port}")
             except Exception as e:
                 raise e
@@ -256,9 +257,8 @@ class UAVWithMapEmpty(EmptyEnv):
             if not response.status_code == 200:
                 raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
         except Exception as e:
-            _ = e
-            retry -= 1
-            return self._check_airsim(retry)
+            self._set_local_port_died()
+            print(traceback.format_exc())
 
     def _set_local_port_died(self, retry=5):
         if retry <= 0:
@@ -271,6 +271,7 @@ class UAVWithMapEmpty(EmptyEnv):
         except Exception as e:
             _ = e
             retry -= 1
+            print(traceback.format_exc())
             return self._set_local_port_died(retry)
 
     def _set_local_port(self, retry=5):
