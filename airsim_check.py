@@ -22,7 +22,7 @@ def manage_servers():
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
 
-    if len(active_ports) < 15:
+    if len(active_ports) < 12:
         if backup_ports:
             new_port = backup_ports.pop(0)
             todo_ports.append(new_port)

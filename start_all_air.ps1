@@ -17,7 +17,8 @@ do
 
         Write-Host "Starting server on port $port..."
         # Call the PowerShell script instead of cmd batch file
-        Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" -NoNewWindow
+        $logFile = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.txt"
+        Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1", "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json" -RedirectStandardOutput $logFile -RedirectStandardError $logFile -NoNewWindow
 
         Start-Sleep -Seconds 5
     }
