@@ -11,7 +11,7 @@ $configPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim
 $logPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
 
 # Calculate the Unity port
-$unityPortOffset = 36454
+$unityPortOffset = 36450
 $unityPort = $port + $unityPortOffset
 
 # Paths for Unity executable and settings
