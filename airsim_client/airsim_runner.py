@@ -129,6 +129,7 @@ def ping():
 def out():
     try:
         airsim_client.kill_airsim()
+        return "Kill Succeed", 200
     except Exception as e:
         logging.error(f"Kill Airsim failed: {str(e)}")
     finally:
