@@ -26,7 +26,6 @@ def manage_servers():
         if backup_ports:
             new_port = backup_ports.pop(0)
             todo_ports.append(new_port)
-            requests.post('http://192.168.0.104:7575/add', json={'port': new_port})
 
     save_ports_to_file(backup_ports, './backup_ports.txt')
     save_ports_to_file(todo_ports, './todo_ports.txt')

@@ -4,6 +4,7 @@ import time
 import signal
 import argparse
 import logging
+import requests
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, kill_airsim, load_config
@@ -45,6 +46,7 @@ app = Flask(__name__)
 airsim_config = load_config(parser.parse_args().config)
 airsim_client = AirSimClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
+requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
 
 
 @app.route('/reset', methods=['POST'])
