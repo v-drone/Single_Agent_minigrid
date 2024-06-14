@@ -1,12 +1,21 @@
-# PowerShell script equivalent
+# PowerShell script
+
+# Set error preference to silently continue on error
+$ErrorActionPreference = 'SilentlyContinue'
+
+# Set the port number from the script's argument
+$port = $args[0]
 
 # Navigate to the specified directory
 Set-Location -Path "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid"
 
-# Run the Python script with the provided command line argument
-python .\airsim_client\airsim_runner.py -f $args[0] -l $args[1]
+# Define configuration and log paths based on the port
+$configPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json"
+$logPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
 
-# Output completion message with the configuration file used
-Write-Host "`nTask completed with config: $($args[0])"
-Write-Host "Press any key to close this window..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+# Start Docker container for the specified port
+Write-Host "Starting Docker container for port $port..."
+docker start "$port"
+
+# Run the Python script using the paths defined above
+python .\airsim_client\airsim_runner.py -f $configPath -l $logPath

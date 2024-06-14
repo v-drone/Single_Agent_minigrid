@@ -17,6 +17,7 @@ import random
 import math
 import json
 import time
+import ray
 import os
 
 mapper = {
@@ -41,43 +42,41 @@ class UAVWithMapEmpty(EmptyEnv):
                  render_mode="human", render_rate=3, **kwargs):
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
                          render_mode=render_mode, tile_size=kwargs.get("tile_size", 5))
-        self.spec = EnvSpec("UAVWithMapEnv-v0", max_episode_steps=self.max_steps)
-        self.actions = self.Actions
-        self.action_space = spaces.Discrete(8, seed=np.random.randint(1000))
-        self.size = size
-        self.full_battery = battery
-        self.battery = battery
-        self.info = {}
-        self.prev_pos = None
-        self.camera = camera
-        self.visited_tiles = set()
-        self.unvisited_tiles = set()
-        self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
 
         # Logging setup
         log_directory = '/home/seventheli/data/logging/'
-        log_filename = os.path.join(log_directory, f'{self.local_port}.txt')
-
+        log_filename = os.path.join(log_directory, f'{ray.get_runtime_context().get_job_id()}.txt')
         logging.basicConfig(filename=log_filename,
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             datefmt='%H:%M:%S',
                             level=logging.DEBUG)
-
         self.logger = logging.getLogger(__name__)
-        self.logger.debug(f"Initialized UAVWithMapEmpty with port {self.local_port}")
-
+        # Set local port
         self.manager_port = port
         self.local_port = None
         self._set_local_port()
-
-        self.prev_transitions = None
+        # Set basic infos
+        self.size = size
+        self.camera = camera
+        self.full_battery = battery
         self.render_rate = render_rate
+        # Set env spec
+        self.spec = EnvSpec("UAVWithMapEnv-v0", max_episode_steps=self.max_steps)
+        self.actions = self.Actions
+        self.action_space = spaces.Discrete(8, seed=np.random.randint(1000))
+        self.observation_space = spaces.Dict({
+            "image": spaces.Box(low=0, high=255, shape=np.array([self.camera, self.camera, 3]), dtype="uint8"),
+            "direction": spaces.Discrete(4),
+            "mission": MissionSpace(mission_func=self._gen_mission)
+        })
+        # Set updatable infos
+        self.info = {}
         self.goal = [0, 0]
-        image_space = spaces.Box(low=0, high=255, shape=np.array([self.camera, self.camera, 3]), dtype="uint8")
-        mission_space = MissionSpace(mission_func=self._gen_mission)
-        self.observation_space = spaces.Dict(
-            {"image": image_space, "direction": spaces.Discrete(4), "mission": mission_space})
+        self.battery = battery
+        self.prev_pos = np.array([self.size, self.size])
+        self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
+        self.prev_transitions = None
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
         obs, _ = super().reset()
