@@ -26,7 +26,7 @@ if (Test-Path -Path $unityExecutablePath -PathType Leaf)
     {
         # Start Unity
         $command = "`"$unityExecutablePath`" `"$settingsPath`""
-        Write-Host "Executing command: $command"
+        Write-Host "Executing Unity command: $command"
         $process = Start-Process -FilePath $unityExecutablePath -ArgumentList $settingsPath -PassThru
         Start-Sleep -Seconds 10
 
@@ -44,13 +44,19 @@ if (Test-Path -Path $unityExecutablePath -PathType Leaf)
             Write-Host "Starting Docker container for port $port..."
             docker start "$port"
 
+            # Define Python command
+            $pythonScriptPath = ".\airsim_client\airsim_runner.py"
+            $pythonCommand = "python $pythonScriptPath -f $configPath -l $logPath -p $unityPID"
+            Write-Host "Executing Python command: $pythonCommand"
+
             # Execute Python script with all necessary parameters
-            python .\airsim_client\airsim_runner.py -f $configPath -l $logPath -p $unityPID
+            Invoke-Expression $pythonCommand
 
             # Completion message
             Write-Host "`nTask completed with config: $configPath"
             Write-Host "Press any key to close this window..."
             $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+
         }
         else
         {
