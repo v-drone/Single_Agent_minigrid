@@ -17,6 +17,7 @@ import random
 import math
 import json
 import time
+import os
 
 mapper = {
     "lava": 1,
@@ -54,8 +55,17 @@ class UAVWithMapEmpty(EmptyEnv):
         self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
 
         # Logging setup
+        log_directory = '/home/seventheli/data/logging/'
+        log_filename = os.path.join(log_directory, f'{self.local_port}.txt')
+
+        logging.basicConfig(filename=log_filename,
+                            filemode='a',
+                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                            datefmt='%H:%M:%S',
+                            level=logging.DEBUG)
+
         self.logger = logging.getLogger(__name__)
-        self.logger.debug(f"Initialized UAVWithMapEmpty")
+        self.logger.debug(f"Initialized UAVWithMapEmpty with port {self.local_port}")
 
         self.manager_port = port
         self.local_port = None
@@ -244,10 +254,11 @@ class UAVWithMapEmpty(EmptyEnv):
         if retry <= 0:
             try:
                 self._set_local_port_died()
-                print(retry)
                 raise AirSimResponseError(f"Failed to ping AirSim, {self.local_port}")
             except Exception as e:
-                raise e
+                _ = e
+                raise AirSimConnectionError(f"Failed to ping AirSim, {self.local_port}, {traceback.format_exc()}")
+
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
             if not response.status_code == 200:
@@ -268,7 +279,6 @@ class UAVWithMapEmpty(EmptyEnv):
         except Exception as e:
             _ = e
             retry -= 1
-            print(traceback.format_exc())
             return self._set_local_port_died(retry)
 
     def _set_local_port(self, retry=5):
