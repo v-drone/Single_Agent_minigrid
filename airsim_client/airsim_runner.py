@@ -129,7 +129,9 @@ def ping():
 def out():
     try:
         airsim_client.kill_airsim()
-        return "Kill Succeed", 200
+        return jsonify({
+            "info": "Kill Succeed"
+        })
     except Exception as e:
         logging.error(f"Kill Airsim failed: {str(e)}")
     finally:
