@@ -2,9 +2,10 @@ import os
 import json
 import time
 import signal
-import argparse
 import logging
+import argparse
 import requests
+import threading
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
 from airsim_utils import car_state_to_json, kill_airsim, load_config
@@ -20,6 +21,10 @@ logging.basicConfig(level=logging.INFO, filename=parser.parse_args().log, filemo
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
+
+def shutdown_server():
+    time.sleep(3)
+    os.kill(os.getpid(), signal.SIGINT)
 
 class AirSimClient:
     def __init__(self, config, pid):
@@ -126,16 +131,16 @@ def ping():
 
 
 @app.route('/exit', methods=['GET'])
-def out():
+def exit_server():
     try:
         airsim_client.kill_airsim()
-        return jsonify({
-            "info": "Kill Succeed"
-        })
+        response_info = {"info": "Kill Succeed"}
+        threading.Thread(target=shutdown_server).start()
     except Exception as e:
         logging.error(f"Kill Airsim failed: {str(e)}")
-    finally:
-        os.kill(os.getpid(), signal.SIGINT)
+        response_info = {"info": "Kill Failed", "error": str(e)}
+    return jsonify(response_info)
+
 
 
 if __name__ == "__main__":

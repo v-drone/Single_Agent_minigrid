@@ -253,7 +253,7 @@ class UAVWithMapEmpty(EmptyEnv):
         if retry <= 0:
             try:
                 self._set_local_port_died()
-                raise AirSimResponseError(f"Failed to ping AirSim, {self.local_port}")
+                raise AirSimConnectionError(f"Failed to ping AirSim, {self.local_port}")
             except Exception as e:
                 _ = e
                 raise AirSimConnectionError(f"Failed to ping AirSim, {self.local_port}, {traceback.format_exc()}")
@@ -269,33 +269,61 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _set_local_port_died(self, retry=5):
         if retry <= 0:
-            raise AirSimResponseError(f"Failed to set died AirSim, {self.local_port}")
+            self.logger.error(f"Failed to set died AirSim after multiple retries, port: {self.local_port}")
+            raise AirSimResponseError(f"Failed to set died AirSim, port: {self.local_port}")
         try:
-            requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
-                          json={"port": self.local_port}, timeout=10)
-            self.logger.info(f"Set Port {self.local_port} Died")
+            response = requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
+                                     json={"port": self.local_port}, timeout=10)
+            response.raise_for_status()  # Ensures we raise an HTTPError for bad responses
+            self.logger.info(f"Successfully set port {self.local_port} as 'died'")
             return
+        except requests.exceptions.HTTPError as he:
+            self.logger.error(f"HTTP Error occurred while setting port as 'died': {he}")
+        except requests.exceptions.ConnectionError as ce:
+            self.logger.error(f"Connection Error occurred while setting port as 'died': {ce}")
+        except requests.exceptions.Timeout as te:
+            self.logger.error(f"Timeout occurred while setting port as 'died': {te}")
         except Exception as e:
-            _ = e
-            retry -= 1
-            return self._set_local_port_died(retry)
+            self.logger.error(f"An unexpected error occurred while setting port as 'died': {e}")
+
+        # Log retry and decrement retry count
+        retry -= 1
+        self.logger.info(f"Retrying to set port as 'died', {retry} retries left")
+        self._set_local_port_died(retry)
 
     def _set_local_port(self, retry=5):
         if retry <= 0:
-            self.logger.error(f"Failed to set Local Port")
-            raise AirSimResponseError(f"Failed to set Local Port")
+            self.logger.error("Failed to set local port after multiple retries")
+            raise AirSimResponseError("Failed to set local port")
         try:
-            response = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake",
-                                    timeout=10)
+            response = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=10)
             response.raise_for_status()
-            _ = response.status_code
             if response.status_code == 200 and response.json().get("port", None) is not None:
-                self.local_port = response.json().get("port", None)
-                self.logger.info(f"Set New Local Port {self.local_port}")
+                self.local_port = response.json()["port"]
+                self.logger.info(f"Successfully set new local port: {self.local_port}")
+                return
+        except requests.exceptions.HTTPError as he:
+            self.logger.error(f"HTTP Error occurred: {he}")
+        except requests.exceptions.ConnectionError as ce:
+            self.logger.error(f"Connection Error occurred: {ce}")
+        except requests.exceptions.Timeout as te:
+            self.logger.error(f"Timeout occurred: {te}")
         except Exception as e:
-            _ = e
-            retry -= 1
-            return self._set_local_port(retry)
+            self.logger.error(f"An unexpected error occurred: {e}")
+
+        # Retry logic
+        retry -= 1
+        self.logger.info(f"Retrying to set local port, {retry} retries left")
+        self._set_local_port(retry)
+
+    def _kill_airsim(self):
+        try:
+            response = requests.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
+            response.raise_for_status()
+            if response.status_code == 200:
+                self.logger.info("Successfully requested server to terminate.")
+        except Exception as e:
+            self.logger.warning(f"Exception occurred while trying to kill AirSim: {e}")
 
     @staticmethod
     def _gen_mission():
