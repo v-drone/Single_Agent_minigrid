@@ -25,12 +25,9 @@ class AirSimClient:
     def __init__(self, config, pid):
         self.config = config
         self.pid = pid
-        self.car_connector = None
-        logging.info("AirSimClient initialized with config.")
-
-    def start_airsim(self):
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
+        logging.info("AirSimClient initialized with config.")
 
     def kill_airsim(self):
         kill_airsim(self.pid)
@@ -39,7 +36,6 @@ class AirSimClient:
     def restart(self):
         logging.info("Restarting Airsim.")
         self.kill_airsim()
-        self.start_airsim()
 
 
 app = Flask(__name__)
