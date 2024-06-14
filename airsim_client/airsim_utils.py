@@ -1,10 +1,6 @@
-import logging
-import os
 import math
 import json
-import signal
 import subprocess
-import time
 
 from pydantic import BaseModel
 
@@ -116,26 +112,9 @@ def car_state_to_json(car_state):
     return json_result
 
 
-def kill_airsim(process_id):
+def kill_airsim(pid):
     try:
-        os.kill(process_id, signal.SIGTERM)
-    except ProcessLookupError:
-        return "Process not found"
-
-
-def start_airsim(path, setting):
-    if os.path.isfile(path) and os.access(path, os.X_OK):
-        command = f'"{path}" "{setting}"'
-        logging.info(f"Executing command: {command}")
-
-        try:
-            process = subprocess.Popen(command, shell=True)  # Adjust according to need
-            time.sleep(10)
-            if process.poll() is None:  # Check if the process has not terminated
-                return process.pid
-            else:
-                raise Exception("Process terminated prematurely")
-        except Exception as e:
-            raise Exception(f"Failed to start process: {str(e)}")
-    else:
-        raise Exception(f"Unity executable not found or not executable: {path}")
+        subprocess.run(['taskkill', '/PID', str(pid), '/F'], check=True)
+        print(f"Unity process with PID {pid} has been terminated.")
+    except Exception as e:
+        print(f"Failed to terminate Unity process: {str(e)}")

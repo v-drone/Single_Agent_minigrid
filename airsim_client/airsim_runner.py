@@ -6,36 +6,34 @@ import argparse
 import logging
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
-from airsim_utils import car_state_to_json, start_airsim, kill_airsim, load_config
+from airsim_utils import car_state_to_json, kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
 parser.add_argument("-l", "--log_path", dest="log", type=str)
+parser.add_argument("-p", "--pid", dest="pid", type=str)
+
 # Configure logging to write to a file
 logging.basicConfig(level=logging.INFO, filename=parser.parse_args().log, filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
-
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 
 class AirSimClient:
-    def __init__(self, config):
+    def __init__(self, config, pid):
         self.config = config
-        self.pid = None
+        self.pid = pid
         self.car_connector = None
         logging.info("AirSimClient initialized with config.")
 
     def start_airsim(self):
-        self.pid = start_airsim(self.config["path"], self.config["setting"])
         self.car_connector = CarConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
 
     def kill_airsim(self):
         kill_airsim(self.pid)
         logging.info(f"Airsim killed with PID: {self.pid}")
-        self.pid = None
-        self.car_connector = None
 
     def restart(self):
         logging.info("Restarting Airsim.")
@@ -45,7 +43,7 @@ class AirSimClient:
 
 app = Flask(__name__)
 airsim_config = load_config(parser.parse_args().config)
-airsim_client = AirSimClient(airsim_config)
+airsim_client = AirSimClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
 
 try:
