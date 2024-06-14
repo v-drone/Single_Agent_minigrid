@@ -46,12 +46,6 @@ airsim_config = load_config(parser.parse_args().config)
 airsim_client = AirSimClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
 
-try:
-    airsim_client.start_airsim()
-except Exception as ex:
-    logging.error(f"Failed to start Airsim: {ex}")
-    exit()
-
 
 @app.route('/reset', methods=['POST'])
 def reset():
