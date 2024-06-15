@@ -1,15 +1,14 @@
 from __future__ import annotations
-from environments.AirSimException import AirSimResponseError, AirSimConnectionError
-from requests.exceptions import RequestException
+from environments.AirSimException import AirSimResponseError, AirSimConnectionError, AirSimActionError
+from environments.AirSimException import AirSimInfoError
 from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
-from minigrid.core.world_object import Goal
+from minigrid.core.world_object import WorldObj, Goal
 from minigrid.core.actions import IntEnum
 from minigrid.core.mission import MissionSpace
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
-import traceback
 import numpy as np
 import logging
 import requests
@@ -76,91 +75,102 @@ class UAVWithMapEmpty(EmptyEnv):
         self.battery = battery
         self.prev_pos = np.array([self.size, self.size])
         self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
-        self.prev_transitions = None
+        self.error_counter = 0
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
         obs, _ = super().reset()
-        self.action_space.seed(np.random.randint(1000))
-        if retry <= 0:
-            self.close()
-            self._set_local_port(10)
-            retry = 5
-            self.logger.error(f"Restarted at {str(self.local_port)}")
         try:
-            self._check_airsim()
+            self._ping_airsim()
             self.agent_dir = 3
             self.info = {}
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-            self._call_airsim_reset()
-            return self._update_info(*self._call_airsim_info()), {}
-        except Exception as e:
-            _ = e
+            self._reset_airsim()
+            self._info_airsim()
+            self.error_counter = 0
+            return self._trans_obs(self.info["obs"]), {}
+        except (AirSimConnectionError, AirSimInfoError, Exception) as e:
+            if e is AirSimInfoError or e is AirSimConnectionError:
+                self.logger.error(e.message)
+            else:
+                self.logger.error(f"Unknown Exception during restarted at {str(self.local_port)}, {str(e)}")
             retry -= 1
             time.sleep(2)
-            return self.reset(retry=retry)
+            if retry <= 0:
+                self.logger.error(f"Failed to reset environment after final retry, port: {self.local_port}")
+                self.release()
+                self._set_local_port(3)
+                return self.reset(retry=5)
+            else:
+                self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
+                return self.reset(retry=retry)
 
     def step(self, action):
         self.prev_pos = np.copy(self.agent_pos)
         self.battery -= 1
         self.step_count += 1
         try:
-            obs, info = self._call_airsim_step(action)
-            obs = self._update_info(obs, info)
+            self._step_airsim(action)
+            self._info_airsim()
             self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
-            terminated = bool(self.info.get("gear", False))
-            truncated = self._get_fail()
-            reward = self._reward() if terminated else 0
-            self.prev_transitions = (obs, reward, terminated, truncated, {})
-        except AirSimConnectionError or AirSimResponseError or RequestException as e:
-            self.logger.error(f"Airsim/Network Exception during AirSim step call: ``{str(e)}``")
-            time.sleep(10)
-            self.reset()
-            obs, reward, terminated, truncated, _ = self.prev_transitions
+        except AirSimActionError as e:
+            self.logger.error(e.message)
+            time.sleep(5)
+            self.error_counter += 1
+        except AirSimInfoError as e:
+            self.logger.error(e.message)
+            time.sleep(5)
+            self.error_counter += 1
         except Exception as e:
             self.logger.error(f"Unknown Exception during AirSim step call: {str(e)}")
-            time.sleep(10)
-            self.reset()
-            obs, reward, terminated, truncated, _ = self.prev_transitions
+            time.sleep(5)
+            self.error_counter += 1
+        obs = self._trans_obs(self.info["obs"])
+        if self.error_counter < 5:
+            terminated = bool(self.info.get("gear", False))
+            truncated = self._get_fail()
+        else:
+            terminated = False
+            truncated = True
+        reward = self._reward() if terminated else 0
         return obs, reward, terminated, truncated, {}
 
     def render(self):
-        view_obs, self.info = self._update_info(*self._call_airsim_info())
-        return view_obs["image"]
+        return np.array(self.info["obs"], dtype=np.uint8)
 
     def to_json(self):
-        json_return = {"mission": self.mission,
-                       "height": self.height,
-                       "width": self.width,
-                       "map": [],
-                       "start": self.start_pos,
-                       }
-        for y, y_d in enumerate(np.array(self.grid.grid).reshape([self.height, self.width])):
-            for x, x_d in enumerate(y_d):
-                if x_d is not None:
+        json_return = {
+            "mission": self.mission,
+            "height": self.height,
+            "width": self.width,
+            "map": [],
+            "start": self.start_pos,
+        }
+
+        # Reshape the grid to match the specified height and width
+        grid_array = np.array(self.grid.grid).reshape([self.height, self.width])
+
+        for y, row in enumerate(grid_array):
+            for x, cell in enumerate(row):
+                # Check if the cell is an instance of WorldObj or None
+                if isinstance(cell, WorldObj) or cell is None:
+                    # If it's None or a valid WorldObj, append the appropriate type
                     json_return["map"].append({
                         "x": x,
                         "y": y,
-                        "type": mapper[x_d.type]
+                        "type": mapper[cell.type] if cell is not None else 0
                     })
                 else:
-                    json_return["map"].append({
-                        "x": x,
-                        "y": y,
-                        "type": 0
-                    })
+                    # If cell contains an invalid type, raise an error
+                    raise ValueError(f"Unexpected object type at position {(x, y)}: {type(cell)}")
         return json_return
 
-    def close(self):
-        requests.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
-        self.local_port = None
-        super().close()
-
-    def _update_info(self, obs, info):
-        self.info = json.loads(info)
-        self._update_grid()
-        obs = {"image": np.array(obs, dtype=np.uint8), "direction": self.agent_dir, "mission": self.mission}
-        return obs
+    def release(self):
+        try:
+            requests.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
+        except Exception as e:
+            self.logger.warning(f"Error while release AirSim: {e}")
+        self._kill_airsim()
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
@@ -211,63 +221,102 @@ class UAVWithMapEmpty(EmptyEnv):
             else:
                 return False
 
-    def _call_airsim_reset(self, retry=3):
-        if retry <= 0:
-            raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
+    def _trans_obs(self, obs):
+        return {"image": np.array(obs, dtype=np.uint8),
+                "direction": self.agent_dir,
+                "mission": self.mission}
+
+    def _reset_airsim(self, retry=3):
         try:
             response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
                                      json={"map": self.to_json()})
-            if not response.status_code == 200:
-                raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
-        except Exception as e:
-            _ = e
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")
+            else:
+                # If response was successful and status code 200, log success
+                self.logger.info(f"Successfully reset AirSim environment, port: {self.local_port}")
+                return True
+        except (requests.exceptions.RequestException, Exception) as e:
+            self.logger.error(f"Error while resetting AirSim: {e}")
             retry -= 1
-            return self._call_airsim_reset(retry)
+            if retry <= 0:
+                raise AirSimConnectionError(f"Failed to reset environment after final retry, port: {self.local_port}")
+            else:
+                self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
+                return self._reset_airsim(retry)
 
-    def _call_airsim_step(self, action, retry=5):
-        if retry <= 0:
-            raise AirSimConnectionError(f"Failed to request to step, {self.local_port}")
+    def _step_airsim(self, action):
         try:
             response = requests.post(f"http://127.0.0.1:{self.local_port}/step", timeout=10,
                                      json={"action": int(action)})
-            data = response.json()
-            return np.array(data.get("obs")), data.get("info")
-        except Exception as e:
-            _ = e
-            retry -= 1
-            return self._call_airsim_step(action, retry)
+            response.raise_for_status()  # Check for HTTP errors
 
-    def _call_airsim_info(self, retry=5):
-        if retry <= 0:
-            raise AirSimResponseError(f"Failed to retrieve information failed, {self.local_port}")
+            # Check for non-200 status code, even though raise_for_status() above should handle it
+            if response.status_code != 200:
+                raise AirSimResponseError(f"Failed to do action environment, port: {self.local_port}")
+        except (requests.exceptions.RequestException, AirSimResponseError, Exception) as e:
+            raise AirSimActionError(f"An unexpected error occurred, port: {self.local_port}", e=e)
+
+    def _info_airsim(self, retry=5):
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
-            data = response.json()
-            return data.get("obs"), data.get("info")
-        except Exception as e:
-            _ = e
-            retry -= 1
-            return self._call_airsim_info(retry)
+            response.raise_for_status()
+            info = json.loads(response.json())
+            # valid
+            self._trans_obs(info["obs"])
+            self.info = info
+            self._update_grid()
+        except (requests.exceptions.RequestException, Exception) as e:
+            self.logger.error(f"Exception while get info: {e}")
+            if retry <= 0:
+                raise AirSimInfoError(f"Failed to retrieve information after retries, port: {self.local_port}")
+            else:
+                time.sleep(2 ** (6 - retry) / 1000)
+                return self._info_airsim(retry - 1)
 
-    def _check_airsim(self, retry=2):
-        if retry <= 0:
-            try:
-                self._set_local_port_died()
-                raise AirSimConnectionError(f"Failed to ping AirSim, {self.local_port}")
-            except Exception as e:
-                _ = e
-                raise AirSimConnectionError(f"Failed to ping AirSim, {self.local_port}, {traceback.format_exc()}")
-
+    def _ping_airsim(self, retry=2):
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
-            if not response.status_code == 200:
-                raise AirSimConnectionError(f"Failed to reset environment, {self.local_port}")
-        except Exception as e:
-            _ = e
-            retry -= 1
-            return self._check_airsim(retry)
+            response.raise_for_status()
+            self.logger.info(f"Successfully pinged AirSim, port: {self.local_port}")
+            return True
+        except (requests.exceptions.RequestException, Exception) as e:
+            self.logger.warning(f"Failed to ping AirSim due to {type(e).__name__}: {e}")
+            if retry > 0:
+                retry -= 1
+                self.logger.info(f"Retrying ping AirSim, {retry} retries left")
+                return self._ping_airsim(retry)
+            else:
+                self._handle_failed_ping()
+                raise AirSimConnectionError(f"Failed to ping AirSim after all retries, port: {self.local_port}")
 
-    def _set_local_port_died(self, retry=5):
+    def _handle_failed_ping(self):
+        """Handles actions to take when pinging fails after all retries."""
+        try:
+            self._set_local_port_died()
+            self._kill_airsim()
+        except Exception as e:
+            self.logger.error(f"Exception occurred while handling failed ping: {e}")
+
+    def _set_local_port(self, retry=5):
+        try:
+            response = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=10)
+            response.raise_for_status()
+            if response.status_code == 200 and response.json().get("port", None) is not None:
+                self.local_port = response.json()["port"]
+                self.logger.info(f"Successfully set new local port: {self.local_port}")
+                return True
+        except (requests.exceptions.RequestException, Exception) as e:
+            self.logger.warning(f"Failed to set local port, {retry} retries left: {e}")
+            if retry > 0:
+                retry -= 1
+                self.logger.warning(f"Retrying ping AirSim, {retry} retries left")
+                return self._set_local_port(retry)
+            else:
+                raise AirSimConnectionError("Failed to set local port after multiple retries")
+
+    def _set_local_port_died(self, retry=2):
         if retry <= 0:
             self.logger.error(f"Failed to set died AirSim after multiple retries, port: {self.local_port}")
             raise AirSimResponseError(f"Failed to set died AirSim, port: {self.local_port}")
@@ -276,45 +325,15 @@ class UAVWithMapEmpty(EmptyEnv):
                                      json={"port": self.local_port}, timeout=10)
             response.raise_for_status()  # Ensures we raise an HTTPError for bad responses
             self.logger.info(f"Successfully set port {self.local_port} as 'died'")
-            return
-        except requests.exceptions.HTTPError as he:
-            self.logger.error(f"HTTP Error occurred while setting port as 'died': {he}")
-        except requests.exceptions.ConnectionError as ce:
-            self.logger.error(f"Connection Error occurred while setting port as 'died': {ce}")
-        except requests.exceptions.Timeout as te:
-            self.logger.error(f"Timeout occurred while setting port as 'died': {te}")
-        except Exception as e:
-            self.logger.error(f"An unexpected error occurred while setting port as 'died': {e}")
-
-        # Log retry and decrement retry count
-        retry -= 1
-        self.logger.info(f"Retrying to set port as 'died', {retry} retries left")
-        self._set_local_port_died(retry)
-
-    def _set_local_port(self, retry=5):
-        if retry <= 0:
-            self.logger.error("Failed to set local port after multiple retries")
-            raise AirSimResponseError("Failed to set local port")
-        try:
-            response = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=10)
-            response.raise_for_status()
-            if response.status_code == 200 and response.json().get("port", None) is not None:
-                self.local_port = response.json()["port"]
-                self.logger.info(f"Successfully set new local port: {self.local_port}")
-                return
-        except requests.exceptions.HTTPError as he:
-            self.logger.error(f"HTTP Error occurred: {he}")
-        except requests.exceptions.ConnectionError as ce:
-            self.logger.error(f"Connection Error occurred: {ce}")
-        except requests.exceptions.Timeout as te:
-            self.logger.error(f"Timeout occurred: {te}")
-        except Exception as e:
-            self.logger.error(f"An unexpected error occurred: {e}")
-
-        # Retry logic
-        retry -= 1
-        self.logger.info(f"Retrying to set local port, {retry} retries left")
-        self._set_local_port(retry)
+            return True
+        except (requests.exceptions.RequestException, Exception) as e:
+            self.logger.error(f"RequestException occurred while setting port as 'died': {e}")
+            if retry > 0:
+                retry -= 1
+                self.logger.warning(f"Retrying to set port as 'died', {retry} retries left")
+                self._set_local_port_died(retry)
+            else:
+                self.logger.error("Failed to set local port as 'died' after multiple retries")
 
     def _kill_airsim(self):
         try:

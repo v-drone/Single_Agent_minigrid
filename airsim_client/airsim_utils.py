@@ -1,7 +1,6 @@
 import math
 import json
 import subprocess
-
 from pydantic import BaseModel
 
 
@@ -79,7 +78,7 @@ def quaternion_to_euler(orientation):
     return roll, pitch, yaw
 
 
-def car_state_to_json(car_state):
+def car_state_to_dict(car_state):
     # Extract orientation and position data from the KinematicsState object within CarState
     orientation = {
         "w": car_state.kinematics_estimated.orientation.w_val,
@@ -95,7 +94,7 @@ def car_state_to_json(car_state):
     }
 
     # Create a dictionary containing the orientation and position
-    result = {
+    return {
         "orientation": quaternion_to_euler(orientation),
         "position": position,
         'gear': car_state.gear,
@@ -106,10 +105,6 @@ def car_state_to_json(car_state):
         'timestamp': car_state.timestamp
 
     }
-
-    # Convert the dictionary to a JSON string
-    json_result = json.dumps(result, indent=4)
-    return json_result
 
 
 def kill_airsim(pid):

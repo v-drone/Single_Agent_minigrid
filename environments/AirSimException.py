@@ -8,7 +8,18 @@ class AirSimConnectionError(AirSimError):
 
     def __init__(self, message="Failed to connect to AirSim server", e=None):
         self.message = message
-        self.e = e
+        if e is not None:
+            self.message += f"; {e}"
+        super().__init__(self.message)
+
+
+class AirSimInfoError(AirSimError):
+    """Exception raised for errors in the response from AirSim."""
+
+    def __init__(self, message="Invalid response from AirSim server", e=None):
+        self.message = message
+        if e is not None:
+            self.message += f"; {e}"
         super().__init__(self.message)
 
 
@@ -17,14 +28,26 @@ class AirSimResponseError(AirSimError):
 
     def __init__(self, message="Invalid response from AirSim server", e=None):
         self.message = message
-        self.e = e
+        if e is not None:
+            self.message += f"; {e}"
         super().__init__(self.message)
 
 
-class AirSimRestartFailed(AirSimError):
-    """Exception raised when AirSim restart attempts fail."""
+class AirSimActionError(AirSimError):
+    """Exception raised for errors in the response from AirSim."""
 
-    def __init__(self, message="Failed to restart AirSim server", e=None):
+    def __init__(self, message="Invalid response from AirSim server", e=None):
         self.message = message
-        self.e = e
+        if e is not None:
+            self.message += f"; {e}"
+        super().__init__(self.message)
+
+
+class AirSimUnknownError(AirSimError):
+    """Exception raised for errors in the response from AirSim."""
+
+    def __init__(self, message="Unknown error", e=None):
+        self.message = message
+        if e is not None:
+            self.message += f"; {e}"
         super().__init__(self.message)

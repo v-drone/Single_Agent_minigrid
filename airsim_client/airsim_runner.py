@@ -8,7 +8,7 @@ import requests
 import threading
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
-from airsim_utils import car_state_to_json, kill_airsim, load_config
+from airsim_client.airsim_utils import car_state_to_dict, kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
@@ -25,6 +25,7 @@ log.setLevel(logging.ERROR)
 def shutdown_server():
     time.sleep(3)
     os.kill(os.getpid(), signal.SIGINT)
+
 
 class AirSimClient:
     def __init__(self, config, pid):
@@ -60,12 +61,8 @@ def reset():
             json.dump(data['map'], f)
         time.sleep(1)  # simulate map reset delay
         airsim_client.car_connector.reset()
-        obs, info = airsim_client.car_connector.get_info()
         logging.info("Map reset successfully.")
-        return jsonify({
-            "obs": obs.tolist(),
-            "info": car_state_to_json(info)
-        })
+        return jsonify({"signal": True})
     except Exception as exc:
         logging.error(f"Reset failed: {str(exc)}")
         abort(500, f"Reset failed: {str(exc)}")
@@ -76,31 +73,11 @@ def step():
     data = request.get_json()
     try:
         airsim_client.car_connector.do_action(data['action'])
-        obs, info = airsim_client.car_connector.get_info()
         logging.info("Action: %d" % data['action'])
-        return jsonify({
-            "obs": obs.tolist(),
-            "info": car_state_to_json(info)
-        })
+        return jsonify({"signal": True})
     except Exception as exc:
         logging.error(f"Action failed: {str(exc)}")
         abort(500, f"Action failed: {str(exc)}")
-
-
-@app.route('/restart', methods=['GET'])
-def restart():
-    try:
-        airsim_client.restart()
-        airsim_client.car_connector.reset()
-        obs, info = airsim_client.car_connector.get_info()
-        logging.info("AirSim restarted successfully.")
-        return jsonify({
-            "obs": obs.tolist(),
-            "info": car_state_to_json(info)
-        })
-    except Exception as exc:
-        logging.error(f"Restart failed: {str(exc)}")
-        abort(500, f"Restart failed: {str(exc)}")
 
 
 @app.route('/info', methods=['GET'])
@@ -110,7 +87,7 @@ def get_info():
         logging.info("Information retrieved successfully.")
         return jsonify({
             "obs": obs.tolist(),
-            "info": car_state_to_json(info)
+            **car_state_to_dict(info)
         })
     except Exception as exc:
         logging.error(f"Info retrieval failed: {str(exc)}")
@@ -140,7 +117,6 @@ def exit_server():
         logging.error(f"Kill Airsim failed: {str(e)}")
         response_info = {"info": "Kill Failed", "error": str(e)}
     return jsonify(response_info)
-
 
 
 if __name__ == "__main__":
