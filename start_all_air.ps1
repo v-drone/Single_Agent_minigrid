@@ -1,5 +1,8 @@
 Write-Host "Writing to backup_ports.txt"
 5000..5400 | ForEach-Object { $_ } | Set-Content "backup_ports.txt"
+Clear-Content todo_ports.txt
+Clear-Content died_ports.txt
+
 Write-Host "Ports backup completed."
 
 Start-Sleep -Seconds 1
