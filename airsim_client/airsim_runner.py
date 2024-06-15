@@ -8,7 +8,7 @@ import requests
 import threading
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
-from airsim_client.airsim_utils import car_state_to_dict, kill_airsim, load_config
+from airsim_utils import car_state_to_dict, kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
