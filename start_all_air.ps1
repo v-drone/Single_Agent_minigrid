@@ -9,20 +9,20 @@ do
     python airsim_check.py
 
     Get-Content todo_ports.txt | ForEach-Object {
-        $port = $_
+        Write-Host "Starting server on port $_..."
         $scriptBlock = {
-            param($port)
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" $port
+            param($_)
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" $_
         }
-        Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
+        Start-Job -ScriptBlock $scriptBlock -ArgumentList $_
 
         Start-Sleep -Seconds 5
     }
 
+
     Get-Content died_ports.txt | ForEach-Object {
-        $port = $_
-        Write-Host "Stopping and removing Docker container for port $port..."
-        docker stop "$port"
+        Write-Host "Stopping and removing Docker container for port $_..."
+        docker stop "$_"
     }
 
     Clear-Content todo_ports.txt

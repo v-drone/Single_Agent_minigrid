@@ -7,6 +7,12 @@ def save_ports_to_file(ports, filepath):
             file.write(f"{port}\n")
 
 
+def extend_ports_to_file(ports, filepath):
+    with open(filepath, 'a') as file:
+        for port in ports:
+            file.write(f"{port}\n")
+
+
 def load_ports_from_file(filepath):
     with open(filepath, 'r') as file:
         ports = [int(i) for i in file.read().split()]
@@ -28,7 +34,7 @@ def manage_servers():
 
     save_ports_to_file(backup_ports, './backup_ports.txt')
     save_ports_to_file(todo_ports, './todo_ports.txt')
-    save_ports_to_file(died_ports, './died_ports.txt')
+    extend_ports_to_file(died_ports, './died_ports.txt')
 
 
 if __name__ == '__main__':
