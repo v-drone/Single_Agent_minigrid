@@ -48,7 +48,8 @@ app = Flask(__name__)
 airsim_config = load_config(parser.parse_args().config)
 airsim_client = AirSimClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
-requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
+response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
+logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
 
 
 @app.route('/reset', methods=['POST'])
