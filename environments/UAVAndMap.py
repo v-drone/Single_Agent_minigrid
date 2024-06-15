@@ -10,13 +10,13 @@ from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
 import numpy as np
+import base64
 import logging
 import requests
 import random
+import zlib
 import math
-import json
 import time
-import ray
 import os
 
 mapper = {
@@ -44,12 +44,12 @@ class UAVWithMapEmpty(EmptyEnv):
 
         # Logging setup
         log_directory = '/home/seventheli/data/logging/'
-        log_filename = os.path.join(log_directory, f'{ray.get_runtime_context().get_job_id()}.txt')
+        log_filename = os.path.join(log_directory, f'{os.getpid()}.txt')
         logging.basicConfig(filename=log_filename,
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             datefmt='%H:%M:%S',
-                            level=logging.DEBUG)
+                            level=logging.WARNING)
         self.logger = logging.getLogger(__name__)
         # Set local port
         self.manager_port = port
@@ -261,6 +261,9 @@ class UAVWithMapEmpty(EmptyEnv):
             response = requests.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
             response.raise_for_status()
             info = response.json()
+            info["obs"] = base64.b64decode(info["obs"])
+            info["obs"] = zlib.decompress(info["obs"])
+            info["obs"] = np.frombuffer(info["obs"], dtype=np.dtype(info['dtype'])).reshape(info["shape"])
             # valid
             self._trans_obs(info["obs"])
             self.info = info

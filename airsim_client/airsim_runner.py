@@ -1,6 +1,8 @@
 import os
+import zlib
 import json
 import time
+import base64
 import signal
 import logging
 import argparse
@@ -84,9 +86,13 @@ def step():
 def get_info():
     try:
         obs, info = airsim_client.car_connector.get_info()
+        compressed_obs = zlib.compress(obs.tobytes())
+        b64_compressed_obs = base64.b64encode(compressed_obs).decode('utf-8')
         logging.info("Information retrieved successfully.")
         return jsonify({
-            "obs": obs.tolist(),
+            "obs": b64_compressed_obs,
+            "dtype": str(obs.dtype),
+            "shape": obs.shape,
             **car_state_to_dict(info)
         })
     except Exception as exc:
