@@ -4,7 +4,7 @@
 $ErrorActionPreference = 'SilentlyContinue'
 
 # Set the port number from the script's argument
-$port = $args[0]
+$port = [int]$args[0]
 
 # Define configuration and log paths based on the port
 $configPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json"
