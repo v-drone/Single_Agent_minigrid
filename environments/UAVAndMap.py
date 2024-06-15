@@ -183,7 +183,7 @@ class UAVWithMapEmpty(EmptyEnv):
         self.agent_pos = self.start_pos
         self.agent_dir = self._rand_int(0, 4)
         # Set goal
-        goal = [random.randint(2, width - 3), random.randint(2, height - 3)]
+        goal = [random.randint(5, width - 5), random.randint(5, height - 5)]
         self.goal = goal
         self.put_obj(Goal(), goal[0], goal[1])
 
