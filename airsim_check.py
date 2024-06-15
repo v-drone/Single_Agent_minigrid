@@ -1,18 +1,16 @@
 import requests
 
 
-def save_ports_to_file(ports, filename):
-    with open(filename, 'w') as file:
+def save_ports_to_file(ports, filepath):
+    with open(filepath, 'w') as file:
         for port in ports:
             file.write(f"{port}\n")
 
 
-def load_ports_from_file(filename):
-    try:
-        with open(filename, 'r') as file:
-            return [int(line.strip()) for line in file if line.strip()]
-    except FileNotFoundError:
-        return []
+def load_ports_from_file(filepath):
+    with open(filepath, 'r') as file:
+        ports = [int(i) for i in file.read().split()]
+    return ports
 
 
 def manage_servers():
@@ -22,10 +20,11 @@ def manage_servers():
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
 
-    if len(active_ports) < 12:
-        if backup_ports:
-            new_port = backup_ports.pop(0)
-            todo_ports.append(new_port)
+    # Ensure there are always at least 12 active ports if possible
+    needed_ports = 12 - len(active_ports)
+    ports_to_add = backup_ports[:needed_ports]
+    todo_ports.extend(ports_to_add)
+    backup_ports = backup_ports[needed_ports:]
 
     save_ports_to_file(backup_ports, './backup_ports.txt')
     save_ports_to_file(todo_ports, './todo_ports.txt')

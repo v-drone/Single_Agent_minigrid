@@ -1,10 +1,8 @@
-$ErrorActionPreference = 'SilentlyContinue'
-
 Write-Host "Writing to backup_ports.txt"
 5000..5400 | ForEach-Object { $_ } | Set-Content "backup_ports.txt"
 Write-Host "Ports backup completed."
 
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 1
 
 do
 {
@@ -12,16 +10,9 @@ do
 
     Get-Content todo_ports.txt | ForEach-Object {
         $port = $_
-        Write-Host "Starting Docker container for port $port..."
-        docker start "$port"
-
-        Write-Host "Starting server on port $port..."
-        # 使用 PowerShell Jobs 正确地传递参数
         $scriptBlock = {
             param($port)
-            $configPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_configs\$port.json"
-            $logPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" $configPath $logPath
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" $port
         }
         Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
@@ -39,10 +30,12 @@ do
 
     Write-Host "Waiting for 10 seconds. Press any key to exit."
     $startTime = Get-Date
-    while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 10 -and -not [Console]::KeyAvailable) {
+    while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 10 -and -not [Console]::KeyAvailable)
+    {
         Start-Sleep -Milliseconds 500
     }
-    if ([Console]::KeyAvailable) {
+    if ([Console]::KeyAvailable)
+    {
         $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
         break
     }
