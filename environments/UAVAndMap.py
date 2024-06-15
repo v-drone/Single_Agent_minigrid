@@ -234,8 +234,6 @@ class UAVWithMapEmpty(EmptyEnv):
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")
             else:
-                # If response was successful and status code 200, log success
-                self.logger.info(f"Successfully reset AirSim environment, port: {self.local_port}")
                 return True
         except (requests.exceptions.RequestException, Exception) as e:
             self.logger.error(f"Error while resetting AirSim: {e}")
@@ -262,7 +260,7 @@ class UAVWithMapEmpty(EmptyEnv):
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
             response.raise_for_status()
-            info = json.loads(response.json())
+            info = response.json()
             # valid
             self._trans_obs(info["obs"])
             self.info = info
@@ -279,13 +277,12 @@ class UAVWithMapEmpty(EmptyEnv):
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
             response.raise_for_status()
-            self.logger.info(f"Successfully pinged AirSim, port: {self.local_port}")
             return True
         except (requests.exceptions.RequestException, Exception) as e:
             self.logger.warning(f"Failed to ping AirSim due to {type(e).__name__}: {e}")
             if retry > 0:
                 retry -= 1
-                self.logger.info(f"Retrying ping AirSim, {retry} retries left")
+                self.logger.warning(f"Retrying ping AirSim, {retry} retries left")
                 return self._ping_airsim(retry)
             else:
                 self._handle_failed_ping()
@@ -324,7 +321,6 @@ class UAVWithMapEmpty(EmptyEnv):
             response = requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                                      json={"port": self.local_port}, timeout=10)
             response.raise_for_status()  # Ensures we raise an HTTPError for bad responses
-            self.logger.info(f"Successfully set port {self.local_port} as 'died'")
             return True
         except (requests.exceptions.RequestException, Exception) as e:
             self.logger.error(f"RequestException occurred while setting port as 'died': {e}")
@@ -339,8 +335,6 @@ class UAVWithMapEmpty(EmptyEnv):
         try:
             response = requests.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
             response.raise_for_status()
-            if response.status_code == 200:
-                self.logger.info("Successfully requested server to terminate.")
         except Exception as e:
             self.logger.warning(f"Exception occurred while trying to kill AirSim: {e}")
 

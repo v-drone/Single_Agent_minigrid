@@ -3,8 +3,6 @@ from fastapi.responses import JSONResponse
 from airsim_client.airsim_utils import PortData
 import uvicorn
 
-app = FastAPI()
-
 
 class AirSimManager:
     def __init__(self):
@@ -38,6 +36,7 @@ class AirSimManager:
 
 
 airsim_manager = AirSimManager()
+app = FastAPI()
 
 
 @app.get("/handshake")
