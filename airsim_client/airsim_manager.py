@@ -8,35 +8,33 @@ app = FastAPI()
 
 class AirSimManager:
     def __init__(self):
-        self.available_ports = []
-        self.died_port = {}
-        self.active_port = {}
+        self.available_ports = set()
+        self.active_ports = set()
+        self.died_ports = set()
 
     def get_available_port(self):
-        for port in self.available_ports:
-            if port not in self.active_port and port not in self.died_port:
-                return port
-        return None
+        available = self.available_ports - self.active_ports - self.died_ports
+        return next(iter(available), None)
 
     def register_connection(self, port):
-        if port in self.available_ports and port not in self.died_port:
-            self.active_port[port] = 'gym'
+        if port in self.available_ports and port not in self.died_ports and port not in self.active_ports:
+            self.active_ports.add(port)
             return True
         return False
 
     def release_connection(self, port):
-        if port in self.active_port:
-            del self.active_port[port]
-        if port in self.died_port:
-            del self.died_port[port]
+        self.active_ports.discard(port)
 
     def set_died(self, port):
-        self.died_port[port] = 'gym'
-        self.available_ports.remove(port)
-        del self.active_port[port]
+        if port in self.available_ports:
+            self.available_ports.discard(port)
+        self.active_ports.discard(port)
+        if port not in self.died_ports:
+            self.died_ports.add(port)
 
     def add_new(self, port):
-        self.available_ports.append(port)
+        if port not in self.available_ports:
+            self.available_ports.add(port)
 
 
 airsim_manager = AirSimManager()
@@ -76,9 +74,9 @@ async def set_died(data: PortData):
 async def get_info():
     try:
         response = {
-            "died": airsim_manager.died_port,
-            "live": airsim_manager.active_port,
-            "available": airsim_manager.available_ports,
+            "died": list(airsim_manager.died_ports),
+            "live": list(airsim_manager.active_ports),
+            "available": list(airsim_manager.available_ports),
         }
         print(response)
         return JSONResponse(response)
