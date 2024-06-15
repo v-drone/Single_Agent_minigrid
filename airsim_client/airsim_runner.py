@@ -19,7 +19,7 @@ parser.add_argument("-p", "--pid", dest="pid", type=str)
 logging.basicConfig(level=logging.INFO, filename=parser.parse_args().log, filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+log.setLevel(logging.DEBUG)
 
 
 def shutdown_server():
