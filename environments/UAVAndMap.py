@@ -49,11 +49,12 @@ class UAVWithMapEmpty(EmptyEnv):
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             datefmt='%H:%M:%S',
-                            level=logging.WARNING)
+                            level=logging.ERROR)
         self.logger = logging.getLogger(__name__)
         # Set local port
         self.manager_port = port
         self.local_port = None
+        self.session = requests.Session()
         self._set_local_port()
         # Set basic infos
         self.size = size
@@ -167,7 +168,7 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def release(self):
         try:
-            requests.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
+            self.session.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
         except Exception as e:
             self.logger.warning(f"Error while release AirSim: {e}")
         self._kill_airsim()
@@ -215,8 +216,7 @@ class UAVWithMapEmpty(EmptyEnv):
         if self.battery <= 0:
             return True
         else:
-            if self.info["position"]["z"] > 100 or self.agent_pos[0] == 29 or self.agent_pos[0] == 0 or \
-                    self.agent_pos[1] == 29 or self.agent_pos[1] == 0:
+            if self.info["position"]["z"] > 100:
                 return True
             else:
                 return False
@@ -228,7 +228,7 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _reset_airsim(self, retry=3):
         try:
-            response = requests.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
+            response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
                                      json={"map": self.to_json()})
             response.raise_for_status()
             if response.status_code != 200:
@@ -246,7 +246,7 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _step_airsim(self, action):
         try:
-            response = requests.post(f"http://127.0.0.1:{self.local_port}/step", timeout=10,
+            response = self.session.post(f"http://127.0.0.1:{self.local_port}/step", timeout=10,
                                      json={"action": int(action)})
             response.raise_for_status()  # Check for HTTP errors
 
@@ -254,11 +254,11 @@ class UAVWithMapEmpty(EmptyEnv):
             if response.status_code != 200:
                 raise AirSimResponseError(f"Failed to do action environment, port: {self.local_port}")
         except (requests.exceptions.RequestException, AirSimResponseError, Exception) as e:
-            raise AirSimActionError(f"An unexpected error occurred, port: {self.local_port}", e=e)
+            raise AirSimActionError(f"An error occurred, port: {self.local_port}", e=e)
 
     def _info_airsim(self, retry=5):
         try:
-            response = requests.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
+            response = self.session.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
             response.raise_for_status()
             info = response.json()
             info["obs"] = base64.b64decode(info["obs"])
@@ -269,16 +269,16 @@ class UAVWithMapEmpty(EmptyEnv):
             self.info = info
             self._update_grid()
         except (requests.exceptions.RequestException, Exception) as e:
-            self.logger.error(f"Exception while get info: {e}")
             if retry <= 0:
-                raise AirSimInfoError(f"Failed to retrieve information after retries, port: {self.local_port}")
+                raise AirSimInfoError(f"Failed to retrieve information after retries,"
+                                      f" port: {self.local_port}", e=e)
             else:
                 time.sleep(2 ** (6 - retry) / 1000)
                 return self._info_airsim(retry - 1)
 
     def _ping_airsim(self, retry=2):
         try:
-            response = requests.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
+            response = self.session.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
             response.raise_for_status()
             return True
         except (requests.exceptions.RequestException, Exception) as e:
@@ -301,11 +301,12 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _set_local_port(self, retry=5):
         try:
-            response = requests.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=10)
+            response = self.session.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=10)
             response.raise_for_status()
             if response.status_code == 200 and response.json().get("port", None) is not None:
                 self.local_port = response.json()["port"]
                 self.logger.info(f"Successfully set new local port: {self.local_port}")
+                self._change_port()
                 return True
         except (requests.exceptions.RequestException, Exception) as e:
             self.logger.warning(f"Failed to set local port, {retry} retries left: {e}")
@@ -321,7 +322,7 @@ class UAVWithMapEmpty(EmptyEnv):
             self.logger.error(f"Failed to set died AirSim after multiple retries, port: {self.local_port}")
             raise AirSimResponseError(f"Failed to set died AirSim, port: {self.local_port}")
         try:
-            response = requests.post(f"http://127.0.0.1:{self.manager_port}/set_died",
+            response = self.session.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                                      json={"port": self.local_port}, timeout=10)
             response.raise_for_status()  # Ensures we raise an HTTPError for bad responses
             return True
@@ -336,10 +337,15 @@ class UAVWithMapEmpty(EmptyEnv):
 
     def _kill_airsim(self):
         try:
-            response = requests.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
+            response = self.session.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
             response.raise_for_status()
         except Exception as e:
             self.logger.warning(f"Exception occurred while trying to kill AirSim: {e}")
+
+    def _change_port(self):
+        self.session.close()
+        self.session = requests.Session()
+        self.logger.info(f"Session and local port updated to: {self.local_port}")
 
     @staticmethod
     def _gen_mission():

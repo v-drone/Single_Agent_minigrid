@@ -32,48 +32,48 @@ class CarConnector(object):
             self.car_controls.throttle = 0.15
             self.car_controls.steering = 0
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
         elif action == 1:
             # faster front throttle
             self.car_controls.brake = 0
             self.car_controls.throttle = 0.3
             self.car_controls.steering = 0
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
         elif action == 2:
             # 50% brake left steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
             self.car_controls.steering = 0.25
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
         elif action == 3:
             # 100% brake left steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
             self.car_controls.steering = 0.5
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
         elif action == 4:
             # 50%  brake right steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
             self.car_controls.steering = -0.25
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
         elif action == 5:
             # 100% brake right steering
             self.car_controls.brake = 0.2
             self.car_controls.throttle = 0
             self.car_controls.steering = -0.5
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
         else:
             # brake
             self.car_controls.brake = 1
             self.car_controls.throttle = 0
             self.car.setCarControls(self.car_controls)
-            time.sleep(np.random.randint(40, 60) / 100)
+            time.sleep(np.random.randint(15, 25) / 100)
             self.car_controls.brake = 0
             self.car_controls.throttle = 0
             self.car.setCarControls(self.car_controls)
