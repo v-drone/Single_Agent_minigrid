@@ -9,7 +9,7 @@ import argparse
 import requests
 import threading
 from flask import Flask, request, jsonify, abort
-from airsim_drone_connector import DroneConnector
+from airsim_connector import DroneConnector
 from airsim_utils import car_state_to_dict, kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
