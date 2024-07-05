@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from airsim_client.airsim_utils import PortData
+from airsim_utils import PortData
 import uvicorn
 
 

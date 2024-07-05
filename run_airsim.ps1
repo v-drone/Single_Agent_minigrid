@@ -15,9 +15,8 @@ $unityPortOffset = 36450
 $unityPort = $port + $unityPortOffset
 
 # Paths for Unity executable and settings
-$unityExecutablePath = "C:\Users\Administrator\Documents\airsimcar$unityPort\AirSimAssets.exe"
+$unityExecutablePath = "C:\Users\Administrator\Documents\airsimdrone$unityPort\AirSimAssets.exe"
 $settingsPath = "C:\Users\Administrator\Documents\AirSim\settings.json"
-$mapPath = "C:\Users\Administrator\Documents\airsimcar$unityPort\AirSimAssets_Data\StreamingAssets\Test1.json"
 
 # Verify Unity executable's existence
 if (Test-Path -Path $unityExecutablePath -PathType Leaf)

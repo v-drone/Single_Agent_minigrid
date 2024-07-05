@@ -45,7 +45,7 @@ class GridWithMapEmpty(EmptyEnv):
 
         # Logging setup
         self.logger = logging.getLogger(__name__)
-        self.logger.debug(f"Initialized UAVWithMapEmpty")
+        self.logger.debug(f"Initialized EmptyWithMapEmpty")
 
         self.manager_port = port
         self.local_port = None

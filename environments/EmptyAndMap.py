@@ -25,7 +25,7 @@ mapper = {
 }
 
 
-class UAVWithMapEmpty(EmptyEnv):
+class EmptyWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         slow_throttle = 0
@@ -55,7 +55,6 @@ class UAVWithMapEmpty(EmptyEnv):
         self.manager_port = port
         self.local_port = None
         self.session = requests.Session()
-        self._set_local_port()
         # Set basic infos
         self.size = size
         self.camera = camera
@@ -81,6 +80,8 @@ class UAVWithMapEmpty(EmptyEnv):
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
         obs, _ = super().reset()
         try:
+            if self.local_port is None:
+                self._set_local_port()
             self._ping_airsim()
             self.agent_dir = 3
             self.info = {}
@@ -92,9 +93,9 @@ class UAVWithMapEmpty(EmptyEnv):
             return self._trans_obs(self.info["obs"]), {}
         except (AirSimConnectionError, AirSimInfoError, Exception) as e:
             if e is AirSimInfoError or e is AirSimConnectionError:
-                self.logger.error(e.message)
+                self.logger.warning(e.message)
             else:
-                self.logger.error(f"Unknown Exception during restarted at {str(self.local_port)}, {str(e)}")
+                self.logger.warning(f"Unknown Exception during restarted at {str(self.local_port)}, {str(e)}")
             retry -= 1
             time.sleep(2)
             if retry <= 0:
@@ -114,16 +115,12 @@ class UAVWithMapEmpty(EmptyEnv):
             self._step_airsim(action)
             self._info_airsim()
             self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
-        except AirSimActionError as e:
-            self.logger.error(e.message)
-            time.sleep(5)
-            self.error_counter += 1
-        except AirSimInfoError as e:
-            self.logger.error(e.message)
+        except (AirSimActionError, AirSimInfoError) as e:
+            self.logger.warning(e.message)
             time.sleep(5)
             self.error_counter += 1
         except Exception as e:
-            self.logger.error(f"Unknown Exception during AirSim step call: {str(e)}")
+            self.logger.warning(f"Unknown Exception during AirSim step call: {str(e)}")
             time.sleep(5)
             self.error_counter += 1
         obs = self._trans_obs(self.info["obs"])
@@ -229,7 +226,7 @@ class UAVWithMapEmpty(EmptyEnv):
     def _reset_airsim(self, retry=3):
         try:
             response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
-                                     json={"map": self.to_json()})
+                                         json={"map": self.to_json()})
             response.raise_for_status()
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")
@@ -239,7 +236,8 @@ class UAVWithMapEmpty(EmptyEnv):
             self.logger.error(f"Error while resetting AirSim: {e}")
             retry -= 1
             if retry <= 0:
-                raise AirSimConnectionError(f"Failed to reset environment after final retry, port: {self.local_port}")
+                raise AirSimConnectionError(f"Failed to reset environment after final retry, port:"
+                                            f" {self.local_port}", e=e)
             else:
                 self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
                 return self._reset_airsim(retry)
@@ -247,9 +245,8 @@ class UAVWithMapEmpty(EmptyEnv):
     def _step_airsim(self, action):
         try:
             response = self.session.post(f"http://127.0.0.1:{self.local_port}/step", timeout=10,
-                                     json={"action": int(action)})
+                                         json={"action": int(action)})
             response.raise_for_status()  # Check for HTTP errors
-
             # Check for non-200 status code, even though raise_for_status() above should handle it
             if response.status_code != 200:
                 raise AirSimResponseError(f"Failed to do action environment, port: {self.local_port}")
@@ -273,6 +270,7 @@ class UAVWithMapEmpty(EmptyEnv):
                 raise AirSimInfoError(f"Failed to retrieve information after retries,"
                                       f" port: {self.local_port}", e=e)
             else:
+                self.logger.warning(f"Failed to trieve information port: {self.local_port}, {e}")
                 time.sleep(2 ** (6 - retry) / 1000)
                 return self._info_airsim(retry - 1)
 
@@ -323,7 +321,7 @@ class UAVWithMapEmpty(EmptyEnv):
             raise AirSimResponseError(f"Failed to set died AirSim, port: {self.local_port}")
         try:
             response = self.session.post(f"http://127.0.0.1:{self.manager_port}/set_died",
-                                     json={"port": self.local_port}, timeout=10)
+                                         json={"port": self.local_port}, timeout=10)
             response.raise_for_status()  # Ensures we raise an HTTPError for bad responses
             return True
         except (requests.exceptions.RequestException, Exception) as e:

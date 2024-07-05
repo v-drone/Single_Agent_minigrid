@@ -1,25 +1,86 @@
 from minigrid.core.grid import Grid as OriginalGrid
-import numpy as np
 from typing import Any
-
-import math
-from minigrid.core.constants import TILE_PIXELS
-from minigrid.core.world_object import Lava
+from minigrid.core.constants import TILE_PIXELS, COLORS, OBJECT_TO_IDX, COLOR_TO_IDX
+from minigrid.core.world_object import Lava, Floor
 from minigrid.utils.rendering import downsample, fill_coords, point_in_rect, point_in_triangle, rotate_fn
+import numpy as np
+import colorsys
+import math
 
-COLORS = {
-    "red": np.array([255, 0, 0]),
-    "green": np.array([0, 255, 0]),
-    "blue": np.array([0, 0, 255]),
-    "purple": np.array([112, 39, 195]),
-    "yellow": np.array([255, 255, 0]),
-    "grey": np.array([100, 100, 100]),
-    "white": np.array([255, 255, 255])
-}
 
-COLOR_TO_IDX = {"red": 0, "green": 1, "blue": 2, "purple": 3, "yellow": 4, "grey": 5, "white": 9}
+def get_color(color, color_buffer):
+    color = COLORS[color] / 2
+    hsv_color = colorsys.rgb_to_hsv(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0)
 
-CHECKED = 'yellow'
+    buffer = color_buffer * 0.02
+    new_h = np.clip(hsv_color[0] + buffer, 0, 1)
+    new_s = np.clip(hsv_color[1] + buffer, 0, 1)
+    new_v = np.clip(hsv_color[2] + buffer, 0, 1)
+
+    new_rgb = colorsys.hsv_to_rgb(new_h, new_s, new_v)
+    return [int(new_rgb[0] * 255), int(new_rgb[1] * 255), int(new_rgb[2] * 255)]
+
+
+class BaseTile(Floor):
+    def __init__(self, color="purple", color_buffer=0, label=1.0):
+        super().__init__(color=color)
+        self.color_buffer = color_buffer
+        self.color_n = get_color(self.color, self.color_buffer)
+        self.label = label
+
+    def render(self, img):
+        fill_coords(img, point_in_rect(0, 1, 0, 1), self.color_n)
+
+    def encode(self):
+        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, 0
+
+
+class RoadTile(BaseTile):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self, color_buffer=0, label=1.0):
+        super().__init__("blue", color_buffer, label)
+
+    def update_color(self):
+        """Change color when agent steps on it."""
+        self.color = "yellow"
+        self.color_n = get_color(self.color, 0)
+
+
+class BuildTile(BaseTile):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self):
+        super().__init__()
+        self.color = "grey"
+        self.color_n = get_color(self.color, 0)
+
+
+class DamageTile(BaseTile):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self):
+        super().__init__()
+        self.color = "purple"
+        self.color_un_labelled = "red"
+        self.color_n = get_color(self.color, 0)
+        self.label = False
+
+    def render(self, img):
+        if self.label:
+            fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
+        else:
+
+            fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color_un_labelled])
+
+
+class StartPoint(Floor):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self):
+        super().__init__()
+        self.color = "green"
+        self._color = get_color(self.color, 0)
 
 
 class WallFail(Lava):

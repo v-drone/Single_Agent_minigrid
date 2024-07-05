@@ -1,53 +1,13 @@
 from __future__ import annotations
-from environments.CustomGrid import Grid, COLOR_TO_IDX, COLORS, CHECKED
+from environments.CustomGrid import Grid, RoadTile
 from minigrid.envs.empty import EmptyEnv
-from minigrid.core.world_object import Floor, Goal
+from minigrid.core.world_object import Goal
 from minigrid.core.actions import IntEnum
-from minigrid.utils.rendering import fill_coords, point_in_rect
-from minigrid.core.constants import OBJECT_TO_IDX
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
 from typing import Any
 import numpy as np
 import random
-import colorsys
-
-
-def get_color(color, color_buffer):
-    color = COLORS[color] / 2
-    hsv_color = colorsys.rgb_to_hsv(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0)
-
-    buffer = color_buffer * 0.02
-    new_h = np.clip(hsv_color[0] + buffer, 0, 1)
-    new_s = np.clip(hsv_color[1] + buffer, 0, 1)
-    new_v = np.clip(hsv_color[2] + buffer, 0, 1)
-
-    new_rgb = colorsys.hsv_to_rgb(new_h, new_s, new_v)
-    return [int(new_rgb[0] * 255), int(new_rgb[1] * 255), int(new_rgb[2] * 255)]
-
-
-class PathTile(Floor):
-    """Custom world object to represent the path tiles."""
-
-    def __init__(self, color='blue', color_buffer=0, label=1.0):
-        super().__init__(color)
-        self.color_buffer = color_buffer
-        self._color = get_color(self.color, self.color_buffer)
-        self.label = label
-
-    def update_color(self):
-        """Change color when agent steps on it."""
-        self.color = CHECKED
-        self._color = get_color(self.color, 0)
-
-    def render(self, img):
-        # Convert color to RGB and apply random variation
-        # fill_coords(img, point_in_rect(0, 1, 0, 1), color)
-
-        fill_coords(img, point_in_rect(0, 1, 0, 1), self._color)
-
-    def encode(self):
-        return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, 0
 
 
 # Update the RouteEnv class to use the new RoutePoint object
@@ -151,7 +111,7 @@ class RouteEnv(EmptyEnv):
                     break
             # Mark the route cells in the grid
             for o, (x, y) in enumerate(route_cells):
-                _ = PathTile(color_buffer=self._rand_int(0, 4))
+                _ = RoadTile(color_buffer=self._rand_int(0, 4))
                 self.grid.set(x, y, _)
 
             all_route_cells.extend(route_cells)
@@ -191,7 +151,7 @@ class RouteEnv(EmptyEnv):
 
         if not np.equal(self.agent_pos, self.prev_pos).all():
             cell = self.grid.get(*self.agent_pos)
-            if isinstance(cell, PathTile) and cell.color != CHECKED:
+            if isinstance(cell, RoadTile) and cell.color != "yellow":
                 cell.update_color()
                 self.unvisited_tiles.remove(self.agent_pos)
                 self.visited_tiles.add(self.agent_pos)

@@ -37,7 +37,6 @@ def vector3r_to_dict(vector3r):
 
 def quaternionr_to_dict(quaternionr):
     return {
-        'w_val': quaternionr.w_val,
         'x_val': quaternionr.x_val,
         'y_val': quaternionr.y_val,
         'z_val': quaternionr.z_val
@@ -46,10 +45,10 @@ def quaternionr_to_dict(quaternionr):
 
 def kinematics_to_dict(kinematics):
     return {
-        'angular_acceleration': vector3r_to_dict(kinematics.angular_acceleration),
-        'angular_velocity': vector3r_to_dict(kinematics.angular_velocity),
-        'linear_acceleration': vector3r_to_dict(kinematics.linear_acceleration),
-        'linear_velocity': vector3r_to_dict(kinematics.linear_velocity),
+        # 'angular_acceleration': vector3r_to_dict(kinematics.angular_acceleration),
+        # 'angular_velocity': vector3r_to_dict(kinematics.angular_velocity),
+        # 'linear_acceleration': vector3r_to_dict(kinematics.linear_acceleration),
+        # 'linear_velocity': vector3r_to_dict(kinematics.linear_velocity),
         'orientation': quaternionr_to_dict(kinematics.orientation),
         'position': vector3r_to_dict(kinematics.position)
     }
@@ -76,6 +75,28 @@ def quaternion_to_euler(orientation):
     yaw = math.atan2(siny_cosp, cosy_cosp)
 
     return roll, pitch, yaw
+
+def drone_state_to_dict(drone_state):
+    # Extract orientation and position data from the KinematicsState object within CarState
+    orientation = {
+        "w": drone_state.kinematics_estimated.orientation.w_val,
+        "x": drone_state.kinematics_estimated.orientation.x_val,
+        "y": drone_state.kinematics_estimated.orientation.y_val,
+        "z": drone_state.kinematics_estimated.orientation.z_val
+    }
+
+    position = {
+        "x": drone_state.kinematics_estimated.position.x_val,
+        "y": drone_state.kinematics_estimated.position.y_val,
+        "z": drone_state.kinematics_estimated.position.z_val
+    }
+
+    # Create a dictionary containing the orientation and position
+    return {
+        "orientation": quaternion_to_euler(orientation),
+        "position": position,
+        "timestamp": drone_state.timestamp,
+    }
 
 
 def car_state_to_dict(car_state):

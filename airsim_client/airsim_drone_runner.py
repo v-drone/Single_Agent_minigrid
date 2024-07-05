@@ -9,7 +9,7 @@ import argparse
 import requests
 import threading
 from flask import Flask, request, jsonify, abort
-from airsim_car_connector import CarConnector
+from airsim_drone_connector import DroneConnector
 from airsim_utils import car_state_to_dict, kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
@@ -28,13 +28,13 @@ def shutdown_server():
     os.kill(os.getpid(), signal.SIGINT)
 
 
-class AirSimClient:
+class DroneClient:
     def __init__(self, config, pid):
         self.config = config
         self.pid = pid
-        self.car_connector = CarConnector("127.0.0.1", self.config["port"])
+        self.car_connector = DroneConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
-        logging.info("AirSimClient initialized with config.")
+        logging.info("DroneClient initialized with config.")
 
     def kill_airsim(self):
         kill_airsim(self.pid)
@@ -47,7 +47,7 @@ class AirSimClient:
 
 app = Flask(__name__)
 airsim_config = load_config(parser.parse_args().config)
-airsim_client = AirSimClient(airsim_config, parser.parse_args().pid)
+airsim_client = DroneClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
 response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
 logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
