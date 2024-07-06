@@ -104,7 +104,7 @@ def get_info():
 @app.route('/ping', methods=['GET'])
 def ping():
     try:
-        if airsim_client.car_connector.ping():
+        if airsim_client.connector.ping():
             logging.info("Ping successful.")
             return "Pong! CarConnector is active.", 200
         else:
