@@ -124,7 +124,6 @@ def car_state_to_dict(car_state):
         'rpm': car_state.rpm,
         'speed': car_state.speed,
         'timestamp': car_state.timestamp
-
     }
 
 
