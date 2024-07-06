@@ -32,7 +32,7 @@ class DroneClient:
     def __init__(self, config, pid):
         self.config = config
         self.pid = pid
-        self.car_connector = DroneConnector("127.0.0.1", self.config["port"])
+        self.connector = DroneConnector("127.0.0.1", self.config["port"])
         logging.info(f"Airsim started with PID: {self.pid}")
         logging.info("DroneClient initialized with config.")
 
@@ -56,13 +56,14 @@ logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
 @app.route('/reset', methods=['POST'])
 def reset():
     data = request.get_json()
-    if not data or not data.get('map'):
+    if not data:
         abort(500, "Map data not provided")
     try:
-        with open(airsim_client.config["map"], "w") as f:
-            json.dump(data['map'], f)
+        if data.get("map", None) is not None:
+            with open(airsim_client.config["map"], "w") as f:
+                json.dump(data['map'], f)
         time.sleep(1)  # simulate map reset delay
-        airsim_client.car_connector.reset()
+        airsim_client.connector.reset()
         logging.info("Map reset successfully.")
         return jsonify({"signal": True})
     except Exception as exc:
@@ -74,7 +75,7 @@ def reset():
 def step():
     data = request.get_json()
     try:
-        airsim_client.car_connector.do_action(data['action'])
+        airsim_client.connector.do_action(data['action'])
         logging.info("Action: %d" % data['action'])
         return jsonify({"signal": True})
     except Exception as exc:
@@ -85,7 +86,7 @@ def step():
 @app.route('/info', methods=['GET'])
 def get_info():
     try:
-        obs, info = airsim_client.car_connector.get_info()
+        obs, info = airsim_client.connector.get_info()
         compressed_obs = zlib.compress(obs.tobytes())
         b64_compressed_obs = base64.b64encode(compressed_obs).decode('utf-8')
         logging.info("Information retrieved successfully.")

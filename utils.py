@@ -13,6 +13,7 @@ from environments.SmallNegWrapper import SmallNegativeWrapper
 from environments.GridAndMap import GridWithMapEmpty
 from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
 from environments.EmptyAndMap import EmptyWithMapEmpty
+from environments.RoadNetworkAndMap import RoadNetworkAndMap
 from environments.ExtraMapRGBWrapper import AddMapWrapper
 from environments.ExtraInfoWrapper import ExtraInfoWrapper
 from environments.RecordingWrapper import RecordingWrapper
@@ -50,8 +51,13 @@ def display_feature_map_info(model, obs):
 
 
 def env_creator(env_config):
-    if env_config["id"] == "UAVWithMapEnv":
+    if env_config["id"] == "EmptyAndMap":
         env = EmptyWithMapEmpty(**env_config)
+        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
+        env = ImgObsWrapper(env)
+        env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))
+    elif env_config["id"] == "RoadNetworkAndMap":
+        env = RoadNetworkAndMap(**env_config)
         env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
         env = ImgObsWrapper(env)
         env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))

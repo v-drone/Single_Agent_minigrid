@@ -73,9 +73,6 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             "damages": {}
         }
 
-    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
-        obs, _ = super(EmptyEnv).reset()
-
     def to_json(self):
         return {
             "height": self.height,
