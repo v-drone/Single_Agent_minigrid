@@ -6,6 +6,7 @@ from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile,
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.world_object import Goal, Floor
 from minigrid.core.actions import IntEnum
+from minigrid.envs import EmptyEnv
 from minigrid.core.mission import MissionSpace
 from gymnasium.envs.registration import EnvSpec
 from gymnasium import spaces
@@ -39,11 +40,14 @@ OBJ_TO_ID = {
 class RoadNetworkAndMap(EmptyWithMapEmpty):
     # Enumeration of possible actions
     class Actions(IntEnum):
-        forward = 0
-        right_half = 1
-        right_full = 2
-        left_half = 3
-        left_full = 4
+        forward_0 = 0
+        forward_1 = 1
+        forward_2 = 2
+        # yaw
+        yaw_45 = 3
+        yaw_90 = 4
+        yaw_n_45 = 5
+        yaw_n_90 = 6
 
     def __init__(self, size=200, max_steps=1000, battery=500,
                  agent_view_size=5, port=7575, camera=100,
@@ -70,7 +74,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         }
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
-        pass
+        obs, _ = super(EmptyEnv).reset()
 
     def to_json(self):
         return {

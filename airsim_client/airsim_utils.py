@@ -79,16 +79,16 @@ def quaternion_to_euler(orientation):
 def drone_state_to_dict(drone_state):
     # Extract orientation and position data from the KinematicsState object within CarState
     orientation = {
-        "w": drone_state.kinematics_estimated.orientation.w_val,
-        "x": drone_state.kinematics_estimated.orientation.x_val,
-        "y": drone_state.kinematics_estimated.orientation.y_val,
-        "z": drone_state.kinematics_estimated.orientation.z_val
+        "w": drone_state["kinematics_estimated"].orientation.w_val,
+        "x": drone_state["kinematics_estimated"].orientation.x_val,
+        "y": drone_state["kinematics_estimated"].orientation.y_val,
+        "z": drone_state["kinematics_estimated"].orientation.z_val
     }
 
     position = {
-        "x": drone_state.kinematics_estimated.position.x_val,
-        "y": drone_state.kinematics_estimated.position.y_val,
-        "z": drone_state.kinematics_estimated.position.z_val
+        "x": drone_state["kinematics_estimated"].position.x_val,
+        "y": drone_state["kinematics_estimated"].position.y_val,
+        "z": drone_state["kinematics_estimated"].position.z_val
     }
 
     # Create a dictionary containing the orientation and position
