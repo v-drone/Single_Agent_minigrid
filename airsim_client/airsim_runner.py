@@ -10,7 +10,7 @@ import requests
 import threading
 from flask import Flask, request, jsonify, abort
 from airsim_connector import DroneConnector
-from airsim_utils import car_state_to_dict, kill_airsim, load_config
+from airsim_utils import kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
@@ -93,7 +93,7 @@ def get_info():
             "obs": b64_compressed_obs,
             "dtype": str(obs.dtype),
             "shape": obs.shape,
-            **car_state_to_dict(info)
+            **info
         })
     except Exception as exc:
         logging.error(f"Info retrieval failed: {str(exc)}")

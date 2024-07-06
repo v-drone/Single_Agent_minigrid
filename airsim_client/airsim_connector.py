@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from airsim import MultirotorClient
 from airsim_utils import drone_state_to_dict
-
+from flask import jsonify
 
 class DroneConnector(object):
     def __init__(self, ip, port):
@@ -72,3 +72,21 @@ class DroneConnector(object):
         img_resized = img.resize((self.img_shape, self.img_shape))
         img_resized = np.array(img_resized, dtype=np.uint8)
         return img_resized.reshape([self.img_shape, self.img_shape, 3])
+
+
+import zlib
+import json
+import time
+import base64
+
+drone = DroneConnector("127.0.0.1", port=41453)
+drone.reset()
+obs, info = drone.get_info()
+compressed_obs = zlib.compress(obs.tobytes())
+b64_compressed_obs = base64.b64encode(compressed_obs).decode('utf-8')
+print({
+            "obs": b64_compressed_obs,
+            "dtype": str(obs.dtype),
+            "shape": obs.shape,
+            **info
+        })
