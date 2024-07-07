@@ -62,7 +62,7 @@ def reset():
         if data.get("map", None) is not None:
             with open(airsim_client.config["map"], "w") as f:
                 json.dump(data['map'], f)
-        time.sleep(1)  # simulate map reset delay
+        time.sleep(1)
         airsim_client.connector.reset()
         logging.info("Map reset successfully.")
         return jsonify({"signal": True})
