@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from airsim import MultirotorClient
 from airsim_utils import drone_state_to_dict
-from flask import jsonify
+
 
 class DroneConnector(object):
     def __init__(self, ip, port):
@@ -21,7 +21,9 @@ class DroneConnector(object):
         self.speed = 5
         self.height = -5
 
-    def reset(self):
+    def reset(self, start_point=None):
+        if start_point is None:
+            start_point = [250, 250]
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)

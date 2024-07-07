@@ -56,14 +56,17 @@ logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
 @app.route('/reset', methods=['POST'])
 def reset():
     data = request.get_json()
-    if not data:
-        abort(500, "Map data not provided")
     try:
         if data.get("map", None) is not None:
             with open(airsim_client.config["map"], "w") as f:
                 json.dump(data['map'], f)
+            airsim_client.connector.reset()
+        elif data.get("start", None) is not None:
+            # todo: update start point
+            airsim_client.connector.reset()
+        else:
+            abort(501, "Map/Start data not provided")
         time.sleep(1)
-        airsim_client.connector.reset()
         logging.info("Map reset successfully.")
         return jsonify({"signal": True})
     except Exception as exc:
