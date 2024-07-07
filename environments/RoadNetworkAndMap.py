@@ -197,7 +197,8 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
     def _reset_airsim(self, retry=3):
         try:
-            response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10)
+            response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
+                                         json={"start": None})
             response.raise_for_status()
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")
@@ -212,4 +213,3 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             else:
                 self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
                 return self._reset_airsim(retry)
-
