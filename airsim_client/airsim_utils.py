@@ -76,6 +76,7 @@ def quaternion_to_euler(orientation):
 
     return roll, pitch, yaw
 
+
 def drone_state_to_dict(drone_state):
     # Extract orientation and position data from the KinematicsState object within CarState
     orientation = {

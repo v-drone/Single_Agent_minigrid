@@ -5,7 +5,7 @@ from functools import reduce
 from minigrid.wrappers import ObservationWrapper
 
 
-class ExtraInfoWrapper(ObservationWrapper):
+class ExtraCarInfoWrapper(ObservationWrapper):
     def __init__(self, env, info_space):
         super().__init__(env)
         self.info_space = info_space

@@ -15,7 +15,7 @@ from environments.SimpleRIDEWrapper import SimpleRIDEWrapper
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from environments.RoadNetworkAndMap import RoadNetworkAndMap
 from environments.ExtraMapRGBWrapper import AddMapWrapper
-from environments.ExtraInfoWrapper import ExtraInfoWrapper
+from environments.ExtraCarInfoWrapper import ExtraCarInfoWrapper
 from environments.RecordingWrapper import RecordingWrapper
 
 agent_dir = {
@@ -55,17 +55,15 @@ def env_creator(env_config):
         env = EmptyWithMapEmpty(**env_config)
         env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
         env = ImgObsWrapper(env)
-        env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))
+        env = ExtraCarInfoWrapper(env, info_space=env_config.get("info_space", 3))
     elif env_config["id"] == "RoadNetworkAndMap":
         env = RoadNetworkAndMap(**env_config)
         env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
         env = ImgObsWrapper(env)
-        env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))
     elif env_config["id"] == "GridWithMapEmpty":
         env = GridWithMapEmpty(**env_config)
         env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
         env = ImgObsWrapper(env)
-        env = ExtraInfoWrapper(env, info_space=env_config.get("info_space", 3))
     else:
         raise NotImplementedError
     env = SmallNegativeWrapper(env)
