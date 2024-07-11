@@ -62,7 +62,7 @@ class DamageTile(BaseTile):
     def __init__(self):
         super().__init__()
         self.color = "purple"
-        self.color_un_labelled = "red"
+        self.color_un_labelled = "blue"
         self.color_n = get_color(self.color, 0)
         self.label = False
 

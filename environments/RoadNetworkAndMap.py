@@ -77,10 +77,6 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         return {
             "height": self.height,
             "width": self.width,
-            "center_x": self.sliced_info["center_x"],
-            "center_y": self.sliced_info["center_y"],
-            "x_range": self.sliced_info["x_range"],
-            "y_range": self.sliced_info["y_range"],
             "start": self.sliced_info["start_pos"],
             "damages": self.sliced_info["damages"]
         }
@@ -195,21 +191,3 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                 self.grid.set(x, y, DamageTile())
             self.sliced_info["damages"][number] = (int(cen_x), int(cen_y), int(size), False)
 
-    def _reset_airsim(self, retry=3):
-        try:
-            response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
-                                         json={"start": (122, 122)})
-            response.raise_for_status()
-            if response.status_code != 200:
-                raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")
-            else:
-                return True
-        except (requests.exceptions.RequestException, Exception) as e:
-            self.logger.error(f"Error while resetting AirSim: {e}")
-            retry -= 1
-            if retry <= 0:
-                raise AirSimConnectionError(f"Failed to reset environment after final retry, port:"
-                                            f" {self.local_port}", e=e)
-            else:
-                self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
-                return self._reset_airsim(retry)

@@ -1,4 +1,5 @@
 import io
+import time
 import airsim
 import numpy as np
 from PIL import Image
@@ -21,18 +22,11 @@ class DroneConnector(object):
         self.speed = 5
         self.height = -5
 
-    def reset(self, start_point=None):
-        if start_point is None:
-            start_point = [250, 250]
-        self.client.reset()
-        self.client.enableApiControl(True)
-        self.client.armDisarm(True)
-        self.get_info()
-        self.client.moveToZAsync(self.height, self.speed).join()
+    def reset(self):
+        self._setup_client()
         return self.get_info()
 
     def do_action(self, action):
-        # Define speed constants
         if action == 0:
             # Move forward at low speed
             self.client.moveByVelocityAsync(self.speed, 0, 0, 1).join()
@@ -56,15 +50,7 @@ class DroneConnector(object):
         return self.get_info()
 
     def get_info(self):
-        response = self.client.simGetImage('0', airsim.ImageType.Scene)
-        image = self._transform_obs(response)
-        client_state = drone_state_to_dict(self.client.getMultirotorState())
-        self.client_state["prev_position"] = self.client_state["position"]
-        self.client_state["position"] = client_state["position"]
-        self.client_state["prev_orientation"] = self.client_state["orientation"]
-        self.client_state["orientation"] = client_state["orientation"]
-        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
-        return image, self.client_state
+        return self._get_obs(), self.client_state
 
     def ping(self):
         return self.client.ping()
@@ -74,3 +60,21 @@ class DroneConnector(object):
         img_resized = img.resize((self.img_shape, self.img_shape))
         img_resized = np.array(img_resized, dtype=np.uint8)
         return img_resized.reshape([self.img_shape, self.img_shape, 3])
+
+    def _get_obs(self):
+        responses = self.client.simGetImage('0', airsim.ImageType.Scene)
+        image = self._transform_obs(responses)
+        client_state = drone_state_to_dict(self.client.getMultirotorState())
+        self.client_state["prev_position"] = self.client_state["position"]
+        self.client_state["position"] = client_state["position"]
+        self.client_state["prev_orientation"] = self.client_state["orientation"]
+        self.client_state["orientation"] = client_state["orientation"]
+        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
+        return image
+
+    def _setup_client(self):
+        self.client.reset()
+        self.client.enableApiControl(True)
+        self.client.armDisarm(True)
+        self.client.moveToZAsync(self.height, self.speed).join()
+        time.sleep(0.01)

@@ -4,97 +4,85 @@ import airsim
 import numpy as np
 from PIL import Image
 from airsim import CarClient
+from airsim_utils import car_state_to_dict
 
 
 class CarConnector(object):
     def __init__(self, ip, port):
-        self.car = CarClient(ip, port=port, timeout_value=5)
-        self.car.confirmConnection()
-        self.car_controls = airsim.CarControls()
-        self.state = {
+        self.client = CarClient(ip, port=port, timeout_value=5)
+        self.client.confirmConnection()
+        self.client_controls = airsim.CarControls()
+        self.client_state = {
             "position": np.zeros(3),
             "prev_position": np.zeros(3),
-            "pose": None,
-            "prev_pose": None,
             "collision": False,
         }
         self.img_shape = 100
 
     def reset(self):
-        self._setup_car()
-        self.do_action(-1)
+        self._setup_client()
         return self.get_info()
 
     def do_action(self, action):
         if action == 0:
             # slow front throttle
-            self.car_controls.brake = 0
-            self.car_controls.throttle = 0.15
-            self.car_controls.steering = 0
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0.15
+            self.client_controls.steering = 0
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 1:
             # faster front throttle
-            self.car_controls.brake = 0
-            self.car_controls.throttle = 0.3
-            self.car_controls.steering = 0
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0.3
+            self.client_controls.steering = 0
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 2:
             # 50% brake left steering
-            self.car_controls.brake = 0.2
-            self.car_controls.throttle = 0
-            self.car_controls.steering = 0.25
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0.2
+            self.client_controls.throttle = 0
+            self.client_controls.steering = 0.25
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 3:
             # 100% brake left steering
-            self.car_controls.brake = 0.2
-            self.car_controls.throttle = 0
-            self.car_controls.steering = 0.5
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0.2
+            self.client_controls.throttle = 0
+            self.client_controls.steering = 0.5
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 4:
             # 50%  brake right steering
-            self.car_controls.brake = 0.2
-            self.car_controls.throttle = 0
-            self.car_controls.steering = -0.25
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0.2
+            self.client_controls.throttle = 0
+            self.client_controls.steering = -0.25
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 5:
             # 100% brake right steering
-            self.car_controls.brake = 0.2
-            self.car_controls.throttle = 0
-            self.car_controls.steering = -0.5
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0.2
+            self.client_controls.throttle = 0
+            self.client_controls.steering = -0.5
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         else:
             # brake
-            self.car_controls.brake = 1
-            self.car_controls.throttle = 0
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 1
+            self.client_controls.throttle = 0
+            self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
-            self.car_controls.brake = 0
-            self.car_controls.throttle = 0
-            self.car.setCarControls(self.car_controls)
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0
+            self.client.setCarControls(self.client_controls)
 
         return self.get_info()
 
     def get_info(self):
-        return self._get_obs(), self.car.getCarState()
+        return self._get_obs(), self.client_state
 
     def ping(self):
-        return self.car.ping()
-
-    def _get_obs(self):
-        responses = self.car.simGetImage('0', airsim.ImageType.Scene)
-        image = self._transform_obs(responses)
-        self.car_state = self.car.getCarState()
-        self.state["prev_pose"] = self.state["pose"]
-        self.state["pose"] = self.car_state.kinematics_estimated
-        self.state["collision"] = self.car.simGetCollisionInfo().has_collided
-
-        return image
+        return self.client.ping()
 
     def _transform_obs(self, response):
         img = Image.open(io.BytesIO(response))
@@ -102,14 +90,20 @@ class CarConnector(object):
         img_resized = np.array(img_resized, dtype=np.uint8)
         return img_resized.reshape([self.img_shape, self.img_shape, 3])
 
-    def _setup_car(self):
-        self.car.reset()
-        self.car.enableApiControl(True)
-        self.car.armDisarm(True)
-        self.car_controls.throttle = 0
-        self.car_controls.steering = 0
-        self.car.setCarControls(self.car_controls)
-        time.sleep(0.01)
+    def _get_obs(self):
+        responses = self.client.simGetImage('0', airsim.ImageType.Scene)
+        image = self._transform_obs(responses)
+        client_state = car_state_to_dict(self.client.getCarState())
+        self.client_state["prev_position"] = self.client_state["position"]
+        self.client_state["position"] = client_state["position"]
+        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
+        return image
 
-    def _get_ex_reward(self):
-        pass
+    def _setup_client(self):
+        self.client.reset()
+        self.client.enableApiControl(True)
+        self.client.armDisarm(True)
+        self.client_controls.throttle = 0
+        self.client_controls.steering = 0
+        self.client.setCarControls(self.client_controls)
+        time.sleep(0.01)
