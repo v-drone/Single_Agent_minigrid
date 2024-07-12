@@ -1,24 +1,11 @@
 from __future__ import annotations
-from environments.AirSimException import AirSimResponseError, AirSimConnectionError
-from minigrid.core.constants import OBJECT_TO_IDX, COLOR_TO_IDX
-from minigrid.utils.rendering import downsample, fill_coords, point_in_rect, point_in_triangle, rotate_fn
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
-from minigrid.core.world_object import Goal, Floor
 from minigrid.core.actions import IntEnum
-from minigrid.envs import EmptyEnv
-from minigrid.core.mission import MissionSpace
-from gymnasium.envs.registration import EnvSpec
-from gymnasium import spaces
-from typing import Any
 import numpy as np
 import itertools
-import logging
-import requests
 import random
-import math
 import json
-import time
 
 ID_TO_OBJ = {
     0: None,
@@ -26,6 +13,7 @@ ID_TO_OBJ = {
     2: StartPoint,
     3: BuildTile,
     4: RoadTile,
+    5: DamageTile,
 }
 
 OBJ_TO_ID = {
@@ -34,6 +22,7 @@ OBJ_TO_ID = {
     StartPoint: 2,
     BuildTile: 3,
     RoadTile: 4,
+    DamageTile: 5,
 }
 
 
@@ -190,4 +179,3 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             for (x, y) in itertools.product(list(range(start_x, end_x)), list(range(start_y, end_y))):
                 self.grid.set(x, y, DamageTile())
             self.sliced_info["damages"][number] = (int(cen_x), int(cen_y), int(size), False)
-

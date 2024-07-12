@@ -25,11 +25,11 @@ class BaseTile(Floor):
     def __init__(self, color="purple", color_buffer=0, label=1.0):
         super().__init__(color=color)
         self.color_buffer = color_buffer
-        self.color_n = get_color(self.color, self.color_buffer)
         self.label = label
 
     def render(self, img):
-        fill_coords(img, point_in_rect(0, 1, 0, 1), self.color_n)
+        fill_coords(img, point_in_rect(0, 1, 0, 1),
+                    get_color(self.color, self.color_buffer))
 
     def encode(self):
         return OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color] * 10 + self.color_buffer, 0
@@ -38,49 +38,38 @@ class BaseTile(Floor):
 class RoadTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color_buffer=0, label=1.0):
+    def __init__(self, color_buffer=0, label=0.0):
         super().__init__("blue", color_buffer, label)
 
     def update_color(self):
         """Change color when agent steps on it."""
         self.color = "yellow"
-        self.color_n = get_color(self.color, 0)
 
 
 class BuildTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self):
-        super().__init__()
-        self.color = "grey"
-        self.color_n = get_color(self.color, 0)
+    def __init__(self, color_buffer=0, label=0.0):
+        super().__init__("grey", color_buffer, label)
 
 
 class DamageTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, color_buffer=0, label=0.0):
+        super().__init__("blue", color_buffer=color_buffer, label=label)
+
+    def update_color(self):
+        """Change color when agent steps on it."""
         self.color = "purple"
-        self.color_un_labelled = "blue"
-        self.color_n = get_color(self.color, 0)
-        self.label = False
-
-    def render(self, img):
-        if self.label:
-            fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-        else:
-
-            fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color_un_labelled])
+        self.label = 1
 
 
 class StartPoint(Floor):
     """Custom world object to represent the path tiles."""
 
     def __init__(self):
-        super().__init__()
-        self.color = "green"
-        self._color = get_color(self.color, 0)
+        super().__init__(color="green")
 
 
 class WallFail(Lava):
