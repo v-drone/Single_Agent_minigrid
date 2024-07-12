@@ -67,6 +67,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             "height": self.height,
             "width": self.width,
             "start": self.sliced_info["start_pos"],
+            "top_left": self.sliced_info["top_left"],
             "damages": self.sliced_info["damages"]
         }
 
@@ -84,8 +85,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         # Calculate the starting and ending indices for the slice
         x_range = list(range(center_x - int(self.size / 2), center_x + int(self.size / 2)))
         y_range = list(range(center_y - int(self.size / 2), center_y + int(self.size / 2)))
-        self.sliced_info["x_range"] = (center_x - int(self.size / 2), center_x + int(self.size / 2))
-        self.sliced_info["y_range"] = (center_y - int(self.size / 2), center_y + int(self.size / 2))
+        self.sliced_info["top_left"] = (center_x - int(self.size / 2), center_y - int(self.size / 2))
         locations = list(itertools.product(x_range, y_range))
         # Call the original _gen_grid method to generate the base grid
         self.grid = Grid(width, height)

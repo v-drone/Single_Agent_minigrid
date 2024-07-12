@@ -19,7 +19,7 @@ class DroneConnector(object):
             "collision": False,
         }
         self.img_shape = 100
-        self.speed = 5
+        self.speed = 20
         self.height = -5
 
     def reset(self):
@@ -78,3 +78,10 @@ class DroneConnector(object):
         self.client.armDisarm(True)
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
+
+
+
+runner = DroneConnector("127.0.0.1", port=41453)
+runner.reset()
+runner.do_action(1)
+runner.do_action(1)
