@@ -11,7 +11,6 @@ class DroneConnector(object):
     def __init__(self, ip, port):
         self.client = MultirotorClient(ip, port=port, timeout_value=5)
         self.client.confirmConnection()
-        self.client.startRecording()
         self.client_state = {
             "position": np.zeros(3),
             "orientation": np.zeros(3),
