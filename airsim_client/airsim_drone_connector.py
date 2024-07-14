@@ -11,6 +11,7 @@ class DroneConnector(object):
     def __init__(self, ip, port):
         self.client = MultirotorClient(ip, port=port, timeout_value=5)
         self.client.confirmConnection()
+        self.client.startRecording()
         self.client_state = {
             "position": np.zeros(3),
             "orientation": np.zeros(3),
@@ -29,21 +30,21 @@ class DroneConnector(object):
     def do_action(self, action):
         if action == 0:
             # Move forward at low speed
-            self.client.moveByVelocityAsync(self.speed, 0, 0, 1).join()
+            self.client.moveByVelocityAsync(self.speed, 0, 0, 1, vehicle_name="SimpleFlight").join()
         elif action == 1:
             # Move forward at medium speed
-            self.client.moveByVelocityAsync(self.speed * 2, 0, 0, 1).join()
+            self.client.moveByVelocityAsync(self.speed * 2, 0, 0, 1, vehicle_name="SimpleFlight").join()
         elif action == 2:
             # Move forward at high speed
-            self.client.moveByVelocityAsync(self.speed * 3, 0, 0, 1).join()
+            self.client.moveByVelocityAsync(self.speed * 3, 0, 0, 1, vehicle_name="SimpleFlight").join()
         elif 3 <= action <= 4:
             # Rotate in place at various yaw rates
             yaw_rate = 45 * (action - 2)  # Degrees per second
-            self.client.rotateByYawRateAsync(yaw_rate, 1).join()
+            self.client.rotateByYawRateAsync(yaw_rate, 1, vehicle_name="SimpleFlight").join()
         elif 5 <= action <= 6:
             # Rotate in place at various yaw rates
             yaw_rate = - (180 - 45 * (action - 2))  # Degrees per second
-            self.client.rotateByYawRateAsync(yaw_rate, 1).join()
+            self.client.rotateByYawRateAsync(yaw_rate, 1, vehicle_name="SimpleFlight").join()
         else:
             raise Exception
         print(self.client.getMultirotorState("SimpleFlight"))
