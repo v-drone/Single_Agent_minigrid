@@ -19,7 +19,7 @@ class DroneConnector(object):
             "collision": False,
         }
         self.img_shape = 100
-        self.speed = 20
+        self.speed = 5
         self.height = -5
 
     def reset(self):
