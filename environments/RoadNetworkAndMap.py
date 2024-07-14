@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import Any
+
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.actions import IntEnum
@@ -48,14 +51,16 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             for each in whole_map:
                 obj_type = ID_TO_OBJ[each["type"]]
                 if obj_type is not None:
-                    self.whole_grid.set(each["x"], each["y"], obj_type())
+                    obj = obj_type()
+                    obj.unity_pos = [each["pos_x"], each["pos_y"]]
+                    self.whole_grid.set(each["x"], each["y"], obj)
+                self.whole_grid_start = np.array([-322.5, -324.5])
         super().__init__(size=size, max_steps=max_steps, battery=battery,
                          agent_view_size=agent_view_size, camera=camera,
                          port=port,
                          render_mode=render_mode,
                          render_rate=render_rate,
                          tile_size=kwargs.get("tile_size", 5))
-        self.sliced_map = {}
         self.sliced_array = []
         self.sliced_info = {
             "start_pos": None,
@@ -66,27 +71,25 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         return {
             "height": self.height,
             "width": self.width,
-            "start": self.sliced_info["start_pos"],
-            "top_left": self.sliced_info["top_left"],
+            "start": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
+            "top_left": list(self.sliced_info["top_left"] + self.whole_grid_start),
             "damages": self.sliced_info["damages"]
         }
 
     def _gen_grid(self, width, height):
-        self.sliced_map = {}
         self.sliced_info = {
-            "start_pos": None,
             "damages": {},
         }
         # Generate random center coordinates within the specified range
         center_x = np.random.randint(40 + int(self.size / 2), 480 - int(self.size / 2))
         center_y = np.random.randint(40 + int(self.size / 2), 480 - int(self.size / 2))
-        self.sliced_info["center_x"] = center_x
-        self.sliced_info["center_y"] = center_y
         # Calculate the starting and ending indices for the slice
         x_range = list(range(center_x - int(self.size / 2), center_x + int(self.size / 2)))
         y_range = list(range(center_y - int(self.size / 2), center_y + int(self.size / 2)))
-        self.sliced_info["top_left"] = (center_x - int(self.size / 2), center_y - int(self.size / 2))
         locations = list(itertools.product(x_range, y_range))
+        top_left = np.array([int(center_x - (self.size / 2)), int(center_y - int(self.size / 2))])
+        top_left_unity = top_left + self.whole_grid_start
+        self.sliced_info["top_left"] = top_left
         # Call the original _gen_grid method to generate the base grid
         self.grid = Grid(width, height)
         slice_array = []
@@ -94,7 +97,6 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             new_x = int(i / self.size)
             new_y = i % self.size
             self.grid.set(new_x, new_y, self.whole_grid.get(x, y))
-            self.sliced_map[(new_x, new_y)] = (x, y)
             slice_array.append(OBJ_TO_ID[type(self.whole_grid.get(x, y))])
         self.slice_array = np.array(slice_array).reshape([height, width]).T
         # Random starting/goal point for the agent
@@ -123,6 +125,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                         nearby_zeros.append((nx, ny))
         self.start_pos = random.choice(nearby_zeros)
         self.agent_pos = self.start_pos
+
         self.agent_dir = 3
         # Calculate the boundaries for the 5x5 block centered on (center_y, center_x)
         start_x = self.start_pos[0] - 2
@@ -135,8 +138,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         start_x = max(start_x, 0)
         end_x = min(end_x, self.slice_array.shape[1] - 2)
         for (x, y) in itertools.product(list(range(start_x, end_x)), list(range(start_y, end_y))):
-            self.grid.set(x, y, StartPoint())
-        self.sliced_info["start_pos"] = (int(self.start_pos[0]), int(self.start_pos[1]))
+            obj = StartPoint()
+            obj.unity_pos = [x + top_left_unity[0], y + top_left_unity[1]]
+            self.grid.set(x, y, obj)
         # Set goal
         nearby_roads = []
         for (x, y) in edge_positions:
@@ -166,6 +170,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         damages = set()
         for each in range(random.randint(2, 7)):
             damages.add(random.choice(nearby_roads))
+
         for number, (cen_x, cen_y, size) in enumerate(damages):
             start_x = cen_x - size
             end_x = cen_x + size
@@ -177,5 +182,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             start_x = max(start_x, 0)
             end_x = min(end_x, self.slice_array.shape[1] - 2)
             for (x, y) in itertools.product(list(range(start_x, end_x)), list(range(start_y, end_y))):
-                self.grid.set(x, y, DamageTile())
-            self.sliced_info["damages"][number] = (int(cen_x), int(cen_y), int(size), False)
+                obj = DamageTile()
+                obj.unity_pos = [x + top_left_unity[0], y + top_left_unity[1]]
+                self.grid.set(x, y, obj)
+            self.sliced_info["damages"][number] = (int(cen_x + top_left_unity[0]),
+                                                   int(cen_y + top_left_unity[1]),
+                                                   int(size), False)

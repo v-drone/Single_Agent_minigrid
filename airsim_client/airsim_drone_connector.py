@@ -46,10 +46,16 @@ class DroneConnector(object):
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         else:
             raise Exception
-
+        print(self.client.getMultirotorState("SimpleFlight"))
         return self.get_info()
 
     def get_info(self):
+        client_state = drone_state_to_dict(self.client.getMultirotorState())
+        self.client_state["prev_position"] = self.client_state["position"]
+        self.client_state["position"] = client_state["position"]
+        self.client_state["prev_orientation"] = self.client_state["orientation"]
+        self.client_state["orientation"] = client_state["orientation"]
+        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
         return self._get_obs(), self.client_state
 
     def ping(self):
@@ -64,12 +70,6 @@ class DroneConnector(object):
     def _get_obs(self):
         responses = self.client.simGetImage('0', airsim.ImageType.Scene)
         image = self._transform_obs(responses)
-        client_state = drone_state_to_dict(self.client.getMultirotorState())
-        self.client_state["prev_position"] = self.client_state["position"]
-        self.client_state["position"] = client_state["position"]
-        self.client_state["prev_orientation"] = self.client_state["orientation"]
-        self.client_state["orientation"] = client_state["orientation"]
-        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
         return image
 
     def _setup_client(self):
@@ -80,8 +80,8 @@ class DroneConnector(object):
         time.sleep(0.01)
 
 
-
-runner = DroneConnector("127.0.0.1", port=41453)
-runner.reset()
-runner.do_action(1)
-runner.do_action(1)
+# runner = DroneConnector("127.0.0.1", port=41451)
+# runner.reset()
+# time.sleep(5)
+# runner.do_action(2)
+# runner.do_action(4)

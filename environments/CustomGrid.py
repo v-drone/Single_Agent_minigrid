@@ -61,7 +61,7 @@ class DamageTile(BaseTile):
 
     def update_color(self):
         """Change color when agent steps on it."""
-        self.color = "purple"
+        self.color = "purplew"
         self.label = 1
 
 
