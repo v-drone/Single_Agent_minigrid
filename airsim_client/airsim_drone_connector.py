@@ -29,13 +29,13 @@ class DroneConnector(object):
     def do_action(self, action):
         if action == 0:
             # Move forward at low speed
-            self.client.moveByVelocityAsync(self.speed, 0, 0, 1).join()
+            self.client.moveByVelocityBodyFrameAsync(self.speed, 0, 0, 3).join()
         elif action == 1:
-            # Move forward at medium speed
-            self.client.moveByVelocityAsync(self.speed * 2, 0, 0, 1).join()
+            # Move forward at medium speed in the current body frame
+            self.client.moveByVelocityBodyFrameAsync(self.speed * 2, 0, 0, 3).join()
         elif action == 2:
-            # Move forward at high speed
-            self.client.moveByVelocityAsync(self.speed * 3, 0, 0, 1).join()
+            # Move forward at high speed in the current body frame
+            self.client.moveByVelocityBodyFrameAsync(self.speed * 4, 0, 0, 3).join()
         elif 3 <= action <= 4:
             # Rotate in place at various yaw rates
             yaw_rate = 45 * (action - 2)  # Degrees per second
@@ -45,8 +45,8 @@ class DroneConnector(object):
             yaw_rate = - (180 - 45 * (action - 2))  # Degrees per second
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         else:
-            raise Exception
-        print(self.client.getMultirotorState("SimpleFlight"))
+            raise Exception("Invalid action")
+        print(self.client.getMultirotorState())
         return self.get_info()
 
     def get_info(self):
@@ -80,8 +80,12 @@ class DroneConnector(object):
         time.sleep(0.01)
 
 
-# runner = DroneConnector("127.0.0.1", port=41451)
+# runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
+# print(runner.client.listVehicles())
+# time.sleep(5)
+# runner.do_action(0)
+# time.sleep(5)
+# runner.do_action(3)
 # time.sleep(5)
 # runner.do_action(2)
-# runner.do_action(4)
