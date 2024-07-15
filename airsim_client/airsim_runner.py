@@ -74,7 +74,7 @@ def create_app(client_class):
             if data.get("map", None) is not None:
                 with open(airsim_client.config["map"], "w") as f:
                     json.dump(data['map'], f)
-                airsim_client.connector.reset()
+                airsim_client.connector.reset(data['map']['start'])
             else:
                 abort(501, "Map data not provided")
             time.sleep(1)
