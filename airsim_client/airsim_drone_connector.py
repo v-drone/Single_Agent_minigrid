@@ -20,9 +20,9 @@ class DroneConnector(object):
         }
         self.img_shape = 100
         self.speed = 10
-        self.height = -5
+        self.height = -7
 
-    def reset(self, start_point):
+    def reset(self):
         self._setup_client()
         return self.get_info()
 
