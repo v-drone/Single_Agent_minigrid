@@ -23,14 +23,7 @@ class DroneConnector(object):
         self.height = -5
 
     def reset(self, start_point):
-        self.client.reset()
-        pos = self.client.simGetVehiclePose()
-        pos.position.x_val = start_point[0]
-        pos.position.y_val = start_point[1]
-        self.client.simSetVehiclePose(pos, False)
-        time.sleep(1)
         self._setup_client()
-
         return self.get_info()
 
     def do_action(self, action):
