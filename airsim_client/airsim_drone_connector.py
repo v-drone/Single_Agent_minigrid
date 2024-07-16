@@ -3,7 +3,7 @@ import time
 import airsim
 import numpy as np
 from PIL import Image
-from airsim import MultirotorClient
+from airsim import MultirotorClient, Pose, Vector3r, Quaternionr
 from airsim_utils import drone_state_to_dict
 
 
@@ -19,15 +19,18 @@ class DroneConnector(object):
             "collision": False,
         }
         self.img_shape = 100
-        self.speed = 5
+        self.speed = 10
         self.height = -5
 
     def reset(self, start_point):
-        self._setup_client()
+        self.client.reset()
         pos = self.client.simGetVehiclePose()
         pos.position.x_val = start_point[0]
         pos.position.y_val = start_point[1]
-        self.client.simSetVehiclePose(pos, True)
+        self.client.simSetVehiclePose(pos, False)
+        time.sleep(1)
+        self._setup_client()
+
         return self.get_info()
 
     def do_action(self, action):
@@ -84,12 +87,3 @@ class DroneConnector(object):
         time.sleep(0.01)
 
 
-# runner = DroneConnector("127.0.0.1", port=41453)
-# runner.reset([150, 150])
-# print(runner.client.simGetVehiclePose())
-# time.sleep(5)
-# runner.do_action(0)
-# time.sleep(5)
-# runner.do_action(3)
-# time.sleep(5)
-# runner.do_action(2)
