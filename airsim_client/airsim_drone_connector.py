@@ -19,8 +19,8 @@ class DroneConnector(object):
             "collision": False,
         }
         self.img_shape = 100
-        self.speed = 10
-        self.height = -7
+        self.speed = 2
+        self.height = -6
 
     def reset(self):
         self._setup_client()
@@ -80,3 +80,8 @@ class DroneConnector(object):
         time.sleep(0.01)
 
 
+# runner = DroneConnector("127.0.0.1", port=41453)
+# runner.reset()
+# runner.do_action(0)
+# runner.do_action(5)
+# runner.do_action(2)
