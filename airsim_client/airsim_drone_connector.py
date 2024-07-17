@@ -76,12 +76,16 @@ class DroneConnector(object):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
+        self.client.simGetSegmentationObjectID("SimpleFlight")
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
 
 
 # runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
-# runner.do_action(0)
+# print(runner.client.getMultirotorState())
+# runner.do_action(1)
+# print(runner.client.getMultirotorState())
+
 # runner.do_action(5)
 # runner.do_action(2)

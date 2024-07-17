@@ -1,7 +1,4 @@
 from __future__ import annotations
-
-from typing import Any
-
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.actions import IntEnum
@@ -55,6 +52,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                     obj.unity_pos = [each["pos_x"], each["pos_y"]]
                     self.whole_grid.set(each["x"], each["y"], obj)
                 self.whole_grid_start = np.array([-322.5, -324.5])
+                self.reset_start = np.array([100, 100])
         super().__init__(size=size, max_steps=max_steps, battery=battery,
                          agent_view_size=agent_view_size, camera=camera,
                          port=port,
@@ -71,9 +69,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         return {
             "height": self.height,
             "width": self.width,
-            "start": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
-            "top_left": list(self.sliced_info["top_left"] + self.whole_grid_start),
-            "damages": self.sliced_info["damages"]
+            "start": list(self.sliced_info["top_left"] + self.whole_grid_start),
+            "damages": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
+            "top_left": self.sliced_info["damages"]
         }
 
     def _gen_grid(self, width, height):
@@ -188,3 +186,28 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             self.sliced_info["damages"][number] = (int(cen_x + top_left_unity[0]),
                                                    int(cen_y + top_left_unity[1]),
                                                    int(size), False)
+
+    def _update_grid(self):
+        y = int(- int(self.info["position"]["x"]) / self.render_rate)
+        x = int(int(self.info["position"]["y"]) / self.render_rate)
+        x = max(0, min(x, self.width - 1))
+        y = max(0, min(y, self.height - 1))
+        self.agent_pos = [x, y]
+        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
+        roll, pitch, yaw = self.info["orientation"]
+        yaw_degrees = math.degrees(yaw)
+
+        # Normalize the yaw to [0, 360)
+        if yaw_degrees < 0:
+            yaw_degrees += 360
+        self.info["yaw_degrees"] = yaw_degrees
+        # Divide the circle into 4 quadrants
+        if 45 <= yaw_degrees < 135:
+            self.agent_dir = 2  # West
+        elif 135 <= yaw_degrees < 225:
+            self.agent_dir = 1  # South
+        elif 225 <= yaw_degrees < 315:
+            self.agent_dir = 0  # East
+        else:
+            self.agent_dir = 3  # North
+
