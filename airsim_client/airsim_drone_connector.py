@@ -46,7 +46,6 @@ class DroneConnector(object):
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         else:
             raise Exception("Invalid action")
-        print(self.client.getMultirotorState())
         return self.get_info()
 
     def get_info(self):
@@ -76,7 +75,7 @@ class DroneConnector(object):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-        self.client.simGetSegmentationObjectID("SimpleFlight")
+        self.client.simGetSegmentationObjectID('SimpleFlight')
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
 
@@ -86,6 +85,5 @@ class DroneConnector(object):
 # print(runner.client.getMultirotorState())
 # runner.do_action(1)
 # print(runner.client.getMultirotorState())
-
 # runner.do_action(5)
 # runner.do_action(2)

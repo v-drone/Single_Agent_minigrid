@@ -5,6 +5,7 @@ from minigrid.core.actions import IntEnum
 import numpy as np
 import itertools
 import random
+import math
 import json
 
 ID_TO_OBJ = {
@@ -69,9 +70,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         return {
             "height": self.height,
             "width": self.width,
-            "start": list(self.sliced_info["top_left"] + self.whole_grid_start),
-            "damages": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
-            "top_left": self.sliced_info["damages"]
+            "start": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
+            "top_left": list(self.sliced_info["top_left"] + self.whole_grid_start),
+            "damages": self.sliced_info["damages"]
         }
 
     def _gen_grid(self, width, height):
@@ -188,9 +189,11 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                                                    int(size), False)
 
     def _update_grid(self):
-        y = int(- int(self.info["position"]["x"]) / self.render_rate)
-        x = int(int(self.info["position"]["y"]) / self.render_rate)
+        relative_y = int(self.info["position"]["x"] / self.render_rate - self.reset_start[1])
+        relative_x = int(self.info["position"]["y"] / self.render_rate - self.reset_start[0])
+        x = self.start_pos[0] + relative_x
         x = max(0, min(x, self.width - 1))
+        y = self.start_pos[1] + relative_y
         y = max(0, min(y, self.height - 1))
         self.agent_pos = [x, y]
         self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
