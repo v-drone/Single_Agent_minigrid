@@ -88,6 +88,8 @@ class EmptyWithMapEmpty(EmptyEnv):
             self._ping_airsim()
             self.agent_dir = 3
             self.info = {}
+            import pdb
+            pdb.set_trace()
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._reset_airsim()
@@ -230,6 +232,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         try:
             response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
                                          json={"map": self.to_json()})
+
             response.raise_for_status()
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")

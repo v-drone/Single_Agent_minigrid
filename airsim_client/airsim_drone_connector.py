@@ -60,11 +60,8 @@ class DroneConnector(object):
             self.client_state["collision"] = False
         return self._get_obs(), self.client_state
 
-
-
     def ping(self):
         return self.client.ping()
-
 
     def _transform_obs(self, response):
         img = Image.open(io.BytesIO(response))
@@ -81,10 +78,9 @@ class DroneConnector(object):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-        self.client.simGetSegmentationObjectID()
+        self.client.simGetSegmentationObjectID("")
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
-
 
 # runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
