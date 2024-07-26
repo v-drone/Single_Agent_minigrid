@@ -4,7 +4,7 @@ import copy
 import airsim
 import numpy as np
 from PIL import Image
-from airsim import MultirotorClient, Pose, Vector3r, Quaternionr
+from airsim import MultirotorClient
 from airsim_utils import drone_state_to_dict
 
 
@@ -25,7 +25,7 @@ class DroneConnector(object):
 
     def reset(self):
         self._setup_client()
-        return self.get_info()
+        self.get_info()
 
     def do_action(self, action):
         if action == 0:
@@ -47,7 +47,6 @@ class DroneConnector(object):
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         else:
             raise Exception("Invalid action")
-        return self.get_info()
 
     def get_info(self):
         client_state = drone_state_to_dict(self.client.getMultirotorState())
@@ -55,7 +54,10 @@ class DroneConnector(object):
         self.client_state["position"] = client_state["position"]
         self.client_state["prev_orientation"] = copy.copy(self.client_state["orientation"])
         self.client_state["orientation"] = client_state["orientation"]
-        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
+        if 1.1 > self.client.simGetCameraInfo("0").fov > 0.9:
+            self.client_state["collision"] = True
+        else:
+            self.client_state["collision"] = False
         return self._get_obs(), self.client_state
 
 
@@ -79,24 +81,14 @@ class DroneConnector(object):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-        # self.client.simGetSegmentationObjectID('SimpleFlight')
+        self.client.simGetSegmentationObjectID('SimpleFlight')
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
 
-    def _get_extra_info(self):
-        info = self.client.simGetCameraInfo("0")
 
 # runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
-# print(runner.client.getMultirotorState())
 # runner.do_action(4)
-# runner.do_action(2)
-# runner.do_action(4)
-# runner.do_action(2)
-# runner.reset()
-# runner.reset()
-# print(runner.client.simGetCameraInfo("0"))
-# runner.do_action(5)
-# runner.do_action(2)
-# runner.client.enableApiControl(False)
-# runner.client.armDisarm(False)
+# print(runner.get_info()[1])
+# runner.do_action(1)
+# print(runner.get_info()[1])
