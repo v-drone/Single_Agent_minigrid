@@ -81,7 +81,7 @@ class DroneConnector(object):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-        self.client.simGetSegmentationObjectID('SimpleFlight')
+        self.client.simGetSegmentationObjectID()
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
 
