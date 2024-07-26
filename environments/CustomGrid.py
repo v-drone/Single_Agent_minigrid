@@ -57,11 +57,11 @@ class DamageTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
     def __init__(self, color_buffer=0, label=0.0):
-        super().__init__("blue", color_buffer=color_buffer, label=label)
+        super().__init__("red", color_buffer=color_buffer, label=label)
 
     def update_color(self):
         """Change color when agent steps on it."""
-        self.color = "purplew"
+        self.color = "purple"
         self.label = 1
 
 

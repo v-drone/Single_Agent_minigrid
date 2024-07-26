@@ -1,10 +1,14 @@
 from __future__ import annotations
+
+from typing import Any
+
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.actions import IntEnum
 import numpy as np
 import itertools
 import random
+import copy
 import math
 import json
 
@@ -60,135 +64,143 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                          render_mode=render_mode,
                          render_rate=render_rate,
                          tile_size=kwargs.get("tile_size", 5))
-        self.sliced_array = []
         self.sliced_info = {
-            "start_pos": None,
             "damages": {}
         }
 
     def to_json(self):
-        return {
+        doc = {
             "height": self.height,
             "width": self.width,
             "start": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
             "top_left": list(self.sliced_info["top_left"] + self.whole_grid_start),
-            "damages": self.sliced_info["damages"]
+            "damages": {}
         }
+        for i, damage in self.sliced_info["damages"].items():
+            doc["damages"][i] = (int(damage[0] - self.start_pos[0]), int(damage[1] - self.start_pos[1]), damage[2])
+        return doc
+
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
+        obs, _ = super().reset()
+        self.agent_dir = 3
+        return obs, _
 
     def _gen_grid(self, width, height):
         self.sliced_info = {
-            "damages": {},
+            "damages": {}
         }
-        # Generate random center coordinates within the specified range
+        self.grid = Grid(width, height)
+        ### generate random center coordinates within the specified range
         center_x = np.random.randint(40 + int(self.size / 2), 480 - int(self.size / 2))
         center_y = np.random.randint(40 + int(self.size / 2), 480 - int(self.size / 2))
-        # Calculate the starting and ending indices for the slice
+        top_left = np.array([int(center_x - (self.size / 2)), int(center_y - int(self.size / 2))])
+        top_left_unity = copy.copy(top_left + self.whole_grid_start)
+        self.sliced_info["top_left"] = top_left
+
+        # Copy map
         x_range = list(range(center_x - int(self.size / 2), center_x + int(self.size / 2)))
         y_range = list(range(center_y - int(self.size / 2), center_y + int(self.size / 2)))
         locations = list(itertools.product(x_range, y_range))
-        top_left = np.array([int(center_x - (self.size / 2)), int(center_y - int(self.size / 2))])
-        top_left_unity = top_left + self.whole_grid_start
-        self.sliced_info["top_left"] = top_left
-        # Call the original _gen_grid method to generate the base grid
-        self.grid = Grid(width, height)
         slice_array = []
         for i, (x, y) in enumerate(locations):
             new_x = int(i / self.size)
             new_y = i % self.size
             self.grid.set(new_x, new_y, self.whole_grid.get(x, y))
             slice_array.append(OBJ_TO_ID[type(self.whole_grid.get(x, y))])
-        self.slice_array = np.array(slice_array).reshape([height, width]).T
-        # Random starting/goal point for the agent
-        road_positions = np.argwhere(self.slice_array == OBJ_TO_ID[RoadTile])
-        # To store the positions of zeros near any RoadTile
-        edge_positions = []
+        slice_array = np.array(slice_array).reshape([height, width]).T
 
-        # Find edge RoadTile positions
+        # Set start
+        road_positions = np.argwhere(slice_array == OBJ_TO_ID[RoadTile])
+        edge_positions = []
+        ## find edge RoadTile positions
         for (y, x) in road_positions:
             neighbors = [(y + dy, x + dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy, dx) != (0, 0)]
             if any((ny < 0 or ny >= self.size or
                     nx < 0 or nx >= self.size or
-                    self.slice_array[ny, nx] != OBJ_TO_ID[RoadTile]) for ny, nx in neighbors):
+                    slice_array[ny, nx] != OBJ_TO_ID[RoadTile]) for ny, nx in neighbors):
                 edge_positions.append((x, y))
         self.edge_positions = edge_positions
         nearby_zeros = []
-
-        # Create a ring of potential centers around each edge position
+        ### create a ring of potential centers around each edge position
         for (x, y) in edge_positions:
             for dy, dx in [(-4, 0), (4, 0), (0, -4), (0, 4)]:
                 ny, nx = y + dy, x + dx
                 # Correct boundary checks to ensure the whole 5x5 block is within array bounds
                 if 0 <= ny - 2 and ny + 2 < self.size and 0 <= nx - 2 and nx + 2 < self.size:
-                    block = self.slice_array[ny - 2:ny + 3, nx - 2:nx + 3]
+                    block = slice_array[ny - 2:ny + 3, nx - 2:nx + 3]
                     if np.all(block == 0):
                         nearby_zeros.append((nx, ny))
         self.start_pos = random.choice(nearby_zeros)
         self.agent_pos = self.start_pos
-
-        self.agent_dir = 3
-        # Calculate the boundaries for the 5x5 block centered on (center_y, center_x)
+        self.agent_dir = 1
+        ## set grid map
+        ### calculate the boundaries for the 5x5 block centered on (center_y, center_x)
         start_x = self.start_pos[0] - 2
         end_x = self.start_pos[0] + 2
         start_y = self.start_pos[1] - 2
         end_y = self.start_pos[1] + 2
-        # Ensure the boundaries are within the limits of the slice_array dimensions
+        ### ensure the boundaries are within the limits of the slice_array dimensions
         start_y = max(start_y, 0)
-        end_y = min(end_y, self.slice_array.shape[0] - 2)
+        end_y = min(end_y, slice_array.shape[0] - 2)
         start_x = max(start_x, 0)
-        end_x = min(end_x, self.slice_array.shape[1] - 2)
+        end_x = min(end_x, slice_array.shape[1] - 2)
         for (x, y) in itertools.product(list(range(start_x, end_x)), list(range(start_y, end_y))):
             obj = StartPoint()
             obj.unity_pos = [x + top_left_unity[0], y + top_left_unity[1]]
             self.grid.set(x, y, obj)
-        # Set goal
-        nearby_roads = []
+
+        # Set damaged point
+        ## find edge RoadTile positions
+        inside_roads = []
         for (x, y) in edge_positions:
             for dy, dx in [(-4, 0), (4, 0), (0, -4), (0, 4)]:
                 ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 5x5 block is within array bounds
-                if 0 <= ny - 2 and ny + 2 < self.size and 0 <= nx - 2 and nx + 2 < self.size:
-                    block = self.slice_array[ny - 2:ny + 3, nx - 2:nx + 3]
+                # Correct boundary checks to ensure the whole 3x3 block is within array bounds
+                if 0 <= ny - 1 and ny + 1 < self.size and 0 <= nx - 1 and nx + 1 < self.size:
+                    block = slice_array[ny - 1:ny + 2, nx - 1:nx + 2]
                     if np.all(block == 4):
-                        nearby_roads.append((nx, ny, 2))
+                        inside_roads.append((nx, ny, 1))
 
             for dy, dx in [(-6, 0), (6, 0), (0, -6), (0, 6)]:
                 ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 6x6 block is within array bounds
-                if 0 <= ny - 3 and ny + 3 < self.size and 0 <= nx - 3 and nx + 3 < self.size:
-                    block = self.slice_array[ny - 3:ny + 4, nx - 3:nx + 4]
+                # Correct boundary checks to ensure the whole 5x5 block is within array bounds
+                if 0 <= ny - 2 and ny + 3 < self.size and 0 <= nx - 2 and nx + 3 < self.size:
+                    block = slice_array[ny - 3:ny + 4, nx - 3:nx + 4]
                     if np.all(block == 4):
-                        nearby_roads.append((nx, ny, 3))
+                        inside_roads.append((nx, ny, 2))
 
             for dy, dx in [(-8, 0), (8, 0), (0, -8), (0, 8)]:
                 ny, nx = y + dy, x + dx
                 # Correct boundary checks to ensure the whole 7x7 block is within array bounds
                 if 0 <= ny - 4 and ny + 4 < self.size and 0 <= nx - 4 and nx + 4 < self.size:
-                    block = self.slice_array[ny - 4:ny + 5, nx - 4:nx + 5]
+                    block = slice_array[ny - 4:ny + 5, nx - 4:nx + 5]
                     if np.all(block == 4):
-                        nearby_roads.append((nx, ny, 4))
-        damages = set()
-        for each in range(random.randint(2, 7)):
-            damages.add(random.choice(nearby_roads))
+                        inside_roads.append((nx, ny, 3))
 
+        ## choice damaged point
+        damages = set()
+        for each in range(random.randint(2, 2)):
+            damages.add(random.choice(inside_roads))
+        ### damaged point in the map
         for number, (cen_x, cen_y, size) in enumerate(damages):
+            self.sliced_info["damages"][number] = (copy.copy(cen_x), copy.copy(cen_y), int(size), False)
             start_x = cen_x - size
             end_x = cen_x + size
             start_y = cen_y - size
             end_y = cen_y + size
-            # Ensure the boundaries are within the limits of the slice_array dimensions
+            ### ensure the boundaries are within the limits of the slice_array dimensions
             start_y = max(start_y, 0)
-            end_y = min(end_y, self.slice_array.shape[0] - 2)
+            end_y = min(end_y, slice_array.shape[0] - 1)
             start_x = max(start_x, 0)
-            end_x = min(end_x, self.slice_array.shape[1] - 2)
-            for (x, y) in itertools.product(list(range(start_x, end_x)), list(range(start_y, end_y))):
+            end_x = min(end_x, slice_array.shape[1] - 1)
+            for (x, y) in itertools.product(list(range(start_x, end_x + 1)), list(range(start_y, end_y + 1))):
                 obj = DamageTile()
                 obj.unity_pos = [x + top_left_unity[0], y + top_left_unity[1]]
                 self.grid.set(x, y, obj)
-            self.sliced_info["damages"][number] = (int(cen_x + top_left_unity[0]),
-                                                   int(cen_y + top_left_unity[1]),
-                                                   int(size), False)
+
 
     def _update_grid(self):
+        # current pos
         relative_y = int(self.info["position"]["x"] / self.render_rate - self.reset_start[1])
         relative_x = int(self.info["position"]["y"] / self.render_rate - self.reset_start[0])
         x = self.start_pos[0] + relative_x
@@ -196,7 +208,14 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         y = self.start_pos[1] + relative_y
         y = max(0, min(y, self.height - 1))
         self.agent_pos = [x, y]
-        self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
+        # last pos
+        prev_relative_y = int(self.info["prev_position"]["x"] / self.render_rate - self.reset_start[1])
+        prev_relative_x = int(self.info["prev_position"]["y"] / self.render_rate - self.reset_start[0])
+        prev_x = self.start_pos[0] + prev_relative_x
+        prev_x = max(0, min(prev_x, self.width - 1))
+        prev_y = self.start_pos[1] + prev_relative_y
+        prev_y = max(0, min(prev_y, self.height - 1))
+        self._mark_path(prev_x, prev_y, x, y)
         roll, pitch, yaw = self.info["orientation"]
         yaw_degrees = math.degrees(yaw)
 
@@ -214,3 +233,17 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         else:
             self.agent_dir = 3  # North
 
+    def _mark_path(self, start_x, start_y, end_x, end_y):
+        steps = max(abs(end_x - start_x), abs(end_y - start_y)) + 1
+        print(start_x, start_y, end_x, end_y)
+        for step in range(steps + 1):
+            t = step / steps
+            interp_x = round(start_x + t * (end_x - start_x))
+            interp_y = round(start_y + t * (end_y - start_y))
+            print(interp_x, interp_y)
+            self._walk(interp_x, interp_y)
+
+    def _walk(self, x, y):
+        for i in range(max(0, y - 1), min(y + 2, self.height)):
+            for j in range(max(0, x - 1), min(x + 2, self.width)):
+                self.walked[i][j] += 1

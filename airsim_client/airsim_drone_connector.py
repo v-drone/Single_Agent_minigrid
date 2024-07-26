@@ -1,5 +1,6 @@
 import io
 import time
+import copy
 import airsim
 import numpy as np
 from PIL import Image
@@ -50,15 +51,18 @@ class DroneConnector(object):
 
     def get_info(self):
         client_state = drone_state_to_dict(self.client.getMultirotorState())
-        self.client_state["prev_position"] = self.client_state["position"]
+        self.client_state["prev_position"] = copy.copy(self.client_state["position"])
         self.client_state["position"] = client_state["position"]
-        self.client_state["prev_orientation"] = self.client_state["orientation"]
+        self.client_state["prev_orientation"] = copy.copy(self.client_state["orientation"])
         self.client_state["orientation"] = client_state["orientation"]
         self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
         return self._get_obs(), self.client_state
 
+
+
     def ping(self):
         return self.client.ping()
+
 
     def _transform_obs(self, response):
         img = Image.open(io.BytesIO(response))
@@ -75,15 +79,24 @@ class DroneConnector(object):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-        self.client.simGetSegmentationObjectID('SimpleFlight')
+        # self.client.simGetSegmentationObjectID('SimpleFlight')
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
 
+    def _get_extra_info(self):
+        info = self.client.simGetCameraInfo("0")
 
 # runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
 # print(runner.client.getMultirotorState())
-# runner.do_action(1)
-# print(runner.client.getMultirotorState())
+# runner.do_action(4)
+# runner.do_action(2)
+# runner.do_action(4)
+# runner.do_action(2)
+# runner.reset()
+# runner.reset()
+# print(runner.client.simGetCameraInfo("0"))
 # runner.do_action(5)
 # runner.do_action(2)
+# runner.client.enableApiControl(False)
+# runner.client.armDisarm(False)

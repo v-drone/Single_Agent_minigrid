@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import traceback
+
 from environments.AirSimException import AirSimResponseError, AirSimConnectionError, AirSimActionError
 from environments.AirSimException import AirSimInfoError
 from environments.CustomGrid import Grid
