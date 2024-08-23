@@ -18,7 +18,7 @@ class DroneConnector(object):
             "prev_position": np.zeros(3),
             "prev_orientation": np.zeros(3),
             "collision": False,
-            "damage": set(),
+            "damage": [],
         }
         self.img_shape = 100
         self.speed = 2
@@ -59,7 +59,9 @@ class DroneConnector(object):
             self.client_state["collision"] = True
         else:
             self.client_state["collision"] = False
-        self.client_state["damage"].add(int(self.client.simGetCameraInfo("0").pose.position.x_val))
+        damage_value = int(self.client.simGetCameraInfo("0").pose.position.x_val)
+        if damage_value not in self.client_state["damage"]:
+            self.client_state["damage"].append(damage_value)
         return self._get_obs(), self.client_state
 
     def ping(self):
