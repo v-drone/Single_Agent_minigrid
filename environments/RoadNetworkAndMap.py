@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile
+from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile, WalkWayTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.actions import IntEnum
 import numpy as np
@@ -19,6 +19,7 @@ ID_TO_OBJ = {
     3: BuildTile,
     4: RoadTile,
     5: DamageTile,
+    6: WalkWayTile,
 }
 
 OBJ_TO_ID = {
@@ -74,10 +75,25 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             "width": self.width,
             "start": list(np.array(self.start_pos) + self.sliced_info["top_left"] + self.whole_grid_start),
             "top_left": list(self.sliced_info["top_left"] + self.whole_grid_start),
-            "damages": {}
+            "damages": {
+                "A": (0, 0, 0),
+                "B": (0, 0, 0),
+                "C": (0, 0, 0),
+                "D": (0, 0, 0),
+                "E": (0, 0, 0),
+            }
+        }
+        mapper = {
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
         }
         for i, damage in self.sliced_info["damages"].items():
-            doc["damages"][i] = (int(damage[0] - self.start_pos[0]), int(damage[1] - self.start_pos[1]), damage[2])
+            doc["damages"][mapper[i]] = (int(damage[0] - self.start_pos[0]),
+                                         int(damage[1] - self.start_pos[1]),
+                                         damage[2])
         return doc
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
@@ -179,7 +195,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         ## choice damaged point
         damages = set()
-        for each in range(random.randint(2, 2)):
+        for each in range(random.randint(2, 5)):
             damages.add(random.choice(inside_roads))
         ### damaged point in the map
         for number, (cen_x, cen_y, size) in enumerate(damages):
@@ -197,7 +213,6 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                 obj = DamageTile()
                 obj.unity_pos = [x + top_left_unity[0], y + top_left_unity[1]]
                 self.grid.set(x, y, obj)
-
 
     def _update_grid(self):
         # current pos
@@ -235,12 +250,10 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
     def _mark_path(self, start_x, start_y, end_x, end_y):
         steps = max(abs(end_x - start_x), abs(end_y - start_y)) + 1
-        print(start_x, start_y, end_x, end_y)
         for step in range(steps + 1):
             t = step / steps
             interp_x = round(start_x + t * (end_x - start_x))
             interp_y = round(start_y + t * (end_y - start_y))
-            print(interp_x, interp_y)
             self._walk(interp_x, interp_y)
 
     def _walk(self, x, y):

@@ -32,12 +32,12 @@ class EmptyWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         slow_throttle = 0
-        fast_throttle = 1
-        steering_right_half = 2
-        steering_right_full = 3
-        steering_left_half = 4
-        steering_left_full = 5
-        brake = 6
+        middle_throttle = 1
+        fast_throttle = 2
+        steering_right_half = 3
+        steering_right_full = 4
+        steering_left_half = 5
+        steering_left_full = 6
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
@@ -88,8 +88,6 @@ class EmptyWithMapEmpty(EmptyEnv):
             self._ping_airsim()
             self.agent_dir = 3
             self.info = {}
-            import pdb
-            pdb.set_trace()
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
             self._reset_airsim()

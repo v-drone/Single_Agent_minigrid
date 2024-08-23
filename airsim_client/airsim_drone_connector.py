@@ -18,6 +18,7 @@ class DroneConnector(object):
             "prev_position": np.zeros(3),
             "prev_orientation": np.zeros(3),
             "collision": False,
+            "damage": set(),
         }
         self.img_shape = 100
         self.speed = 2
@@ -58,6 +59,7 @@ class DroneConnector(object):
             self.client_state["collision"] = True
         else:
             self.client_state["collision"] = False
+        self.client_state["damage"].add(int(self.client.simGetCameraInfo("0").pose.position.x_val))
         return self._get_obs(), self.client_state
 
     def ping(self):
@@ -82,9 +84,11 @@ class DroneConnector(object):
         self.client.moveToZAsync(self.height, self.speed).join()
         time.sleep(0.01)
 
-# runner = DroneConnector("127.0.0.1", port=41453)
+
+runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
 # runner.do_action(4)
 # print(runner.get_info()[1])
 # runner.do_action(1)
 # print(runner.get_info()[1])
+# print(runner.client.simGetCameraInfo("0").pose.position.x_val)

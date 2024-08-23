@@ -45,6 +45,17 @@ class RoadTile(BaseTile):
         """Change color when agent steps on it."""
         self.color = "yellow"
 
+class WalkWayTile(BaseTile):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self, color_buffer=0, label=0.0):
+        super().__init__("blue", color_buffer, label)
+        self.mark = False
+
+    def update_color(self):
+        """Change color when agent steps on it."""
+        self.color = "yellow"
+        self.mark = True
 
 class BuildTile(BaseTile):
     """Custom world object to represent the path tiles."""
