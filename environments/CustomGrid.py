@@ -1,7 +1,8 @@
 from minigrid.core.grid import Grid as OriginalGrid
 from typing import Any
 from minigrid.core.constants import TILE_PIXELS, COLORS, OBJECT_TO_IDX, COLOR_TO_IDX
-from minigrid.core.world_object import Lava, Floor
+from minigrid.core.world_object import Floor
+from minigrid.core.world_object import Lava as OriginalLava
 from minigrid.utils.rendering import downsample, fill_coords, point_in_rect, point_in_triangle, rotate_fn
 import numpy as np
 import colorsys
@@ -22,10 +23,21 @@ def get_color(color, color_buffer):
 
 
 class BaseTile(Floor):
-    def __init__(self, color="purple", color_buffer=0, label=1.0):
+    def __init__(self, color="purple", color_buffer=0):
         super().__init__(color=color)
         self.color_buffer = color_buffer
-        self.label = label
+        self.reward = 0
+        self.visit = 0
+        self.original_reward = 0
+
+    def reset_tile(self):
+        self.reward = self.original_reward
+        self.visit = 0
+
+    def update_color(self):
+        """Change color when agent steps on it."""
+        # self.color = "white"
+        pass
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1),
@@ -38,52 +50,76 @@ class BaseTile(Floor):
 class RoadTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color_buffer=0, label=0.0):
-        super().__init__("blue", color_buffer, label)
+    def __init__(self, color_buffer=0):
+        super().__init__("blue", color_buffer)
+        self.reward = 0.01
+        self.original_reward = 0.1
 
     def update_color(self):
         """Change color when agent steps on it."""
-        self.color = "yellow"
+        self.color = "purple"
+        self.reward = 0
+        self.visit = 1
+
 
 class WalkWayTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color_buffer=0, label=0.0):
-        super().__init__("blue", color_buffer, label)
-        self.mark = False
+    def __init__(self, color_buffer=0, mark_type=0):
+        if mark_type == 1:
+            super().__init__("yellow", color_buffer)
+        elif mark_type == 2:
+            super().__init__("black", color_buffer)
+        else:
+            super().__init__("grey", color_buffer)
+        self.reward = 0.01
 
     def update_color(self):
         """Change color when agent steps on it."""
-        self.color = "yellow"
-        self.mark = True
+        self.color = "purple"
+        self.reward = 0
+        self.got_value = 1
+
 
 class BuildTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color_buffer=0, label=0.0):
-        super().__init__("grey", color_buffer, label)
+    def __init__(self, color_buffer=0):
+        super().__init__("grey", color_buffer)
 
 
 class DamageTile(BaseTile):
     """Custom world object to represent the path tiles."""
 
-    def __init__(self, color_buffer=0, label=0.0):
-        super().__init__("red", color_buffer=color_buffer, label=label)
+    def __init__(self, color_buffer=0):
+        super().__init__("blue", color_buffer=color_buffer)
+        self.reward = 0.5
 
     def update_color(self):
         """Change color when agent steps on it."""
         self.color = "purple"
-        self.label = 1
+        self.reward = 0
 
 
-class StartPoint(Floor):
+class StartPoint(BaseTile):
     """Custom world object to represent the path tiles."""
 
     def __init__(self):
         super().__init__(color="green")
+        self.reward = 0
 
 
-class WallFail(Lava):
+class Lava(OriginalLava):
+    """Custom world object to represent the path tiles."""
+
+    def __init__(self, color: str = "grey"):
+        super().__init__()
+
+    def reset_tile(self):
+        pass
+
+
+class WallFail(OriginalLava):
     """Custom world object to represent the path tiles."""
 
     def __init__(self, color: str = "grey"):
@@ -95,8 +131,9 @@ class WallFail(Lava):
 
 
 class Grid(OriginalGrid):
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, agent_size=1):
         super().__init__(width, height)
+        self.agent_size = agent_size
 
     def render_tile(self, obj=None, agent_dir=None, highlight=False, tile_size=TILE_PIXELS, subdivs=3) -> np.ndarray:
         """
@@ -173,8 +210,9 @@ class Grid(OriginalGrid):
         for j in range(0, self.height):
             for i in range(0, self.width):
                 cell = self.get(i, j)
+                agent_x, agent_y = agent_pos
+                agent_here = (agent_x <= i < agent_x + self.agent_size) and (agent_y <= j < agent_y + self.agent_size)
 
-                agent_here = np.array_equal(agent_pos, (i, j))
                 assert highlight_mask is not None
                 tile_img = self.render_tile(
                     cell,

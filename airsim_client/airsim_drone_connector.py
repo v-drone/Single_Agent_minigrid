@@ -21,7 +21,7 @@ class DroneConnector(object):
             "damage": [],
         }
         self.img_shape = 100
-        self.speed = 2
+        self.speed = 1
         self.height = -6
 
     def reset(self):
@@ -60,7 +60,7 @@ class DroneConnector(object):
         else:
             self.client_state["collision"] = False
         damage_value = int(self.client.simGetCameraInfo("0").pose.position.x_val)
-        if damage_value not in self.client_state["damage"]:
+        if damage_value not in self.client_state["damage"] and int(damage_value) != 0:
             self.client_state["damage"].append(damage_value)
         return self._get_obs(), self.client_state
 

@@ -29,6 +29,7 @@ OBJ_TO_ID = {
     BuildTile: 3,
     RoadTile: 4,
     DamageTile: 5,
+    WalkWayTile: 6
 }
 
 
@@ -44,18 +45,24 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         yaw_n_45 = 5
         yaw_n_90 = 6
 
-    def __init__(self, size=200, max_steps=1000, battery=500,
+    def __init__(self, size=50, max_steps=1000, battery=500,
                  agent_view_size=5, port=7575, camera=100,
-                 render_mode="human", render_rate=3, **kwargs):
-        self.whole_grid = Grid(512, 512)
-
+                 render_mode="human",
+                 render_rate=3,
+                 agent_size=3,
+                 **kwargs):
+        self.agent_size = agent_size
+        self.whole_grid = Grid(512, 512, self.agent_size)
         with open("./map.txt", "r") as f:
             whole_map = json.load(f)["map"]
+            whole_map = [{**i, "y": 511 - i["y"]} for i in whole_map]
             for each in whole_map:
                 obj_type = ID_TO_OBJ[each["type"]]
                 if obj_type is not None:
-                    obj = obj_type()
-                    obj.unity_pos = [each["pos_x"], each["pos_y"]]
+                    if "mark" in each:
+                        obj = obj_type(mark_type=each["mark"])
+                    else:
+                        obj = obj_type()
                     self.whole_grid.set(each["x"], each["y"], obj)
                 self.whole_grid_start = np.array([-322.5, -324.5])
                 self.reset_start = np.array([100, 100])
@@ -68,6 +75,8 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.sliced_info = {
             "damages": {}
         }
+        self.movement = []
+        self.reward = 0
 
     def to_json(self):
         doc = {
@@ -97,22 +106,70 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         return doc
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
+        for each in self.whole_grid.grid:
+            if each is not None:
+                each.reset_tile()
         obs, _ = super().reset()
+        self.movement = []
         self.agent_dir = 3
+        self.reward = 0
         return obs, _
+
+    def step(self, action):
+        obs, reward, terminated, truncated, _ = super().step(action)
+        if type(self.grid.get(*self.agent_pos)) == StartPoint:
+            self.battery = self.full_battery
+        reward = self._reward()
+        return obs, reward, terminated, truncated, _
+
+    def _get_fail(self):
+        if self.info["collision"]:
+            return True
+        if self.battery <= 0 or self.step_count > self.max_steps:
+            return True
+        if self.info["position"]["z"] > 100:
+            return True
+        return False
+
+    def _get_success(self):
+        visited = 0
+        total = 0
+        for each in self.grid.grid:
+            if type(each) == RoadTile:
+                total += 1
+                if each.visit == 1:
+                    visited += 1
+        visited_rate = visited / total
+        if visited_rate > 0.8 and type(self.grid.get(*self.agent_pos)) == StartPoint:
+            return True
+        else:
+            return False
+
+    def _reward(self):
+        """
+        Compute the reward to be given upon success
+        """
+        terminated, truncated = self._check_status()
+        basic_reward = self.reward
+        if truncated:
+            bonus = -100
+        elif terminated:
+            bonus = 100
+        else:
+            bonus = 0
+        return basic_reward + bonus
 
     def _gen_grid(self, width, height):
         self.sliced_info = {
             "damages": {}
         }
-        self.grid = Grid(width, height)
+        self.grid = Grid(width, height, self.agent_size)
         ### generate random center coordinates within the specified range
-        center_x = np.random.randint(40 + int(self.size / 2), 480 - int(self.size / 2))
-        center_y = np.random.randint(40 + int(self.size / 2), 480 - int(self.size / 2))
+        center_x = np.random.randint(100 + int(self.size / 2), 400 - int(self.size / 2))
+        center_y = np.random.randint(100 + int(self.size / 2), 400 - int(self.size / 2))
         top_left = np.array([int(center_x - (self.size / 2)), int(center_y - int(self.size / 2))])
         top_left_unity = copy.copy(top_left + self.whole_grid_start)
         self.sliced_info["top_left"] = top_left
-
         # Copy map
         x_range = list(range(center_x - int(self.size / 2), center_x + int(self.size / 2)))
         y_range = list(range(center_y - int(self.size / 2), center_y + int(self.size / 2)))
@@ -124,7 +181,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             self.grid.set(new_x, new_y, self.whole_grid.get(x, y))
             slice_array.append(OBJ_TO_ID[type(self.whole_grid.get(x, y))])
         slice_array = np.array(slice_array).reshape([height, width]).T
-
+        self.slice_array = slice_array
         # Set start
         road_positions = np.argwhere(slice_array == OBJ_TO_ID[RoadTile])
         edge_positions = []
@@ -139,13 +196,15 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         nearby_zeros = []
         ### create a ring of potential centers around each edge position
         for (x, y) in edge_positions:
-            for dy, dx in [(-4, 0), (4, 0), (0, -4), (0, 4)]:
+            for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 5x5 block is within array bounds
-                if 0 <= ny - 2 and ny + 2 < self.size and 0 <= nx - 2 and nx + 2 < self.size:
-                    block = slice_array[ny - 2:ny + 3, nx - 2:nx + 3]
+                # Correct boundary checks to ensure the whole 3x3 block is within array bounds
+                if 0 <= ny - 1 and ny + 1 < self.size and 0 <= nx - 1 and nx + 1 < self.size:
+                    block = slice_array[ny - 1:ny + 1, nx - 1:nx + 1]
                     if np.all(block == 0):
                         nearby_zeros.append((nx, ny))
+        # if len(nearby_zeros) == 0:
+        #     raise IndexError()
         self.start_pos = random.choice(nearby_zeros)
         self.agent_pos = self.start_pos
         self.agent_dir = 1
@@ -199,7 +258,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             damages.add(random.choice(inside_roads))
         ### damaged point in the map
         for number, (cen_x, cen_y, size) in enumerate(damages):
-            self.sliced_info["damages"][number] = (copy.copy(cen_x), copy.copy(cen_y), int(size), False)
+            self.sliced_info["damages"][number + 1] = (copy.copy(cen_x), copy.copy(cen_y), int(size), False)
             start_x = cen_x - size
             end_x = cen_x + size
             start_y = cen_y - size
@@ -230,7 +289,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         prev_x = max(0, min(prev_x, self.width - 1))
         prev_y = self.start_pos[1] + prev_relative_y
         prev_y = max(0, min(prev_y, self.height - 1))
-        self._mark_path(prev_x, prev_y, x, y)
+        self.reward = self._mark_path(prev_x, prev_y, x, y)
         roll, pitch, yaw = self.info["orientation"]
         yaw_degrees = math.degrees(yaw)
 
@@ -249,14 +308,22 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             self.agent_dir = 3  # North
 
     def _mark_path(self, start_x, start_y, end_x, end_y):
+        reward = 0
         steps = max(abs(end_x - start_x), abs(end_y - start_y)) + 1
         for step in range(steps + 1):
             t = step / steps
             interp_x = round(start_x + t * (end_x - start_x))
             interp_y = round(start_y + t * (end_y - start_y))
-            self._walk(interp_x, interp_y)
+            reward += self._walk(interp_x, interp_y)
+        return reward
 
     def _walk(self, x, y):
+        reward = 0
         for i in range(max(0, y - 1), min(y + 2, self.height)):
             for j in range(max(0, x - 1), min(x + 2, self.width)):
                 self.walked[i][j] += 1
+                self.movement.append([j, i])
+                if self.grid.get(j, i) is not None:
+                    reward += self.grid.get(j, i).reward
+                    self.grid.get(j, i).update_color()
+        return reward

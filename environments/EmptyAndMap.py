@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import traceback
-
 from environments.AirSimException import AirSimResponseError, AirSimConnectionError, AirSimActionError
 from environments.AirSimException import AirSimInfoError
 from environments.CustomGrid import Grid
@@ -127,14 +125,23 @@ class EmptyWithMapEmpty(EmptyEnv):
             time.sleep(5)
             self.error_counter += 1
         obs = self._trans_obs(self.info["obs"])
+        terminated, truncated = self._check_status()
+        reward = self._reward()
+        return obs, reward, terminated, truncated, {}
+
+    def _reward(self) -> float:
+        terminated, truncated = self._check_status()
+        reward = super()._reward() if terminated else 0
+        return reward
+
+    def _check_status(self):
         if self.error_counter < 5:
-            terminated = bool(self.info.get("gear", False))
+            terminated = self._get_success()
             truncated = self._get_fail()
         else:
             terminated = False
             truncated = True
-        reward = self._reward() if terminated else 0
-        return obs, reward, terminated, truncated, {}
+        return terminated, truncated
 
     def render(self):
         return np.array(self.info["obs"], dtype=np.uint8)
@@ -220,6 +227,13 @@ class EmptyWithMapEmpty(EmptyEnv):
                 return True
             else:
                 return False
+
+    def _get_success(self):
+        if self.error_counter < 5:
+            terminated = bool(self.info.get("gear", False))
+        else:
+            terminated = False
+        return terminated
 
     def _trans_obs(self, obs):
         return {"image": np.array(obs, dtype=np.uint8),

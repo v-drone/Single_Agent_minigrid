@@ -2,7 +2,6 @@ import numpy as np
 from gymnasium import spaces
 from scipy.ndimage import zoom
 from minigrid.wrappers import ObservationWrapper
-from ray.rllib.utils.exploration.epsilon_greedy import EpsilonGreedy
 
 
 class AddMapWrapper(ObservationWrapper):
