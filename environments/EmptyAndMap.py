@@ -176,9 +176,9 @@ class EmptyWithMapEmpty(EmptyEnv):
     def release(self):
         try:
             self.session.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
+            self._kill_airsim()
         except Exception as e:
             self.logger.warning(f"Error while release AirSim: {e}")
-        self._kill_airsim()
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
