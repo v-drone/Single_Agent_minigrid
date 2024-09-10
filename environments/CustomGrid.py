@@ -53,7 +53,7 @@ class RoadTile(BaseTile):
     def __init__(self, color_buffer=0):
         super().__init__("blue", color_buffer)
         self.reward = 0.01
-        self.original_reward = 0.1
+        self.original_reward = 0.01
 
     def update_color(self):
         """Change color when agent steps on it."""
@@ -73,12 +73,12 @@ class WalkWayTile(BaseTile):
         else:
             super().__init__("grey", color_buffer)
         self.reward = 0.01
+        self.original_reward = 0.01
 
     def update_color(self):
         """Change color when agent steps on it."""
         self.color = "purple"
         self.reward = 0
-        self.got_value = 1
 
 
 class BuildTile(BaseTile):
@@ -93,7 +93,8 @@ class DamageTile(BaseTile):
 
     def __init__(self, color_buffer=0):
         super().__init__("blue", color_buffer=color_buffer)
-        self.reward = 0.5
+        self.reward = 0.25
+        self.original_reward = 0.25
 
     def update_color(self):
         """Change color when agent steps on it."""
@@ -133,7 +134,7 @@ class WallFail(OriginalLava):
 class Grid(OriginalGrid):
     def __init__(self, width: int, height: int, agent_size=1):
         super().__init__(width, height)
-        self.agent_size = agent_size
+        self.agent_size = (agent_size+1)/2
 
     def render_tile(self, obj=None, agent_dir=None, highlight=False, tile_size=TILE_PIXELS, subdivs=3) -> np.ndarray:
         """
@@ -211,7 +212,8 @@ class Grid(OriginalGrid):
             for i in range(0, self.width):
                 cell = self.get(i, j)
                 agent_x, agent_y = agent_pos
-                agent_here = (agent_x <= i < agent_x + self.agent_size) and (agent_y <= j < agent_y + self.agent_size)
+                agent_here = ((agent_x - self.agent_size < i < agent_x + self.agent_size) and
+                              (agent_y - self.agent_size < j < agent_y + self.agent_size))
 
                 assert highlight_mask is not None
                 tile_img = self.render_tile(

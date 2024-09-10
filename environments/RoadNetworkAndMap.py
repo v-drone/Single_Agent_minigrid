@@ -33,6 +33,14 @@ OBJ_TO_ID = {
 }
 
 
+class GenException(Exception):
+    def __init__(self, message="Gen Error", e=None):
+        self.message = message
+        if e is not None:
+            self.message += f"; {e}"
+        super().__init__(self.message)
+
+
 class RoadNetworkAndMap(EmptyWithMapEmpty):
     # Enumeration of possible actions
     class Actions(IntEnum):
@@ -45,7 +53,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         yaw_n_45 = 5
         yaw_n_90 = 6
 
-    def __init__(self, size=50, max_steps=1000, battery=500,
+    def __init__(self, size=50, max_steps=500, battery=200,
                  agent_view_size=5, port=7575, camera=100,
                  render_mode="human",
                  render_rate=3,
@@ -109,7 +117,10 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         for each in self.whole_grid.grid:
             if each is not None:
                 each.reset_tile()
-        obs, _ = super().reset()
+        try:
+            obs, _ = super().reset()
+        except GenException:
+            return self.reset(retry=retry)
         self.movement = []
         self.agent_dir = 3
         self.reward = 0
@@ -184,36 +195,31 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.slice_array = slice_array
         # Set start
         road_positions = np.argwhere(slice_array == OBJ_TO_ID[RoadTile])
-        edge_positions = []
-        ## find edge RoadTile positions
+        start_pos_list = []
         for (y, x) in road_positions:
-            neighbors = [(y + dy, x + dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dy, dx) != (0, 0)]
-            if any((ny < 0 or ny >= self.size or
-                    nx < 0 or nx >= self.size or
-                    slice_array[ny, nx] != OBJ_TO_ID[RoadTile]) for ny, nx in neighbors):
-                edge_positions.append((x, y))
-        self.edge_positions = edge_positions
-        nearby_zeros = []
-        ### create a ring of potential centers around each edge position
-        for (x, y) in edge_positions:
-            for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 3x3 block is within array bounds
-                if 0 <= ny - 1 and ny + 1 < self.size and 0 <= nx - 1 and nx + 1 < self.size:
-                    block = slice_array[ny - 1:ny + 1, nx - 1:nx + 1]
-                    if np.all(block == 0):
-                        nearby_zeros.append((nx, ny))
-        # if len(nearby_zeros) == 0:
-        #     raise IndexError()
-        self.start_pos = random.choice(nearby_zeros)
+            neighbors = [(y + dy, x + dx) for dy in (-3, -2, -1, 0, 1, 2, 3) for dx in (-3, -2, -1, 0, 1, 2, 3) if
+                         (dy, dx) != (0, 0)]
+            for ny, nx in neighbors:
+                block = slice_array[ny - 1:ny + 2, nx - 1:nx + 2]
+                if (
+                        (3 < ny < self.size - 3) and
+                        (3 < nx < self.size - 3) and
+                        (block.shape == (3, 3)) and
+                        (np.sum(block) == 0)
+                ):
+                    start_pos_list.append((nx, ny))
+        if len(start_pos_list) == 0:
+            raise GenException()
+        self.start_pos_list = start_pos_list
+        self.start_pos = random.choice(start_pos_list)
         self.agent_pos = self.start_pos
         self.agent_dir = 1
         ## set grid map
         ### calculate the boundaries for the 5x5 block centered on (center_y, center_x)
         start_x = self.start_pos[0] - 2
-        end_x = self.start_pos[0] + 2
+        end_x = self.start_pos[0] + 3
         start_y = self.start_pos[1] - 2
-        end_y = self.start_pos[1] + 2
+        end_y = self.start_pos[1] + 3
         ### ensure the boundaries are within the limits of the slice_array dimensions
         start_y = max(start_y, 0)
         end_y = min(end_y, slice_array.shape[0] - 2)
@@ -226,36 +232,39 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         # Set damaged point
         ## find edge RoadTile positions
-        inside_roads = []
-        for (x, y) in edge_positions:
-            for dy, dx in [(-4, 0), (4, 0), (0, -4), (0, 4)]:
-                ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 3x3 block is within array bounds
-                if 0 <= ny - 1 and ny + 1 < self.size and 0 <= nx - 1 and nx + 1 < self.size:
-                    block = slice_array[ny - 1:ny + 2, nx - 1:nx + 2]
-                    if np.all(block == 4):
-                        inside_roads.append((nx, ny, 1))
+        damaged_list = []
+        for (y, x) in road_positions:
+            block_3x3 = slice_array[y - 1:y + 2, x - 1:x + 2]
+            if (
+                    (1 <= y < self.size - 1) and
+                    (1 <= x < self.size - 1) and
+                    (block_3x3.shape == (3, 3)) and
+                    (np.all(block_3x3 == 4))
+            ):
+                damaged_list.append((x, y, 1))
 
-            for dy, dx in [(-6, 0), (6, 0), (0, -6), (0, 6)]:
-                ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 5x5 block is within array bounds
-                if 0 <= ny - 2 and ny + 3 < self.size and 0 <= nx - 2 and nx + 3 < self.size:
-                    block = slice_array[ny - 3:ny + 4, nx - 3:nx + 4]
-                    if np.all(block == 4):
-                        inside_roads.append((nx, ny, 2))
+            block_5x5 = slice_array[y - 2:y + 3, x - 2:x + 3]
+            if (
+                    (2 <= y < self.size - 2) and
+                    (2 <= x < self.size - 2) and
+                    (block_5x5.shape == (5, 5)) and
+                    (np.all(block_5x5 == 4))
+            ):
+                damaged_list.append((x, y, 2))
 
-            for dy, dx in [(-8, 0), (8, 0), (0, -8), (0, 8)]:
-                ny, nx = y + dy, x + dx
-                # Correct boundary checks to ensure the whole 7x7 block is within array bounds
-                if 0 <= ny - 4 and ny + 4 < self.size and 0 <= nx - 4 and nx + 4 < self.size:
-                    block = slice_array[ny - 4:ny + 5, nx - 4:nx + 5]
-                    if np.all(block == 4):
-                        inside_roads.append((nx, ny, 3))
+            block_7x7 = slice_array[y - 3:y + 4, x - 3:x + 4]
+            if (
+                    (3 <= y < self.size - 3) and
+                    (3 <= x < self.size - 3) and
+                    (block_7x7.shape == (7, 7)) and
+                    (np.all(block_7x7 == 4))
+            ):
+                damaged_list.append((x, y, 3))
 
         ## choice damaged point
         damages = set()
         for each in range(random.randint(2, 5)):
-            damages.add(random.choice(inside_roads))
+            damages.add(random.choice(damaged_list))
         ### damaged point in the map
         for number, (cen_x, cen_y, size) in enumerate(damages):
             self.sliced_info["damages"][number + 1] = (copy.copy(cen_x), copy.copy(cen_y), int(size), False)

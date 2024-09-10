@@ -17,6 +17,7 @@ from environments.RoadNetworkAndMap import RoadNetworkAndMap
 from environments.ExtraMapRGBWrapper import AddMapWrapper
 from environments.ExtraCarInfoWrapper import ExtraCarInfoWrapper
 from environments.RecordingWrapper import RecordingWrapper
+from environments.ExtraDroneInfoWrapper import ExtraDroneInfoWrapper
 
 agent_dir = {
     0: '>',
@@ -55,11 +56,12 @@ def env_creator(env_config):
         env = EmptyWithMapEmpty(**env_config)
         env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
         env = ImgObsWrapper(env)
-        env = ExtraCarInfoWrapper(env, info_space=env_config.get("info_space", 3))
+        env = ExtraCarInfoWrapper(env)
     elif env_config["id"] == "RoadNetworkAndMap":
         env = RoadNetworkAndMap(**env_config)
-        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
+        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 2))
         env = ImgObsWrapper(env)
+        env = ExtraDroneInfoWrapper(env)
     elif env_config["id"] == "GridWithMapEmpty":
         env = GridWithMapEmpty(**env_config)
         env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 3))
@@ -161,10 +163,10 @@ def get_size(obj):
 
     while obj_q:
         size += sum(sys.getsizeof(i) for i in obj_q)
-        all_refr = ((id(o), o) for o in gc.get_referents(*obj_q))
-        new_refr = {o_id: o for o_id, o in all_refr if o_id not in marked and not isinstance(o, type)}
-        obj_q = new_refr.values()
-        marked.update(new_refr.keys())
+        all_refer = ((id(o), o) for o in gc.get_referents(*obj_q))
+        new_refer = {o_id: o for o_id, o in all_refer if o_id not in marked and not isinstance(o, type)}
+        obj_q = new_refer.values()
+        marked.update(new_refer.keys())
 
     return size
 
