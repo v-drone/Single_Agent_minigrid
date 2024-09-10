@@ -1,5 +1,5 @@
 Write-Host "Writing to backup_ports.txt"
-5000..5400 | ForEach-Object { $_ } | Set-Content "backup_ports.txt"
+5000..5100 | ForEach-Object { $_ } | Set-Content "backup_ports.txt"
 Clear-Content todo_ports.txt
 Clear-Content died_ports.txt
 
@@ -21,7 +21,7 @@ do
         }
         Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 10
     }
 
 
@@ -38,7 +38,7 @@ do
     $startTime = Get-Date
     while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 10 -and -not [Console]::KeyAvailable)
     {
-        Start-Sleep -Milliseconds 500
+        Start-Sleep -Milliseconds 1000
     }
     if ([Console]::KeyAvailable)
     {
