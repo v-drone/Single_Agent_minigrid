@@ -26,8 +26,8 @@ def manage_servers():
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
 
-    # Ensure there are always at least 12 active ports if possible
-    needed_ports = 20 - len(active_ports)
+    # Ensure there are always at least 5 active ports if possible
+    needed_ports = 5 - len(active_ports)
     ports_to_add = backup_ports[:needed_ports]
     todo_ports.extend(ports_to_add)
     backup_ports = backup_ports[needed_ports:]
