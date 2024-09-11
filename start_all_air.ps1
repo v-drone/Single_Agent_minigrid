@@ -21,7 +21,7 @@ do
         }
         Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
-        Start-Sleep -Seconds 10
+        Start-Sleep -Seconds 30
     }
 
 
@@ -34,11 +34,11 @@ do
     Clear-Content todo_ports.txt
     Clear-Content died_ports.txt
 
-    Write-Host "Waiting for 10 seconds. Press any key to exit."
+    Write-Host "Waiting for 20 seconds. Press any key to exit."
     $startTime = Get-Date
-    while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 10 -and -not [Console]::KeyAvailable)
+    while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 20 -and -not [Console]::KeyAvailable)
     {
-        Start-Sleep -Milliseconds 1000
+        Start-Sleep -Milliseconds 2000
     }
     if ([Console]::KeyAvailable)
     {
