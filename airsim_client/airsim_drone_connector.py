@@ -87,7 +87,7 @@ class DroneConnector(object):
         time.sleep(0.01)
 
 
-runner = DroneConnector("127.0.0.1", port=41453)
+# runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
 # runner.do_action(4)
 # print(runner.get_info()[1])
