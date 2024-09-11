@@ -1,6 +1,6 @@
 
 serverAddr = "192.168.0.104"
-serverPort = 7002
+serverPort = 7000
 
 [[proxies]]
 name = "5268"
