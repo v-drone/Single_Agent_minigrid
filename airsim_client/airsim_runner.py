@@ -8,6 +8,7 @@ import logging
 import argparse
 import requests
 import threading
+import traceback
 from flask import Flask, request, jsonify, abort
 from airsim_drone_connector import DroneConnector
 from airsim_car_connector import CarConnector
@@ -82,6 +83,7 @@ def create_app(client_class):
             return jsonify({"signal": True})
         except Exception as exc:
             logging.error(f"Reset failed: {str(exc)}")
+            logging.error(traceback.format_exc())
             abort(500, f"Reset failed: {str(exc)}")
 
     @app.route('/step', methods=['POST'])
@@ -93,6 +95,7 @@ def create_app(client_class):
             return jsonify({"signal": True})
         except Exception as exc:
             logging.error(f"Action failed: {str(exc)}")
+            logging.error(traceback.format_exc())
             abort(500, f"Action failed: {str(exc)}")
 
     @app.route('/info', methods=['GET'])
@@ -110,6 +113,7 @@ def create_app(client_class):
             })
         except Exception as exc:
             logging.error(f"Info retrieval failed: {str(exc)}")
+            logging.error(traceback.format_exc())
             abort(500, f"Info retrieval failed: {str(exc)}")
 
     @app.route('/ping', methods=['GET'])
@@ -122,6 +126,7 @@ def create_app(client_class):
                 abort(503, "Failed to connect to Connector")
         except Exception as e:
             logging.error(f"Ping failed: {str(e)}")
+            logging.error(traceback.format_exc())
             abort(500, f"Ping failed: {str(e)}")
 
     @app.route('/exit', methods=['GET'])

@@ -1,10 +1,9 @@
 from __future__ import annotations
-
 from typing import Any
-
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile, WalkWayTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.actions import IntEnum
+from gymnasium import spaces
 import numpy as np
 import itertools
 import random
@@ -80,6 +79,8 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                          render_mode=render_mode,
                          render_rate=render_rate,
                          tile_size=kwargs.get("tile_size", 5))
+        self.actions = self.Actions
+        self.action_space = spaces.Discrete(7, seed=np.random.randint(1000))
         self.sliced_info = {
             "damages": {}
         }

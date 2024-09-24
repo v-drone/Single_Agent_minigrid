@@ -110,8 +110,8 @@ class AttentionCNN(DQNTorchModel):
             nn.AdaptiveMaxPool2d((1, 1)),
             nn.Flatten(1),
         )
-        self.map_attention = ValueAttention(256, value_dim=1)
-        self.front_attention = ValueAttention(256, value_dim=2)
+        self.map_attention = ValueAttention(256, value_dim=2)
+        self.front_attention = ValueAttention(256, value_dim=1)
 
     def import_from_h5(self, h5_file: str) -> None:
         pass
@@ -119,8 +119,7 @@ class AttentionCNN(DQNTorchModel):
     def process_conv(self, obs):
         batch_size, f = obs.shape
         bat = obs[:, -1]
-        speed = obs[:, -2]
-        yaw = obs[:, -3]
+        yaw = obs[:, -2]
         epsilon = 1e-65
         bat_prime = bat + epsilon
         bat_normalized = 1 - sigmoid(bat_prime, int(self.battery / 2), 0.1)
@@ -134,11 +133,11 @@ class AttentionCNN(DQNTorchModel):
         img = obs[:, location: location + self.map_size * self.map_size * 4]
         img = img.reshape([batch_size, self.map_size, self.map_size, 4])
         location += self.map_size * self.map_size * 4
-        return img, view, bat_normalized, speed, yaw, batch_size
+        return img, view, bat_normalized, yaw, batch_size
 
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"].float()
-        img, view, bat, speed, yaw, batch_size = self.process_conv(obs)
+        img, view, bat, yaw, batch_size = self.process_conv(obs)
         try:
             # map
             img = img.permute(0, 3, 1, 2)
@@ -153,8 +152,8 @@ class AttentionCNN(DQNTorchModel):
         view = self.view_layers(view)
         view = view.view(batch_size, -1)
 
-        img = self.map_attention(img, torch.stack([bat], dim=1))
-        view = self.front_attention(view, torch.stack([yaw, speed], dim=1))
+        img = self.map_attention(img, torch.stack([bat, yaw], dim=1))
+        view = self.front_attention(view, torch.stack([yaw], dim=1))
         return torch.concat([img, view], dim=-1), state
 
     def value_function(self):
