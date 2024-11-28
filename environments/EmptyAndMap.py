@@ -79,8 +79,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
         obs, _ = super().reset()
-        import pdb
-        pdb.set_trace()
+
         try:
             if self.local_port is None:
                 self._set_local_port()
@@ -89,6 +88,8 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.info = {}
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
+            import pdb
+            pdb.set_trace()
             self._reset_airsim()
             self._info_airsim()
             self.error_counter = 0

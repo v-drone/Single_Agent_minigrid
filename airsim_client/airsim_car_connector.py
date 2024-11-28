@@ -14,7 +14,7 @@ class CarConnector(object):
         self.client_controls = airsim.CarControls()
         self.client_state = {
             "position": np.zeros(3),
-            "prev_position": np.zeros(3),
+            "orientation": np.zeros(3),
             "collision": False,
         }
         self.img_shape = 100
@@ -79,6 +79,10 @@ class CarConnector(object):
         return self.get_info()
 
     def get_info(self):
+        client_state = car_state_to_dict(self.client.getCarState())
+        self.client_state["position"] = client_state["position"]
+        self.client_state["orientation"] = client_state["orientation"]
+        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
         return self._get_obs(), self.client_state
 
     def ping(self):
@@ -93,10 +97,6 @@ class CarConnector(object):
     def _get_obs(self):
         responses = self.client.simGetImage('0', airsim.ImageType.Scene)
         image = self._transform_obs(responses)
-        client_state = car_state_to_dict(self.client.getCarState())
-        self.client_state["prev_position"] = self.client_state["position"]
-        self.client_state["position"] = client_state["position"]
-        self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
         return image
 
     def _setup_client(self):
@@ -107,3 +107,6 @@ class CarConnector(object):
         self.client_controls.steering = 0
         self.client.setCarControls(self.client_controls)
         time.sleep(0.01)
+
+# connector = CarConnector("127.0.0.1", 41530)
+# connector.get_info()
