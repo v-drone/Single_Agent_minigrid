@@ -88,8 +88,6 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.info = {}
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-            import pdb
-            pdb.set_trace()
             self._reset_airsim()
             self._info_airsim()
             self.error_counter = 0
