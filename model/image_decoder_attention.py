@@ -104,9 +104,9 @@ class AdditionalInfoProcessor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(AdditionalInfoProcessor, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 32),
             nn.ReLU(inplace=True),
-            nn.Linear(64, output_dim),
+            nn.Linear(32, output_dim),
             nn.ReLU(inplace=True)
         )
 
@@ -182,26 +182,12 @@ class AttentionCNN(DQNTorchModel):
             nn.AdaptiveAvgPool2d((1, 1)),  # 1x1
             nn.Flatten()
         )
-
-        self.additional_info_processor = AdditionalInfoProcessor(input_dim=2, output_dim=64)
+        self.additional_info = 32
+        self.additional_info_processor = AdditionalInfoProcessor(input_dim=2, output_dim=self.additional_info)
 
         self.fc = nn.Sequential(
-            nn.Linear(128 + 128 + 64, 256),
-            nn.ReLU(inplace=True),
-            nn.Linear(256, num_outputs)
+            nn.Linear(128 + 128 + self.additional_info, num_outputs),
         )
-
-        if self.dueling:
-            self.value_stream = nn.Sequential(
-                nn.Linear(128 + 128 + 64, 256),
-                nn.ReLU(inplace=True),
-                nn.Linear(256, 1)
-            )
-            self.advantage_stream = nn.Sequential(
-                nn.Linear(128 + 128 + 64, 256),
-                nn.ReLU(inplace=True),
-                nn.Linear(256, num_outputs)
-            )
 
     def import_from_h5(self, h5_file: str) -> None:
         pass
@@ -229,14 +215,8 @@ class AttentionCNN(DQNTorchModel):
 
         combined_features = torch.cat([view_features, map_features, param_features], dim=1)
 
-        if self.dueling:
-            value = self.value_stream(combined_features)
-            advantage = self.advantage_stream(combined_features)
-            q_values = value + advantage - advantage.mean(dim=1, keepdim=True)
-            return q_values, state
-        else:
-            q_values = self.fc(combined_features)
-            return q_values, state
+        q_values = self.fc(combined_features)
+        return q_values, state
 
     def value_function(self):
         pass

@@ -8,6 +8,7 @@ import logging
 import argparse
 import requests
 import threading
+import traceback
 from flask import Flask, request, jsonify, abort
 from airsim_drone_connector import DroneConnector
 from airsim_utils import kill_airsim, load_config
@@ -110,6 +111,7 @@ def ping():
         else:
             abort(503, "Failed to connect to CarConnector")
     except Exception as e:
+        print(traceback.format_exc())
         logging.error(f"Ping failed: {str(e)}")
         abort(500, f"Ping failed: {str(e)}")
 
