@@ -54,17 +54,17 @@ def display_feature_map_info(model, obs):
 def env_creator(env_config):
     if env_config["id"] == "EmptyAndMap":
         env = EmptyWithMapEmpty(**env_config)
-        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 2))
+        env = AddMapWrapper(env, render_map_size=env_config.get("render_map_size"))
         env = ImgObsWrapper(env)
         env = ExtraCarInfoWrapper(env)
     elif env_config["id"] == "RoadNetworkAndMap":
         env = RoadNetworkAndMap(**env_config)
-        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 2))
+        env = AddMapWrapper(env, render_map_size=env_config.get("render_map_size"))
         env = ImgObsWrapper(env)
         env = ExtraDroneInfoWrapper(env)
     elif env_config["id"] == "GridWithMapEmpty":
         env = GridWithMapEmpty(**env_config)
-        env = AddMapWrapper(env, zoom_size=env_config.get("zoom_size", 2))
+        env = AddMapWrapper(env, render_map_size=env_config.get("render_map_size"))
         env = ImgObsWrapper(env)
     else:
         raise NotImplementedError
