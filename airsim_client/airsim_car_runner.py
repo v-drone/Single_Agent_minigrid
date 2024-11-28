@@ -93,7 +93,7 @@ def get_info():
             "obs": b64_compressed_obs,
             "dtype": str(obs.dtype),
             "shape": obs.shape,
-            **car_state_to_dict(info)
+            **info
         })
     except Exception as exc:
         logging.error(f"Info retrieval failed: {str(exc)}")

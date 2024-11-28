@@ -79,6 +79,8 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None, retry=5):
         obs, _ = super().reset()
+        import pdb
+        pdb.set_trace()
         try:
             if self.local_port is None:
                 self._set_local_port()

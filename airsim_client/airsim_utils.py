@@ -114,7 +114,6 @@ def car_state_to_dict(car_state):
         "y": car_state.kinematics_estimated.position.y_val,
         "z": car_state.kinematics_estimated.position.z_val
     }
-
     # Create a dictionary containing the orientation and position
     return {
         "orientation": quaternion_to_euler(orientation),
