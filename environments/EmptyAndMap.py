@@ -65,7 +65,8 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.actions = self.Actions
         self.action_space = spaces.Discrete(8, seed=np.random.randint(1000))
         self.observation_space = spaces.Dict({
-            "image": spaces.Box(low=0, high=255, shape=np.array([self.camera, self.camera, 3]), dtype="uint8"),
+            "image": spaces.Box(low=0, high=255, shape=np.array([self.camera, self.camera, 3]),
+                                dtype=np.uint8),
             "direction": spaces.Discrete(4),
             "mission": MissionSpace(mission_func=self._gen_mission)
         })
