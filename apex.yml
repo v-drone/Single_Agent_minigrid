@@ -22,12 +22,13 @@ hyper_parameters:
   num_cpus_per_worker: 1
   num_gpus_per_worker: 0
   num_envs_per_worker: 1
-  num_workers: 2
+  num_workers: 6
   num_steps_sampled_before_learning_starts: 150000
   rollout_fragment_length: 16
-  target_network_update_freq: 30000
+  target_network_update_freq: t0000
   train_batch_size: 512
   min_sample_timesteps_per_iteration: 10000
+  always_attach_evaluation_results: True
 log:
   save_file: "/home/seventheli/data/logging/simple_env"
   save_checkout: "/home/seventheli/data/checkpoints/simple_env"
