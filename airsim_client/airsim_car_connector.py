@@ -17,6 +17,7 @@ class CarConnector(object):
             "orientation": np.zeros(3),
             "collision": False,
             "speed": 0,
+            "gear": False
         }
         self.img_shape = 100
 
@@ -85,6 +86,7 @@ class CarConnector(object):
         self.client_state["orientation"] = client_state["orientation"]
         self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
         self.client_state["collision"] = client_state["speed"]
+        self.client_state["gear"] = client_state["gear"]
         return self._get_obs(), self.client_state
 
     def ping(self):
@@ -111,4 +113,4 @@ class CarConnector(object):
         time.sleep(0.01)
 
 # connector = CarConnector("127.0.0.1", 41530)
-# connector.get_info()
+# print(connector.get_info())

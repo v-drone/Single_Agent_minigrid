@@ -29,12 +29,13 @@ class EmptyWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
     class Actions(IntEnum):
         slow_throttle = 0
-        middle_throttle = 1
-        fast_throttle = 2
-        steering_right_half = 3
-        steering_right_full = 4
-        steering_left_half = 5
-        steering_left_full = 6
+        fast_throttle = 1
+        steering_right_half = 2
+        steering_right_full = 3
+        steering_left_half = 4
+        steering_left_full = 5
+        mid_break = 6
+
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
