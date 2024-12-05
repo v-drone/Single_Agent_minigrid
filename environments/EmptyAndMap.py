@@ -1,6 +1,5 @@
 from __future__ import annotations
-from environments.AirSimException import AirSimResponseError, AirSimConnectionError, AirSimActionError
-from environments.AirSimException import AirSimInfoError
+from environments.AirSimException import AirSimResponseError, AirSimConnectionError, AirSimActionError, AirSimInfoError
 from environments.CustomGrid import Grid
 from minigrid.envs.empty import EmptyEnv
 from minigrid.core.world_object import WorldObj, Goal
@@ -19,11 +18,37 @@ import math
 import time
 import os
 
+
 mapper = {
     "lava": 1,
     "goal": 2,
 }
 
+class RetryOperation:
+    """Utility to handle retry logic."""
+    @staticmethod
+    def execute(operation, retries=3, delay=2, *args, **kwargs):
+        for attempt in range(retries):
+            try:
+                return operation(*args, **kwargs)
+            except Exception as e:
+                logging.warning(f"Attempt {attempt + 1} failed: {e}")
+                time.sleep(delay)
+        raise Exception(f"Operation failed after {retries} retries")
+
+class AirSimSessionManager:
+    """Context manager for AirSim session handling."""
+    def __init__(self, session, local_port):
+        self.session = session
+        self.local_port = local_port
+
+    def __enter__(self):
+        # Initialization logic if needed
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Ensure session is properly closed
+        self.session.close()
 
 class EmptyWithMapEmpty(EmptyEnv):
     # Enumeration of possible actions
@@ -52,19 +77,21 @@ class EmptyWithMapEmpty(EmptyEnv):
                             datefmt='%H:%M:%S',
                             level=logging.ERROR)
         self.logger = logging.getLogger(__name__)
-        # Set local port
+        # Set local port and session
         self.manager_port = port
         self.local_port = None
         self.session = requests.Session()
+
         # Set basic infos
         self.size = size
         self.camera = camera
         self.full_battery = battery
         self.render_rate = render_rate
+
         # Set env spec
         self.spec = EnvSpec("UAVWithMapEnv-v0", max_episode_steps=self.max_steps)
         self.actions = self.Actions
-        self.action_space = spaces.Discrete(8, seed=np.random.randint(1000))
+        self.action_space = spaces.Discrete(7, seed=np.random.randint(1000))
         self.observation_space = spaces.Dict({
             "image": spaces.Box(low=0, high=255, shape=np.array([self.camera, self.camera, 3]),
                                 dtype=np.uint8),
@@ -84,27 +111,24 @@ class EmptyWithMapEmpty(EmptyEnv):
 
         try:
             if self.local_port is None:
-                self._set_local_port()
-            self._ping_airsim()
+                RetryOperation.execute(self._set_local_port)
+            RetryOperation.execute(self._ping_airsim)
             self.agent_dir = 3
             self.info = {}
             self.battery = self.full_battery
             self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
-            self._reset_airsim()
-            self._info_airsim()
+            RetryOperation.execute(self._reset_airsim)
+            RetryOperation.execute(self._info_airsim)
             self.error_counter = 0
             return self._trans_obs(self.info["obs"]), {}
-        except (AirSimConnectionError, AirSimInfoError, Exception) as e:
-            if e is AirSimInfoError or e is AirSimConnectionError:
-                self.logger.warning(e.message)
-            else:
-                self.logger.warning(f"Unknown Exception during restarted at {str(self.local_port)}, {str(e)}")
+        except (AirSimConnectionError, AirSimInfoError) as e:
+            self.logger.warning(e.message)
             retry -= 1
             time.sleep(2)
             if retry <= 0:
                 self.logger.error(f"Failed to reset environment after final retry, port: {self.local_port}")
                 self.release()
-                self._set_local_port(3)
+                RetryOperation.execute(self._set_local_port, retries=3)
                 return self.reset(retry=5)
             else:
                 self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
@@ -115,15 +139,11 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.battery -= 1
         self.step_count += 1
         try:
-            self._step_airsim(action)
-            self._info_airsim()
+            RetryOperation.execute(self._step_airsim, action=action)
+            RetryOperation.execute(self._info_airsim)
             self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
         except (AirSimActionError, AirSimInfoError) as e:
             self.logger.warning(e.message)
-            time.sleep(5)
-            self.error_counter += 1
-        except Exception as e:
-            self.logger.warning(f"Unknown Exception during AirSim step call: {str(e)}")
             time.sleep(5)
             self.error_counter += 1
         obs = self._trans_obs(self.info["obs"])
@@ -132,9 +152,8 @@ class EmptyWithMapEmpty(EmptyEnv):
         return obs, reward, terminated, truncated, {}
 
     def _reward(self) -> float:
-        terminated, truncated = self._check_status()
-        reward = super()._reward() if terminated else 0
-        return reward
+        terminated, _ = self._check_status()
+        return super()._reward() if terminated else 0
 
     def _check_status(self):
         if self.error_counter < 5:
@@ -162,16 +181,13 @@ class EmptyWithMapEmpty(EmptyEnv):
 
         for y, row in enumerate(grid_array):
             for x, cell in enumerate(row):
-                # Check if the cell is an instance of WorldObj or None
                 if isinstance(cell, WorldObj) or cell is None:
-                    # If it's None or a valid WorldObj, append the appropriate type
                     json_return["map"].append({
                         "x": x,
                         "y": y,
                         "type": mapper[cell.type] if cell is not None else 0
                     })
                 else:
-                    # If cell contains an invalid type, raise an error
                     raise ValueError(f"Unexpected object type at position {(x, y)}: {type(cell)}")
         return json_return
 
@@ -180,7 +196,7 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.session.post("http://127.0.0.1:7575/release", timeout=10, json={"port": self.local_port})
             self._kill_airsim()
         except Exception as e:
-            self.logger.warning(f"Error while release AirSim: {e}")
+            self.logger.warning(f"Error while releasing AirSim: {e}")
 
     def _gen_grid(self, width, height):
         # Call the original _gen_grid method to generate the base grid
@@ -243,71 +259,48 @@ class EmptyWithMapEmpty(EmptyEnv):
                 "mission": self.mission}
 
     def _reset_airsim(self, retry=3):
-        try:
-            response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset", timeout=10,
-                                         json={"map": self.to_json()})
-
+        def reset_operation():
+            response = self.session.post(f"http://127.0.0.1:{self.local_port}/reset",
+                                         timeout=10, json={"map": self.to_json()})
             response.raise_for_status()
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to reset environment, port: {self.local_port}")
-            else:
-                return True
-        except (requests.exceptions.RequestException, Exception) as e:
-            self.logger.error(f"Error while resetting AirSim: {e}")
-            retry -= 1
-            if retry <= 0:
-                raise AirSimConnectionError(f"Failed to reset environment after final retry, port:"
-                                            f" {self.local_port}", e=e)
-            else:
-                self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
-                return self._reset_airsim(retry)
+            return True
 
-    def _step_airsim(self, action):
-        try:
-            response = self.session.post(f"http://127.0.0.1:{self.local_port}/step", timeout=10,
-                                         json={"action": int(action)})
-            response.raise_for_status()  # Check for HTTP errors
-            # Check for non-200 status code, even though raise_for_status() above should handle it
+        RetryOperation.execute(reset_operation, retries=retry)
+
+    def _step_airsim(self, action, retry=3):
+        def step_operation():
+            response = self.session.post(f"http://127.0.0.1:{self.local_port}/step",
+                                         timeout=10, json={"action": int(action)})
+            response.raise_for_status()
             if response.status_code != 200:
-                raise AirSimResponseError(f"Failed to do action environment, port: {self.local_port}")
-        except (requests.exceptions.RequestException, AirSimResponseError, Exception) as e:
-            raise AirSimActionError(f"An error occurred, port: {self.local_port}", e=e)
+                raise AirSimResponseError(f"Failed to perform action in environment, port: {self.local_port}")
+            return True
+
+        RetryOperation.execute(step_operation, retries=retry)
 
     def _info_airsim(self, retry=5):
-        try:
+        def info_operation():
             response = self.session.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
             response.raise_for_status()
             info = response.json()
             info["obs"] = base64.b64decode(info["obs"])
             info["obs"] = zlib.decompress(info["obs"])
             info["obs"] = np.frombuffer(info["obs"], dtype=np.dtype(info['dtype'])).reshape(info["shape"])
-            # valid
-            self._trans_obs(info["obs"])
             self.info = info
             self._update_grid()
-        except (requests.exceptions.RequestException, Exception) as e:
-            if retry <= 0:
-                raise AirSimInfoError(f"Failed to retrieve information after retries,"
-                                      f" port: {self.local_port}", e=e)
-            else:
-                self.logger.warning(f"Failed to trieve information port: {self.local_port}, {e}")
-                time.sleep(2 ** (6 - retry) / 1000)
-                return self._info_airsim(retry - 1)
+            return True
+
+        RetryOperation.execute(info_operation, retries=retry)
 
     def _ping_airsim(self, retry=2):
-        try:
+        def ping_operation():
             response = self.session.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
             response.raise_for_status()
             return True
-        except (requests.exceptions.RequestException, Exception) as e:
-            self.logger.warning(f"Failed to ping AirSim due to {type(e).__name__}: {e}")
-            if retry > 0:
-                retry -= 1
-                self.logger.warning(f"Retrying ping AirSim, {retry} retries left")
-                return self._ping_airsim(retry)
-            else:
-                self._handle_failed_ping()
-                raise AirSimConnectionError(f"Failed to ping AirSim after all retries, port: {self.local_port}")
+
+        RetryOperation.execute(ping_operation, retries=retry)
 
     def _handle_failed_ping(self):
         """Handles actions to take when pinging fails after all retries."""
@@ -318,7 +311,7 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.logger.error(f"Exception occurred while handling failed ping: {e}")
 
     def _set_local_port(self, retry=5):
-        try:
+        def set_local_port_operation():
             response = self.session.get(f"http://127.0.0.1:{self.manager_port}/handshake", timeout=10)
             response.raise_for_status()
             if response.status_code == 200 and response.json().get("port", None) is not None:
@@ -326,39 +319,28 @@ class EmptyWithMapEmpty(EmptyEnv):
                 self.logger.info(f"Successfully set new local port: {self.local_port}")
                 self._change_port()
                 return True
-        except (requests.exceptions.RequestException, Exception) as e:
-            self.logger.warning(f"Failed to set local port, {retry} retries left: {e}")
-            if retry > 0:
-                retry -= 1
-                self.logger.warning(f"Retrying ping AirSim, {retry} retries left")
-                return self._set_local_port(retry)
             else:
-                raise AirSimConnectionError("Failed to set local port after multiple retries")
+                raise AirSimConnectionError("Failed to receive a valid port during handshake.")
+
+        RetryOperation.execute(set_local_port_operation, retries=retry)
 
     def _set_local_port_died(self, retry=2):
-        if retry <= 0:
-            self.logger.error(f"Failed to set died AirSim after multiple retries, port: {self.local_port}")
-            raise AirSimResponseError(f"Failed to set died AirSim, port: {self.local_port}")
-        try:
+        def set_port_died_operation():
             response = self.session.post(f"http://127.0.0.1:{self.manager_port}/set_died",
                                          json={"port": self.local_port}, timeout=10)
-            response.raise_for_status()  # Ensures we raise an HTTPError for bad responses
+            response.raise_for_status()
             return True
-        except (requests.exceptions.RequestException, Exception) as e:
-            self.logger.error(f"RequestException occurred while setting port as 'died': {e}")
-            if retry > 0:
-                retry -= 1
-                self.logger.warning(f"Retrying to set port as 'died', {retry} retries left")
-                self._set_local_port_died(retry)
-            else:
-                self.logger.error("Failed to set local port as 'died' after multiple retries")
 
-    def _kill_airsim(self):
-        try:
+        RetryOperation.execute(set_port_died_operation, retries=retry)
+
+
+    def _kill_airsim(self, retry=3):
+        def kill_operation():
             response = self.session.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
             response.raise_for_status()
-        except Exception as e:
-            self.logger.warning(f"Exception occurred while trying to kill AirSim: {e}")
+            return True
+
+        RetryOperation.execute(kill_operation, retries=retry)
 
     def _change_port(self):
         self.session.close()
