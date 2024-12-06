@@ -29,7 +29,6 @@ class RetryOperation:
 
     @staticmethod
     def execute(operation, retries=3, delay=2, *args, **kwargs):
-        print(operation)
         for attempt in range(retries):
             try:
                 with requests.Session() as session:

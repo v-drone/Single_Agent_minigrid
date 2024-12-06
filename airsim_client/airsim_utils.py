@@ -133,6 +133,8 @@ def kill_airsim(pid, docker_container_name):
         # Define the path to the PowerShell script
         powershell_script_path = "C:\\Users\\Administrator\\Documents\\UAV\\Single_Agent_minigrid\\kill_airsim.ps1"
         # Run the PowerShell script to terminate Unity, Docker container, and related processes
+        print(" ".join(["powershell", "-ExecutionPolicy", "Bypass", "-File", powershell_script_path,
+                        "-unityPID", str(pid), "-dockerContainerName", docker_container_name]))
         subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", powershell_script_path,
                         "-unityPID", str(pid), "-dockerContainerName", docker_container_name],
                        check=True)
