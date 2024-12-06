@@ -29,6 +29,7 @@ class RetryOperation:
 
     @staticmethod
     def execute(operation, retries=3, delay=2, *args, **kwargs):
+        print(operation)
         for attempt in range(retries):
             try:
                 with requests.Session() as session:
@@ -101,11 +102,11 @@ class EmptyWithMapEmpty(EmptyEnv):
         obs, _ = super().reset()
         try:
             if self.local_port is None:
-                RetryOperation.execute(self._set_local_port)
-            RetryOperation.execute(self._ping_airsim)
+                self._set_local_port(5)
+            self._ping_airsim()
             self._reset_internal_state()
-            RetryOperation.execute(self._reset_airsim)
-            RetryOperation.execute(self._info_airsim)
+            self._reset_airsim()
+            self._info_airsim()
             self.error_counter = 0
             obs = self._trans_obs(self.info["obs"])
             self.prev_obs = copy.copy(obs)
@@ -131,8 +132,8 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.battery -= 1
         self.step_count += 1
         try:
-            RetryOperation.execute(self._step_airsim, action=action)
-            RetryOperation.execute(self._info_airsim)
+            self._step_airsim(action=action)
+            self._info_airsim()
             self.walked[self.agent_pos[1]][self.agent_pos[0]] += 1
             obs = self._trans_obs(self.info["obs"])
             terminated, truncated = self._check_status()
@@ -180,7 +181,7 @@ class EmptyWithMapEmpty(EmptyEnv):
             with requests.Session() as session:
                 session.post("http://127.0.0.1:{port}/release".format(port=self.manager_port)
                              , timeout=10, json={"port": self.local_port})
-            self._kill_airsim()
+            self.local_port = None
         except Exception as e:
             self.logger.warning(f"Error while releasing AirSim: {e}")
 
@@ -354,10 +355,7 @@ class EmptyWithMapEmpty(EmptyEnv):
     def _handle_port_error(self):
         self.logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.local_port}")
         self._set_local_port_died()
-        try:
-            self.release()
-        except AirSimRetryError:
-            pass
+        self._kill_airsim()
         self.local_port = None
 
     @staticmethod
@@ -373,3 +371,6 @@ class EmptyWithMapEmpty(EmptyEnv):
             return obs
         except Exception as e:
             raise AirSimInfoError(f"Failed to parse info response: {e}")
+
+    def close(self):
+        self.release()

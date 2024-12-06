@@ -128,12 +128,13 @@ def car_state_to_dict(car_state):
     }
 
 
-def kill_airsim(pid):
+def kill_airsim(pid, docker_container_name):
     try:
-        parent = psutil.Process(pid)
-        children = parent.children(recursive=True)
-        for child in children:
-            child.kill()
-        parent.kill()
-    except :
+        # Define the path to the PowerShell script
+        powershell_script_path = "C:\\Users\\Administrator\\Documents\\UAV\\Single_Agent_minigrid\\kill_airsim.ps1"
+        # Run the PowerShell script to terminate Unity, Docker container, and related processes
+        subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", powershell_script_path,
+                        "-unityPID", str(pid), "-dockerContainerName", docker_container_name],
+                       check=True)
+    except:
         pass
