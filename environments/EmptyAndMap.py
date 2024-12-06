@@ -33,11 +33,14 @@ class RetryOperation:
             try:
                 with requests.Session() as session:
                     return operation(session, *args, **kwargs)
-            except AirSimConnectionError as e:
-                logging.warning(f"Attempt {attempt + 1} failed due to network error: {e}")
+            except requests.exceptions.ConnectionError as e:
                 if attempt < retries - 1:
                     time.sleep(delay)
-        raise AirSimRetryError(f"Operation failed after {retries} retries due to network issues")
+            except Exception as e:
+                logging.warning(f"Attempt {attempt + 1} failed due to unknown error: {e}")
+                if attempt < retries - 1:
+                    time.sleep(delay)
+        raise AirSimRetryError(f"Operation failed after {retries} retries due to issues")
 
 
 class EmptyWithMapEmpty(EmptyEnv):
@@ -348,8 +351,10 @@ class EmptyWithMapEmpty(EmptyEnv):
             response = session.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
             response.raise_for_status()
             return True
-
-        RetryOperation.execute(kill_operation, retries=retry)
+        try:
+            RetryOperation.execute(kill_operation, retries=retry)
+        except:
+            pass
 
     def _handle_port_error(self):
         self.logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.local_port}")

@@ -29,14 +29,14 @@ class CarConnector(object):
         if action == 0:
             # slow front throttle
             self.client_controls.brake = 0
-            self.client_controls.throttle = 0.1
+            self.client_controls.throttle = 0.25
             self.client_controls.steering = 0
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 1:
             # faster front throttle
             self.client_controls.brake = 0
-            self.client_controls.throttle = 0.2
+            self.client_controls.throttle = 0.5
             self.client_controls.steering = 0
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
