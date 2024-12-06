@@ -2,6 +2,16 @@ class AirSimError(Exception):
     """Base class for AirSim errors."""
     pass
 
+class AirSimRetryError(AirSimError):
+    """Exception raised when failing to connect to the AirSim server."""
+
+    def __init__(self, message="Failed after retry", e=None):
+        self.message = message
+        if e is not None:
+            self.message += f"; {e}"
+        super().__init__(self.message)
+
+
 
 class AirSimConnectionError(AirSimError):
     """Exception raised when failing to connect to the AirSim server."""
