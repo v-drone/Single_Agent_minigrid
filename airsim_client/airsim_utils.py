@@ -128,7 +128,7 @@ def car_state_to_dict(car_state):
     }
 
 
-def kill_process_tree(pid):
+def kill_airsim(pid):
     try:
         parent = psutil.Process(pid)
         children = parent.children(recursive=True)
