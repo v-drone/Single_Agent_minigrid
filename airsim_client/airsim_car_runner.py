@@ -10,7 +10,7 @@ import requests
 import threading
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
-from airsim_utils import car_state_to_dict, kill_airsim, load_config
+from airsim_utils import kill_airsim, load_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--config", dest="config", type=str)
@@ -18,7 +18,8 @@ parser.add_argument("-l", "--log_path", dest="log", type=str)
 parser.add_argument("-p", "--pid", dest="pid", type=str)
 
 # Configure logging to write to a file
-logging.basicConfig(level=logging.INFO, filename=parser.parse_args().log, filemode='w',
+args = parser.parse_args()
+logging.basicConfig(level=logging.DEBUG, filename=args.log, filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger('werkzeug')
 
@@ -37,20 +38,26 @@ class CarClient:
         logging.info("CarClient initialized with config.")
 
     def kill_airsim(self):
-        kill_airsim(self.pid)
-        logging.info(f"Airsim killed with PID: {self.pid}")
+        try:
+            kill_airsim(self.pid)
+            logging.info(f"Airsim killed with PID: {self.pid}")
+        except Exception as e:
+            logging.error(f"Failed to kill AirSim with PID {self.pid}: {e}")
 
     def restart(self):
-        logging.info("Restarting Airsim.")
+        logging.info("Restarting AirSim.")
         self.kill_airsim()
 
 
 app = Flask(__name__)
-airsim_config = load_config(parser.parse_args().config)
-airsim_client = CarClient(airsim_config, parser.parse_args().pid)
+airsim_config = load_config(args.config)
+airsim_client = CarClient(airsim_config, args.pid)
 logging.info(f"Configuration loaded: {airsim_config}")
-response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
-logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
+try:
+    response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
+    logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
+except requests.RequestException as e:
+    logging.error(f"Failed to add server to management system: {e}")
 
 
 @app.route('/reset', methods=['POST'])
@@ -69,7 +76,6 @@ def reset():
         logging.error(f"Reset failed: {str(exc)}")
         abort(500, f"Reset failed: {str(exc)}")
 
-
 @app.route('/step', methods=['POST'])
 def step():
     data = request.get_json()
@@ -80,7 +86,6 @@ def step():
     except Exception as exc:
         logging.error(f"Action failed: {str(exc)}")
         abort(500, f"Action failed: {str(exc)}")
-
 
 @app.route('/info', methods=['GET'])
 def get_info():
@@ -98,7 +103,6 @@ def get_info():
     except Exception as exc:
         logging.error(f"Info retrieval failed: {str(exc)}")
         abort(500, f"Info retrieval failed: {str(exc)}")
-
 
 @app.route('/ping', methods=['GET'])
 def ping():

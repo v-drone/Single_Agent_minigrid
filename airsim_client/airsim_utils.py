@@ -1,5 +1,6 @@
 import math
 import json
+import psutil
 import subprocess
 from pydantic import BaseModel
 
@@ -127,9 +128,12 @@ def car_state_to_dict(car_state):
     }
 
 
-def kill_airsim(pid):
+def kill_process_tree(pid):
     try:
-        subprocess.run(['taskkill', '/PID', str(pid), '/F'], check=True)
-        print(f"Unity process with PID {pid} has been terminated.")
-    except Exception as e:
-        print(f"Failed to terminate Unity process: {str(e)}")
+        parent = psutil.Process(pid)
+        children = parent.children(recursive=True)
+        for child in children:
+            child.kill()
+        parent.kill()
+    except :
+        pass
