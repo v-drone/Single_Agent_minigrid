@@ -40,7 +40,7 @@ class CarClient:
 
     def kill_airsim(self):
         try:
-            kill_airsim(self.pid, str(self.config["port"]))
+            kill_airsim(self.pid, str(self.config["server_port"]))
             logging.info(f"Airsim killed with PID: {self.pid}")
         except Exception as e:
             logging.error(f"Failed to kill AirSim with PID {self.pid}: {e}")
