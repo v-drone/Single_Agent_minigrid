@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.DEBUG, filename=args.log, filemode='w',
 log = logging.getLogger('werkzeug')
 
 
+
 def shutdown_server():
     time.sleep(3)
     os.kill(os.getpid(), signal.SIGINT)
@@ -50,8 +51,8 @@ class CarClient:
 
 
 app = Flask(__name__)
-airsim_config = load_config(args.config)
-airsim_client = CarClient(airsim_config, args.pid)
+airsim_config = load_config(parser.parse_args().config)
+airsim_client = CarClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
 try:
     response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
