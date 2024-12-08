@@ -22,7 +22,7 @@ hyper_parameters:
   num_cpus_per_worker: 1
   num_gpus_per_worker: 0
   num_envs_per_worker: 1
-  num_workers: 6
+  num_workers: 4
   max_retries: 5
   num_steps_sampled_before_learning_starts: 150000
   rollout_fragment_length: 16
