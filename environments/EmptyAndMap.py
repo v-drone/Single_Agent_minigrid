@@ -100,34 +100,32 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.walked = np.zeros(shape=[self.size, self.size], dtype=np.uint8)
         self.error_counter = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None, retry=5):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None):
         obs, _ = super().reset()
         try:
             if self.local_port is None:
-                self._set_local_port(5)
+                self._set_local_port()
             self._ping_airsim()
             self._reset_internal_state()
             self._reset_airsim()
             self._info_airsim()
-            self.error_counter = 0
             obs = self._trans_obs(self.info["obs"])
             self.prev_obs = copy.copy(obs)
+            self.error_counter = 0
             return obs, {}
         except (AirSimRetryError, AirSimInfoError):
+            time.sleep(2)
+            self.error_counter += 1
             if self.error_counter >= 5:
                 self._handle_port_error()
-                return self.reset(retry=5)
+            return self.reset()
         except Exception as e:
             self.logger.warning(f"Error occurred during reset: {e}")
-            retry -= 1
+            self.error_counter += 1
             time.sleep(2)
-            if retry <= 0:
-                self.logger.error(f"Failed to reset environment after final retry, port: {self.local_port}")
+            if self.error_counter >= 5:
                 self._handle_port_error()
-                return self.reset(retry=5)
-            else:
-                self.logger.warning(f"Retrying to reset AirSim, {retry} retries left")
-                return self.reset(retry=retry)
+            return self.reset()
 
     def step(self, action):
         self.prev_pos = np.copy(self.agent_pos)
@@ -335,9 +333,10 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _set_local_port_died(self, retry=3):
         def set_port_died_operation(session):
-            response = session.post(f"http://127.0.0.1:{self.manager_port}/set_died",
-                                    json={"port": self.local_port}, timeout=10)
-            response.raise_for_status()
+            if self.local_port is not None:
+                response = session.post(f"http://127.0.0.1:{self.manager_port}/set_died",
+                                        json={"port": self.local_port}, timeout=10)
+                response.raise_for_status()
             return True
 
         try:
@@ -348,8 +347,9 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _kill_airsim(self, retry=3):
         def kill_operation(session):
-            response = session.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
-            response.raise_for_status()
+            if self.local_port  is not None:
+                response = session.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
+                response.raise_for_status()
             return True
         try:
             RetryOperation.execute(kill_operation, retries=retry)
@@ -357,10 +357,11 @@ class EmptyWithMapEmpty(EmptyEnv):
             pass
 
     def _handle_port_error(self):
-        self.logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.local_port}")
-        self._set_local_port_died()
-        self._kill_airsim()
-        self.local_port = None
+        if self.local_port is not None:
+            self.logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.local_port}")
+            self._set_local_port_died()
+            self._kill_airsim()
+            self.local_port = None
 
     @staticmethod
     def _gen_mission():
