@@ -42,29 +42,29 @@ class CarConnector(object):
             time.sleep(np.random.randint(25, 50) / 100)
         elif action == 2:
             # 50% brake left steering
-            self.client_controls.brake = 0.2
-            self.client_controls.throttle = 0
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0.5
             self.client_controls.steering = 0.25
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(25, 50) / 100)
         elif action == 3:
             # 100% brake left steering
-            self.client_controls.brake = 0.2
-            self.client_controls.throttle = 0
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0.5
             self.client_controls.steering = 0.5
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(25, 50) / 100)
         elif action == 4:
             # 50% brake right steering
-            self.client_controls.brake = 0.2
-            self.client_controls.throttle = 0
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0.5
             self.client_controls.steering = -0.25
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(25, 50) / 100)
         elif action == 5:
             # 100% brake right steering
-            self.client_controls.brake = 0.2
-            self.client_controls.throttle = 0
+            self.client_controls.brake = 0
+            self.client_controls.throttle = 0.5
             self.client_controls.steering = -0.5
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(25, 50) / 100)
@@ -79,7 +79,7 @@ class CarConnector(object):
         self.client_controls.throttle = 0
         self.client_controls.steering = 0
         self.client.setCarControls(self.client_controls)
-        time.sleep(0.1)
+        time.sleep(0.2)
 
         return self.get_info()
 
