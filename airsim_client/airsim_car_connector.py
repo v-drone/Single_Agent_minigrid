@@ -1,5 +1,7 @@
 import io
 import time
+from multiprocessing.forkserver import connect_to_new_process
+
 import airsim
 import numpy as np
 from PIL import Image
@@ -28,67 +30,61 @@ class CarConnector(object):
     def do_action(self, action):
         if action == 0:
             # slow front throttle
-            self.client_controls.brake = 0
             self.client_controls.throttle = 0.5
             self.client_controls.steering = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
+            time.sleep(2)
         elif action == 1:
             # faster front throttle
-            self.client_controls.brake = 0
             self.client_controls.throttle = 1
             self.client_controls.steering = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
+            time.sleep(2)
         elif action == 2:
-            # 50% brake left steering
-            self.client_controls.brake = 0
-            self.client_controls.throttle = 0.5
+            # left steering with throttle
+            self.client_controls.throttle = 0.33
             self.client_controls.steering = 0.25
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
+            time.sleep(1)
         elif action == 3:
-            # 100% brake left steering
-            self.client_controls.brake = 0
-            self.client_controls.throttle = 0.5
+            # sharp left steering
+            self.client_controls.throttle = 0.33
             self.client_controls.steering = 0.5
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
+            time.sleep(1)
         elif action == 4:
-            # 50% brake right steering
-            self.client_controls.brake = 0
-            self.client_controls.throttle = 0.5
+            # right steering with throttle
+            self.client_controls.throttle = 0.33
             self.client_controls.steering = -0.25
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
+            time.sleep(1)
         elif action == 5:
-            # 100% brake right steering
-            self.client_controls.brake = 0
-            self.client_controls.throttle = 0.5
+            # sharp right steering
+            self.client_controls.throttle = 0.33
             self.client_controls.steering = -0.5
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
+            time.sleep(1)
         else:
             # brake
-            self.client_controls.brake = 1
+            self.client_controls.brake = -0.25
             self.client_controls.throttle = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(np.random.randint(25, 50) / 100)
-
-        self.client_controls.brake = 1
-        self.client_controls.throttle = 0
+            time.sleep(2)
+        self._ensure_stopped()
         self.client_controls.steering = 0
+        self.client_controls.throttle = 0
+        self.client_controls.brake = 0
         self.client.setCarControls(self.client_controls)
-        time.sleep(0.2)
+        time.sleep(0.1)
+        # self.get_info()
 
-        return self.get_info()
 
     def get_info(self):
         client_state = car_state_to_dict(self.client.getCarState())
         self.client_state["position"] = client_state["position"]
         self.client_state["orientation"] = client_state["orientation"]
         self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
-        self.client_state["collision"] = client_state["speed"]
+        self.client_state["speed"] = client_state["speed"]
         self.client_state["gear"] = client_state["gear"]
         return self._get_obs(), self.client_state
 
@@ -107,13 +103,24 @@ class CarConnector(object):
         return image
 
     def _setup_client(self):
-        self.client.reset()
+        self.client.enableApiControl(False)
         self.client.enableApiControl(True)
-        self.client.armDisarm(True)
-        self.client_controls.throttle = 0
-        self.client_controls.steering = 0
+        self.client.reset()
         self.client.setCarControls(self.client_controls)
-        time.sleep(0.01)
+        time.sleep(1)
 
-# connector = CarConnector("127.0.0.1", 41530)
-# print(connector.get_info())
+    def _ensure_stopped(self):
+        for _ in range(10):
+            self.get_info()
+            car_state = self.client.getCarState()
+            speed = car_state.speed
+            if speed <= 1:
+                return
+            elif speed < 0:
+                self.client_controls.brake = 0
+                self.client_controls.throttle = 0.1
+            else:
+                self.client_controls.brake = -0.1
+                self.client_controls.throttle = 0
+            self.client.setCarControls(self.client_controls)
+            time.sleep(0.1)
