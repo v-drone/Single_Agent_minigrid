@@ -55,7 +55,7 @@ class CarConnector(object):
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
         elif action == 4:
-            # 50%  brake right steering
+            # 50% brake right steering
             self.client_controls.brake = 0.2
             self.client_controls.throttle = 0
             self.client_controls.steering = -0.25
@@ -74,9 +74,13 @@ class CarConnector(object):
             self.client_controls.throttle = 0
             self.client.setCarControls(self.client_controls)
             time.sleep(np.random.randint(15, 25) / 100)
-            self.client_controls.brake = 0
-            self.client_controls.throttle = 0
-            self.client.setCarControls(self.client_controls)
+
+        self.client_controls.brake = 1
+        self.client_controls.throttle = 0
+        self.client_controls.steering = 0
+        self.client.setCarControls(self.client_controls)
+
+        time.sleep(0.1)
 
         return self.get_info()
 
