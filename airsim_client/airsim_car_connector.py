@@ -33,49 +33,49 @@ class CarConnector(object):
             self.client_controls.throttle = 0.5
             self.client_controls.steering = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(1)
+            time.sleep(0.3)
         elif action == 1:
             # faster front throttle
             self.client_controls.throttle = 1
             self.client_controls.steering = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(1)
+            time.sleep(0.3)
         elif action == 2:
             # left steering with throttle
             self.client_controls.throttle = 0.33
-            self.client_controls.steering = 0.25
+            self.client_controls.steering = 0.5
             self.client.setCarControls(self.client_controls)
-            time.sleep(0.5)
+            time.sleep(0.15)
         elif action == 3:
             # sharp left steering
             self.client_controls.throttle = 0.33
-            self.client_controls.steering = 0.5
+            self.client_controls.steering = 1
             self.client.setCarControls(self.client_controls)
-            time.sleep(0.5)
+            time.sleep(0.15)
         elif action == 4:
             # right steering with throttle
             self.client_controls.throttle = 0.33
-            self.client_controls.steering = -0.25
+            self.client_controls.steering = -0.5
             self.client.setCarControls(self.client_controls)
-            time.sleep(0.5)
+            time.sleep(0.15)
         elif action == 5:
             # sharp right steering
             self.client_controls.throttle = 0.33
-            self.client_controls.steering = -0.5
+            self.client_controls.steering = -1
             self.client.setCarControls(self.client_controls)
-            time.sleep(0.5)
+            time.sleep(0.15)
         else:
             # brake
-            self.client_controls.brake = -0.25
+            self.client_controls.brake = -0.1
             self.client_controls.throttle = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(0.5)
+            time.sleep(0.15)
         self._ensure_stopped()
         self.client_controls.steering = 0
         self.client_controls.throttle = 0
         self.client_controls.brake = 0
         self.client.setCarControls(self.client_controls)
-        time.sleep(0.1)
+        time.sleep(0.02)
         # self.get_info()
 
 
@@ -118,12 +118,12 @@ class CarConnector(object):
                 return
             elif speed < 0:
                 self.client_controls.brake = 0
-                self.client_controls.throttle = 0.1
+                self.client_controls.throttle = 0.2
             else:
                 self.client_controls.brake = -0.1
                 self.client_controls.throttle = 0
             self.client.setCarControls(self.client_controls)
-            time.sleep(0.05)
+            time.sleep(0.02)
 
 
 # connector = CarConnector("127.0.0.1", 41530)
@@ -136,7 +136,10 @@ class CarConnector(object):
 # connector.do_action(3)
 # time.sleep(5)
 # connector.get_info()
-# connector.do_action(1)
+# connector.do_action(6)
+# time.sleep(5)
+# connector.get_info()
+# connector.do_action(3)
 # time.sleep(5)
 # connector.get_info()
 # connector.do_action(1)
