@@ -20,11 +20,11 @@ hyper_parameters:
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
   num_cpus_per_worker: 1
-  num_gpus_per_worker: 0
+  num_gpus_per_worker: 0.01
   num_envs_per_worker: 1
-  num_workers: 4
+  num_workers: 6
   max_retries: 5
-  num_steps_sampled_before_learning_starts: 150000
+  num_steps_sampled_before_learning_starts: 100000
   rollout_fragment_length: 16
   target_network_update_freq: 50000
   train_batch_size: 256

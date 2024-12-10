@@ -1,5 +1,5 @@
 Write-Host "Writing to backup_ports.txt"
-5050..5100 | ForEach-Object { $_ } | Set-Content "backup_ports.txt"
+5030..5100 | ForEach-Object { $_ } | Set-Content "backup_ports.txt"
 Clear-Content todo_ports.txt
 Clear-Content died_ports.txt
 
