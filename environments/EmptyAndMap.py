@@ -247,7 +247,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         if self.battery <= 0:
             return True
         else:
-            if self.info["position"]["z"] > 100:
+            if self.info["position"]["z"] >= -1.49:
                 return True
             else:
                 return False

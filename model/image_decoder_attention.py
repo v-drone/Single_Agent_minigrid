@@ -14,9 +14,9 @@ def sigmoid(x, alpha=50, beta=0.1):
     return 1 / (1 + torch.exp(-beta * (x - alpha)))
 
 
-class SEBlock(nn.Module):
+class SimpleAttention(nn.Module):
     def __init__(self, num_channels, reduction_ratio=16):
-        super(SEBlock, self).__init__()
+        super(SimpleAttention, self).__init__()
         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Linear(num_channels, num_channels // reduction_ratio),
@@ -30,52 +30,6 @@ class SEBlock(nn.Module):
         y = self.global_avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
         return x * y
-
-
-class ChannelAttention(nn.Module):
-    def __init__(self, in_planes, ratio=16):
-        super(ChannelAttention, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.max_pool = nn.AdaptiveMaxPool2d(1)
-
-        self.fc = nn.Sequential(
-            nn.Conv2d(in_planes, in_planes // ratio, 1, bias=False),
-            nn.ReLU(),
-            nn.Conv2d(in_planes // ratio, in_planes, 1, bias=False)
-        )
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        avg_out = self.fc(self.avg_pool(x))
-        max_out = self.fc(self.max_pool(x))
-        out = avg_out + max_out
-        return self.sigmoid(out)
-
-
-class SpatialAttention(nn.Module):
-    def __init__(self, kernel_size=7):
-        super(SpatialAttention, self).__init__()
-        self.conv = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        avg_out = torch.mean(x, dim=1, keepdim=True)
-        max_out, _ = torch.max(x, dim=1, keepdim=True)
-        x = torch.cat([avg_out, max_out], dim=1)
-        x = self.conv(x)
-        return self.sigmoid(x)
-
-
-class CBAM(nn.Module):
-    def __init__(self, in_planes, ratio=16, kernel_size=7):
-        super(CBAM, self).__init__()
-        self.channel_attention = ChannelAttention(in_planes, ratio)
-        self.spatial_attention = SpatialAttention(kernel_size)
-
-    def forward(self, x):
-        x = x * self.channel_attention(x)
-        x = x * self.spatial_attention(x)
-        return x
 
 
 class SelfAttention(nn.Module):
@@ -150,44 +104,42 @@ class AttentionCNN(DQNTorchModel):
             sigma0=sigma0,
             add_layer_norm=add_layer_norm,
         )
-
-        self.view_layers = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            SEBlock(32),
-            nn.MaxPool2d(2),  # 50x50
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            SEBlock(64),
-            nn.MaxPool2d(2),  # 25x25
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            SEBlock(128),
-            nn.AdaptiveAvgPool2d((1, 1)),  # 1x1
-            nn.Flatten()
-        )
-
+        self.view_size = 100
+        self.map_size = 100
         self.map_layers = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            SEBlock(32),
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(inplace=True),
+            SimpleAttention(32),
             nn.MaxPool2d(2),  # 50x50
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            SEBlock(64),
+            nn.LeakyReLU(inplace=True),
+            SimpleAttention(64),
             nn.MaxPool2d(2),  # 25x25
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            SEBlock(128),
+            nn.LeakyReLU(inplace=True),
+            SimpleAttention(128),
             nn.AdaptiveAvgPool2d((1, 1)),  # 1x1
             nn.Flatten()
         )
+        self.view_layers = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),  # Output: 50x50x32
+            nn.LeakyReLU(negative_slope=0.01),
+            SimpleAttention(32),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # Output: 25x25x64
+            nn.LeakyReLU(negative_slope=0.01),
+            SimpleAttention(64),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),  # Output: 13x13x128
+            nn.LeakyReLU(negative_slope=0.01),
+            SimpleAttention(128),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),  # Output: 7x7x256
+            nn.LeakyReLU(negative_slope=0.01),
+            SimpleAttention(256),
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten(1),
+        )
+
         self.additional_info = 32
         self.additional_info_processor = AdditionalInfoProcessor(input_dim=2, output_dim=self.additional_info)
-
-        self.fc = nn.Sequential(
-            nn.Linear(128 + 128 + self.additional_info, num_outputs),
-        )
 
     def import_from_h5(self, h5_file: str) -> None:
         pass
@@ -215,8 +167,7 @@ class AttentionCNN(DQNTorchModel):
 
         combined_features = torch.cat([view_features, map_features, param_features], dim=1)
 
-        q_values = self.fc(combined_features)
-        return q_values, state
+        return combined_features, state
 
     def value_function(self):
         pass
@@ -228,30 +179,38 @@ class WrappedModel(nn.Module):
         self.original_model = original_model
 
     def forward(self, obs):
-        img, view, bat, speed, yaw, batch_size = self.original_model.process_conv(obs)
+        batch_size = obs.shape[0]
+        view_image_size = 3 * self.original_model.view_size * self.original_model.view_size
+        map_image_size = 4 * self.original_model.map_size * self.original_model.map_size
 
-        # img
-        img = img.permute(0, 3, 1, 2)
-        img = self.original_model.map_layers(img)
-        img = img.view(batch_size, -1)
+        view_image = obs[:, :view_image_size].view(
+            batch_size, 3, self.original_model.view_size, self.original_model.view_size)
+        map_image = obs[:, view_image_size:view_image_size + map_image_size].view(
+            batch_size, 4, self.original_model.map_size, self.original_model.map_size)
 
-        # view
-        view = view.permute(0, 3, 1, 2)
-        view = self.original_model.view_layers(view)
-        view = view.view(batch_size, -1)
+        yaw = obs[:, -3]
+        speed = obs[:, -2]
+        bat = obs[:, -1]
+        bat = self.original_model.normalize_bat(bat)
 
-        img = self.original_model.map_attention(img, torch.stack([bat], dim=1))
-        view = self.original_model.front_attention(view, torch.stack([yaw, speed], dim=1))
+        # feature
+        map_features = self.original_model.map_layers(map_image)
+        view_features = self.original_model.view_layers(view_image)
 
-        features = torch.concat([img, view], dim=-1)
-        action_scores = features.flatten(start_dim=1)  # Ensure no in-place modification
-        advantage = self.original_model.advantage_module(action_scores)
-        logit = torch.unsqueeze(torch.ones_like(action_scores), -1)  # No in-place modification here
+        img = self.original_model.map_attention(map_features, torch.stack([yaw, speed, bat], dim=1))
+        view_ = self.original_model.front_attention(view_features, torch.stack([yaw, speed], dim=1))
+
+        features = torch.cat([img, view_], dim=-1)
+
+        # dueling: advantage_module, value_module
+        advantage = self.original_model.advantage_module(features)
         if self.original_model.dueling:
             value = self.original_model.value_module(features)
-            return advantage, value, logit
         else:
-            return advantage, logit, logit
+            value = torch.zeros_like(advantage.mean(dim=-1, keepdim=True))
+
+        logit = torch.ones_like(advantage).unsqueeze(-1)
+        return advantage, value, logit
 
 
 class WrappedEmbedding(nn.Module):
@@ -259,21 +218,29 @@ class WrappedEmbedding(nn.Module):
         super(WrappedEmbedding, self).__init__()
         self.original_model = original_model
         self.map_size = original_model.map_size
-        self.code_size = original_model.code_size
         self.view_size = original_model.view_size
 
     def forward(self, obs):
-        img, view, bat, speed, yaw, batch_size = self.original_model.process_conv(obs)
-        # img
-        img = img.permute(0, 3, 1, 2)
-        img = self.original_model.map_layers(img)
-        img = img.view(batch_size, -1)
+        batch_size = obs.shape[0]
 
-        # view
-        view = view.permute(0, 3, 1, 2)
-        view = self.original_model.view_layers(view)
-        view = view.view(batch_size, -1)
+        view_image_size = 3 * self.view_size * self.view_size
+        map_image_size = 4 * self.map_size * self.map_size
 
-        img = self.original_model.map_attention(img, torch.concat([yaw.unsqueeze(-1), bat.unsqueeze(-1)]))
-        view = self.original_model.front_attention(view, torch.concat([yaw.unsqueeze(-1), speed.unsqueeze(-1)]))
-        return torch.concat([img, view], dim=-1)
+        view_image = obs[:, :view_image_size].view(
+            batch_size, 3, self.view_size, self.view_size)
+        map_img = obs[:, view_image_size:view_image_size + map_image_size].view(
+            batch_size, 4, self.map_size, self.map_size)
+
+        yaw = obs[:, -3]
+        speed = obs[:, -2]
+        bat = obs[:, -1]
+        bat = self.original_model.normalize_bat(bat)
+
+        img = self.original_model.map_layers(map_img)
+        view_feat = self.original_model.view_layers(view_image)
+
+        img = self.original_model.map_attention(img, torch.stack([yaw, speed, bat], dim=1))
+        view_feat = self.original_model.front_attention(view_feat, torch.stack([yaw, speed], dim=1))
+
+        return torch.cat([img, view_feat], dim=-1)
+

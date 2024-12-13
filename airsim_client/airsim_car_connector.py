@@ -1,7 +1,5 @@
 import io
 import time
-from multiprocessing.forkserver import connect_to_new_process
-
 import airsim
 import numpy as np
 from PIL import Image
@@ -76,7 +74,6 @@ class CarConnector(object):
         self.client_controls.brake = 0
         self.client.setCarControls(self.client_controls)
         time.sleep(0.02)
-        # self.get_info()
 
 
     def get_info(self):
@@ -128,27 +125,34 @@ class CarConnector(object):
 
 # connector = CarConnector("127.0.0.1", 41530)
 # connector.reset()
-# time.sleep(5)
-# connector.get_info()
+# (connector.get_info()[-1])
 # connector.do_action(0)
-# time.sleep(5)
-# connector.get_info()
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
 # connector.do_action(3)
-# time.sleep(5)
-# connector.get_info()
-# connector.do_action(6)
-# time.sleep(5)
-# connector.get_info()
-# connector.do_action(3)
-# time.sleep(5)
-# connector.get_info()
-# connector.do_action(1)
-# time.sleep(5)
-# connector.get_info()
-# connector.do_action(5)
-# time.sleep(5)
-# connector.get_info()
-# connector.do_action(1)
-# time.sleep(5)
-# connector.get_info()
-# connector.do_action(6)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
+# connector.do_action(0)
+# print(connector.get_info()[-1])
