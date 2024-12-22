@@ -96,7 +96,6 @@ class BaseBuffer(ABC):
                 "terminateds": self.terminateds[batch_ids],
                 "truncateds": self.truncateds[batch_ids],
                 "weights": self.weights[batch_ids],
-                "shape": np.array([self.obs[batch_ids, :].shape])
             }
         )
         return data

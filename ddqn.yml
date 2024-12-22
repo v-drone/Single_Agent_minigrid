@@ -10,8 +10,8 @@ hyper_parameters:
     epsilon_timesteps: 1000000
     initial_epsilon: 1
     final_epsilon: 0.01
-  lr: 0.0001
-  n_step: 5
+  lr: 0.0005
+  n_step: 4
   num_atoms: 1
   replay_buffer_config:
     capacity: 1000000
@@ -20,15 +20,15 @@ hyper_parameters:
     type: MultiAgentPrioritizedReplayBuffer
   num_gpus: 1
   num_cpus_per_worker: 1
-  num_gpus_per_worker: 0.01
+  num_gpus_per_worker: 0.1
   num_envs_per_worker: 1
   num_workers: 1
-  num_steps_sampled_before_learning_starts: 50000
-  rollout_fragment_length: 16
-  target_network_update_freq: 50000
-  train_batch_size: 64
-  min_sample_timesteps_per_iteration: 5000
-  always_attach_evaluation_results: True
+  max_retries: 3
+  num_steps_sampled_before_learning_starts: 10000
+  rollout_fragment_length: 4
+  target_network_update_freq: 10000
+  train_batch_size: 32
+  min_sample_timesteps_per_iteration: 1000
 log:
   save_file: "/home/seventheli/data/logging/simple_env"
   save_checkout: "/home/seventheli/data/checkpoints/simple_env"

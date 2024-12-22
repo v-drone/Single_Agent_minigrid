@@ -15,7 +15,7 @@ from ray.rllib.utils.replay_buffers.multi_agent_replay_buffer import _ALL_POLICI
 from ray.rllib.utils.replay_buffers.multi_agent_prioritized_replay_buffer import MultiAgentPrioritizedReplayBuffer
 from ray.rllib.utils.replay_buffers.prioritized_replay_buffer import PrioritizedReplayBuffer
 from replay_buffer.replay_node import BaseBuffer
-from ray.rllib.policy.sample_batch import SampleBatch, MultiAgentBatch
+from ray.rllib.policy.sample_batch import SampleBatch, MultiAgentBatch, concat_samples
 from ray.util.debug import log_once
 from utils import split_list_into_n_parts
 
@@ -23,83 +23,79 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def decompress_data(data_info):
-    data, length, shape = data_info
+def decompress_data(data, length, batch_size):
     compressed_item = data[:length]
     decompressed_bytes = zlib.decompress(compressed_item)
-    array = np.frombuffer(decompressed_bytes, dtype=np.uint8).reshape(shape)
-    return array
+    return np.frombuffer(decompressed_bytes, dtype=np.uint8).reshape([batch_size, -1])
 
 
-def decompress_parallel(obs, lengths_obs, shapes, new_obs, lengths_new_obs):
-    data_info_list = list(zip(obs, lengths_obs, shapes)) + list(zip(new_obs, lengths_new_obs, shapes))
-    results = []
-    for each in data_info_list:
-        results.append(decompress_data(each))
-    midpoint = len(results) // 2
-    decompressed_obs, decompressed_new_obs = results[:midpoint], results[midpoint:]
-    return decompressed_obs, decompressed_new_obs
-
-
-def decompress_sample_batch(ma_batch):
-    obs = ma_batch["obs"].reshape(len(ma_batch["shape"]), -1)
-    new_obs = ma_batch["new_obs"].reshape(len(ma_batch["shape"]), -1)
-    decompressed_obs, decompressed_new_obs = decompress_parallel(
-        obs, ma_batch["length_obs"], ma_batch["shape"],
-        new_obs, ma_batch["length_new_obs"]
-    )
-    obs = np.concatenate(decompressed_obs)
-    new_obs = np.concatenate(decompressed_new_obs)
+def decompress_sample_block(ma_block):
+    n = ma_block["terminateds"].shape[0]
+    obs_bytes = ma_block["obs"].reshape(-1)
+    new_obs_bytes = ma_block["new_obs"].reshape(-1)
+    obs = decompress_data(obs_bytes, ma_block["length_obs"][0], n)
+    new_obs = decompress_data(new_obs_bytes, ma_block["length_new_obs"][0], n)
     data = SampleBatch(
         {
             "obs": obs,
             "new_obs": new_obs,
-            "actions": ma_batch["actions"],
-            "rewards": ma_batch["rewards"],
-            "terminateds": ma_batch["terminateds"],
-            "truncateds": ma_batch["truncateds"],
-            "weights": ma_batch["weights"],
-            "batch_indexes": ma_batch["batch_indexes"],
-        },
+            "actions": ma_block["actions"],
+            "rewards": ma_block["rewards"],
+            "terminateds": ma_block["terminateds"],
+            "truncateds": ma_block["truncateds"],
+            "weights": ma_block["weights"],
+            "batch_indexes": ma_block["batch_indexes"],
+        }
     )
     return data
 
 
 @ray.remote(num_cpus=2, max_calls=50, num_returns=1)
-def compress_sample_batch_loop(samples, store):
-    _ = []
+def compress_sample_block_loop(samples, store):
+    result = []
     for each in samples:
-        _.append(compress_sample_batch(each[0], each[1], store))
-    return _
+        result.append(compress_sample_block(each[0], each[1], store))
+    return result
 
 
-def compress_sample_batch(sample_batch, weight, store):
-    obs = zlib.compress(sample_batch["obs"], 5)
-    obs = np.frombuffer(obs, dtype=np.uint8)
-    length_obs = np.array(obs.shape)
-    obs = np.concatenate([np.frombuffer(obs, dtype=np.uint8),
-                          np.array([0] * (len(sample_batch["obs"]) * store - len(obs)), dtype=np.uint8)])
-    obs = obs.reshape(len(sample_batch["obs"]), store)
-    new_obs = zlib.compress(sample_batch["new_obs"], 5)
-    new_obs = np.frombuffer(new_obs, dtype=np.uint8)
-    length_new_obs = np.array(new_obs.shape)
-    new_obs = np.concatenate([np.frombuffer(new_obs, dtype=np.uint8),
-                              np.array([0] * (len(sample_batch["new_obs"]) * store - len(new_obs)), dtype=np.uint8)])
-    new_obs = new_obs.reshape(len(sample_batch["obs"]), store)
+def compress_sample_block(sample_block, weight, store):
+    obs = np.array(sample_block["obs"])
+    new_obs = np.array(sample_block["new_obs"])
+    n = obs.shape[0]
+
+    obs_bytes = obs.tobytes()
+    new_obs_bytes = new_obs.tobytes()
+
+    compressed_obs = zlib.compress(obs_bytes, 5)
+    compressed_new_obs = zlib.compress(new_obs_bytes, 5)
+    length_obs = len(compressed_obs)
+    length_new_obs = len(compressed_new_obs)
+
+    total_capacity = n * store
+    if length_obs > total_capacity:
+        raise ValueError(f"Compressed obs size {length_obs} exceeds N*store ({n}*{store})")
+    if length_new_obs > total_capacity:
+        raise ValueError(f"Compressed new_obs size {length_new_obs} exceeds N*store ({n}*{store})")
+
+    padded_obs = np.zeros((n * store,), dtype=np.uint8)
+    padded_obs[:length_obs] = np.frombuffer(compressed_obs, dtype=np.uint8)
+    padded_obs = padded_obs.reshape(n, store)
+
+    padded_new_obs = np.zeros((n * store,), dtype=np.uint8)
+    padded_new_obs[:length_new_obs] = np.frombuffer(compressed_new_obs, dtype=np.uint8)
+    padded_new_obs = padded_new_obs.reshape(n, store)
 
     data = SampleBatch(
         {
-            "obs": obs,
-            "new_obs": new_obs,
-            "actions": sample_batch["actions"],
-            "rewards": sample_batch["rewards"],
-            "terminateds": sample_batch["terminateds"],
-            "truncateds": sample_batch["truncateds"],
-            "weights": sample_batch["weights"],
-            "length_obs": length_obs,
-            "length_new_obs": length_new_obs,
-            "shape": sample_batch["shape"]
-
+            "obs": padded_obs,
+            "new_obs": padded_new_obs,
+            "actions": sample_block["actions"],
+            "rewards": sample_block["rewards"],
+            "terminateds": sample_block["terminateds"],
+            "truncateds": sample_block["truncateds"],
+            "weights": sample_block["weights"],
+            "length_obs": np.array([length_obs], dtype=np.int32),
+            "length_new_obs": np.array([length_new_obs], dtype=np.int32),
         }
     )
     return data, weight
@@ -152,7 +148,7 @@ class PrioritizedBlockReplayBuffer(PrioritizedReplayBuffer):
             self._sub_store.append([data, weight])
         if len(self._sub_store) == self.num_save:
             _list = split_list_into_n_parts(self._sub_store, n=self.split_mini_batch)
-            result_ids = [compress_sample_batch_loop.remote(batch, self.store) for batch in _list]
+            result_ids = [compress_sample_block_loop.remote(batch, self.store) for batch in _list]
             results = ray.get(result_ids)
             results = list(chain(*results))
             for each in results:
@@ -342,14 +338,6 @@ class MultiAgentPrioritizedBlockReplayBuffer(MultiAgentPrioritizedReplayBuffer):
                     batch_indexes, new_priorities
                 )
 
-    def _maybe_split_into_policy_batches(self, batch: SampleBatchType):
-        """Returns a dict of policy IDs and batches, depending on our replay mode.
-
-        This method helps with splitting up MultiAgentBatches only if the
-        self.replay_mode requires it.
-        """
-        return batch.policy_batches
-
     @DeveloperAPI
     @override(ReplayBuffer)
     def sample(
@@ -365,15 +353,32 @@ class MultiAgentPrioritizedBlockReplayBuffer(MultiAgentPrioritizedReplayBuffer):
                         policy_id is None
                 ), "`policy_id` specifier not allowed in `lockstep` mode!"
                 # In lockstep mode we sample MultiAgentBatches
-                return decompress_sample_batch(self.replay_buffers[_ALL_POLICIES].sample(num_items, **kwargs))
+                return decompress_sample_block(self.replay_buffers[_ALL_POLICIES].sample(num_items, **kwargs))
             elif policy_id is not None:
-                sample = self.replay_buffers[policy_id].sample(num_items, **kwargs)
-                sample = decompress_sample_batch(sample)
-                return MultiAgentBatch({policy_id: sample}, sample.count)
+                return self._sample_single_policy(policy_id, num_items, **kwargs)
             else:
-                samples = {}
-                for policy_id, replay_buffer in self.replay_buffers.items():
-                    sample = replay_buffer.sample(num_items, **kwargs)
-                    sample = decompress_sample_batch(sample)
-                    samples[policy_id] = sample
-                return MultiAgentBatch(samples, sum(s.count for s in samples.values()))
+                return self._sample_all_policies(num_items, **kwargs)
+
+    def _maybe_split_into_policy_batches(self, batch: SampleBatchType):
+        """Returns a dict of policy IDs and batches, depending on our replay mode.
+
+        This method helps with splitting up MultiAgentBatches only if the
+        self.replay_mode requires it.
+        """
+        return batch.policy_batches
+
+    @DeveloperAPI
+    def _store(self):
+        return self.replay_buffers
+
+    def _sample_single_policy(self, policy_id, num_items, **kwargs):
+        samples = []
+        for turn in range(0, num_items):
+            samples.append(decompress_sample_block(self.replay_buffers[policy_id].sample(1, **kwargs)))
+        return concat_samples(samples)
+
+    def _sample_all_policies(self, num_items, **kwargs):
+        samples_all = {}
+        for policy_id, replay_buffer in self.replay_buffers.items():
+            samples_all[policy_id] = self._sample_single_policy(policy_id, num_items, **kwargs)
+        return MultiAgentBatch(samples_all, sum(s.count for s in samples_all.values()))

@@ -18,6 +18,7 @@ from environments.ExtraMapRGBWrapper import AddMapWrapper
 from environments.ExtraCarInfoWrapper import ExtraCarInfoWrapper
 from environments.RecordingWrapper import RecordingWrapper
 from environments.ExtraDroneInfoWrapper import ExtraDroneInfoWrapper
+from environments.DistanceBouns import CloserWrapper
 
 agent_dir = {
     0: '>',
@@ -57,6 +58,7 @@ def env_creator(env_config):
         env = AddMapWrapper(env, render_map_size=env_config.get("render_map_size"))
         env = ImgObsWrapper(env)
         env = ExtraCarInfoWrapper(env)
+        env = CloserWrapper(env)
     elif env_config["id"] == "RoadNetworkAndMap":
         env = RoadNetworkAndMap(**env_config)
         env = AddMapWrapper(env, render_map_size=env_config.get("render_map_size"))

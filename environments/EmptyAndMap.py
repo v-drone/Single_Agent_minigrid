@@ -23,6 +23,9 @@ mapper = {
     "goal": 2,
 }
 
+remote_ip = "192.168.3.10"
+# local_ip = "192.168.3.31"
+
 
 class RetryOperation:
     """Utility to handle retry logic."""
@@ -34,6 +37,7 @@ class RetryOperation:
                 with requests.Session() as session:
                     return operation(session, *args, **kwargs)
             except requests.exceptions.ConnectionError as e:
+                _ = e
                 if attempt < retries - 1:
                     time.sleep(delay)
             except Exception as e:
@@ -52,7 +56,6 @@ class EmptyWithMapEmpty(EmptyEnv):
         steering_right_full = 3
         steering_left_half = 4
         steering_left_full = 5
-        mid_break = 6
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
@@ -116,14 +119,14 @@ class EmptyWithMapEmpty(EmptyEnv):
         except (AirSimRetryError, AirSimInfoError):
             time.sleep(2)
             self.error_counter += 1
-            if self.error_counter >= 5:
+            if self.error_counter >= 2:
                 self._handle_port_error()
             return self.reset()
         except Exception as e:
             self.logger.warning(f"Error occurred during reset: {e}")
             self.error_counter += 1
             time.sleep(2)
-            if self.error_counter >= 5:
+            if self.error_counter >= 2:
                 self._handle_port_error()
             return self.reset()
 
@@ -179,8 +182,8 @@ class EmptyWithMapEmpty(EmptyEnv):
     def release(self):
         try:
             with requests.Session() as session:
-                session.post("http://127.0.0.1:{port}/release".format(port=self.manager_port)
-                             , timeout=10, json={"port": self.local_port})
+                session.post("http://127.0.0.1:{port}/release".format(port=self.manager_port), timeout=10,
+                             json={"port": self.local_port})
             self.local_port = None
         except Exception as e:
             self.logger.warning(f"Error while releasing AirSim: {e}")
@@ -271,7 +274,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _reset_airsim(self, retry=3):
         def reset_operation(session):
-            response = session.post(f"http://127.0.0.1:{self.local_port}/reset",
+            response = session.post(f"http://{remote_ip}:{self.local_port}/reset",
                                     timeout=10, json={"map": self.to_json()})
             response.raise_for_status()
             if response.status_code != 200:
@@ -282,7 +285,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _step_airsim(self, action, retry=3):
         def step_operation(session):
-            response = session.post(f"http://127.0.0.1:{self.local_port}/step",
+            response = session.post(f"http://{remote_ip}:{self.local_port}/step",
                                     timeout=10, json={"action": int(action)})
             response.raise_for_status()
             if response.status_code != 200:
@@ -293,7 +296,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _info_airsim(self, retry=5):
         def info_operation(session):
-            response = session.get(f"http://127.0.0.1:{self.local_port}/info", timeout=10)
+            response = session.get(f"http://{remote_ip}:{self.local_port}/info", timeout=10)
             response.raise_for_status()
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to get info, port: {self.local_port}")
@@ -310,7 +313,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _ping_airsim(self, retry=2):
         def ping_operation(session):
-            response = session.get(f"http://127.0.0.1:{self.local_port}/ping", timeout=10)
+            response = session.get(f"http://{remote_ip}:{self.local_port}/ping", timeout=10)
             response.raise_for_status()
             if response.status_code != 200:
                 raise AirSimConnectionError(f"Failed to ping, port: {self.local_port}")
@@ -344,16 +347,17 @@ class EmptyWithMapEmpty(EmptyEnv):
         except Exception as e:
             self.logger.warning(f"Error while setting local port as dead: {e}")
 
-
     def _kill_airsim(self, retry=3):
         def kill_operation(session):
-            if self.local_port  is not None:
-                response = session.get(f"http://127.0.0.1:{self.local_port}/exit", timeout=10)
+            if self.local_port is not None:
+                response = session.get(f"http://{remote_ip}:{self.local_port}/exit", timeout=10)
                 response.raise_for_status()
             return True
+
         try:
             RetryOperation.execute(kill_operation, retries=retry)
-        except:
+        except Exception as e:
+            self.logger.warning(f"Kill failed {e}")
             pass
 
     def _handle_port_error(self):
