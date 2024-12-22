@@ -1,6 +1,5 @@
 import math
 import json
-import psutil
 import subprocess
 from pydantic import BaseModel
 
