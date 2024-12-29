@@ -24,7 +24,6 @@ logging.basicConfig(level=logging.DEBUG, filename=args.log, filemode='w',
 log = logging.getLogger('werkzeug')
 
 
-
 def shutdown_server():
     time.sleep(3)
     os.kill(os.getpid(), signal.SIGINT)
@@ -73,6 +72,7 @@ def reset():
         logging.error(f"Reset failed: {str(exc)}")
         abort(500, f"Reset failed: {str(exc)}")
 
+
 @app.route('/step', methods=['POST'])
 def step():
     data = request.get_json()
@@ -83,6 +83,7 @@ def step():
     except Exception as exc:
         logging.error(f"Action failed: {str(exc)}")
         abort(500, f"Action failed: {str(exc)}")
+
 
 @app.route('/info', methods=['GET'])
 def get_info():
@@ -100,6 +101,7 @@ def get_info():
     except Exception as exc:
         logging.error(f"Info retrieval failed: {str(exc)}")
         abort(500, f"Info retrieval failed: {str(exc)}")
+
 
 @app.route('/ping', methods=['GET'])
 def ping():

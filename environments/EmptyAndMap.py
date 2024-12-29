@@ -24,6 +24,8 @@ mapper = {
 }
 
 remote_ip = "192.168.3.10"
+
+
 # local_ip = "192.168.3.31"
 
 
@@ -195,8 +197,13 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.walked = np.zeros(shape=[self.width, self.height], dtype=np.uint8)
 
     def _reward(self) -> float:
-        terminated, _ = self._check_status()
-        return super()._reward() if terminated else 0
+        terminated, truncated = self._check_status()
+        if terminated:
+            return super()._reward()
+        elif truncated:
+            return -0.5
+        else:
+            return 0
 
     def _check_status(self):
         if self.error_counter < 5:
