@@ -25,10 +25,6 @@ mapper = {
 
 remote_ip = "192.168.3.10"
 
-
-# local_ip = "192.168.3.31"
-
-
 class RetryOperation:
     """Utility to handle retry logic."""
 
@@ -58,6 +54,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         steering_right_full = 3
         steering_left_half = 4
         steering_left_full = 5
+        mid_break = 6
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
