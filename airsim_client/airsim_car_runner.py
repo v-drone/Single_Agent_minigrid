@@ -8,7 +8,6 @@ import logging
 import argparse
 import requests
 import threading
-import traceback
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
 from airsim_utils import kill_airsim, load_config

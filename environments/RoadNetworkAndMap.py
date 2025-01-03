@@ -112,7 +112,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                 "E": (0, 0, 0),
             }
         }
-        mapper = {0: "A", 1: "B", 2: "C", 3: "D", 4: "E"}
+        mapper = {1: "A", 2: "B", 3: "C", 4: "D", 5: "E"}
         for i, damage in self.sliced_info["damages"].items():
             doc["damages"][mapper[i]] = (
                 int(damage[0] - self.start_pos[0]),
@@ -150,7 +150,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             obs, info = super().reset(seed=seed, options=options)
         except GenException:
             logging.warning("GenException encountered during reset. Retrying...")
-            return self.reset(seed=seed, options=options, retry=retry - 1)
+            return self.reset(seed=seed, options=options, retry=retry)
 
         self.movement = []
         self.agent_dir = 3
@@ -178,7 +178,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         return obs, reward, terminated, truncated, info
 
-    def _get_fail(self):
+    def _check_fail(self):
         """
         Override the parent's _get_fail to check additional conditions such as collision,
         battery, and high altitude (z > 100).
@@ -191,7 +191,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             return True
         return False
 
-    def _get_success(self):
+    def _check_success(self):
         """
         Override the parent's _get_success to check if >80% RoadTile is visited
         and the agent is on a StartPoint tile.
@@ -447,7 +447,10 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         # Randomly pick 2-5 damage positions
         damages = set()
         for _ in range(random.randint(2, 5)):
-            damages.add(random.choice(damaged_list))
+            try:
+                damages.add(random.choice(damaged_list))
+            except IndexError:
+                pass
 
         for number, (cen_x, cen_y, size) in enumerate(damages):
             self.sliced_info["damages"][number + 1] = (cen_x, cen_y, size, False)

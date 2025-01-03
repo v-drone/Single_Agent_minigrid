@@ -66,8 +66,8 @@ def compress_sample_block(sample_block, weight, store):
     obs_bytes = obs.tobytes()
     new_obs_bytes = new_obs.tobytes()
 
-    compressed_obs = zlib.compress(obs_bytes, 5)
-    compressed_new_obs = zlib.compress(new_obs_bytes, 5)
+    compressed_obs = zlib.compress(obs_bytes, 8)
+    compressed_new_obs = zlib.compress(new_obs_bytes, 8)
     length_obs = len(compressed_obs)
     length_new_obs = len(compressed_new_obs)
 

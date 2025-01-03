@@ -7,7 +7,9 @@ from minigrid.core.actions import IntEnum
 from minigrid.core.mission import MissionSpace
 from gymnasium import spaces
 from typing import Any, Optional
+import traceback
 import copy
+import uuid
 import numpy as np
 import base64
 import logging
@@ -60,19 +62,50 @@ class EmptyWithMapEmpty(EmptyEnv):
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
                          render_mode=render_mode, tile_size=kwargs.get("render_rate", 5))
 
-        # Logging setup
+        # Generate a unique environment ID (either from config or a random uuid)
+        self.env_id = str(uuid.uuid4())
+
+        # Create a logger name that includes the env_id
+        logger_name = f"gym_logger_{self.env_id}"
+        self.gym_logger = logging.getLogger(logger_name)
+        self.gym_logger.setLevel(logging.DEBUG)
+
+        # Construct a unique file path
         log_directory = "C:/Users/seven/Documents/UAV/Single_Agent_minigrid/Logs/"
         os.makedirs(log_directory, exist_ok=True)
-        log_filename = os.path.join(log_directory, f'{os.getpid()}.txt')
-        logging.basicConfig(filename=log_filename,
-                            filemode='a',
-                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                            datefmt='%H:%M:%S',
-                            level=logging.ERROR)
-        self.logger = logging.getLogger(__name__)
+        file_path = os.path.join(log_directory, f"gym_{self.env_id}.log")
+
+        # Only add a FileHandler if there is none
+        if not self.gym_logger.handlers:
+            fh1 = logging.FileHandler(file_path, mode='a')
+            fh1.setLevel(logging.DEBUG)
+            formatter = logging.Formatter(
+                '%(asctime)s [GYM %(name)s] %(levelname)s: %(message)s',
+                datefmt='%H:%M:%S'
+            )
+            fh1.setFormatter(formatter)
+            self.gym_logger.addHandler(fh1)
+
+        self.gym_logger.info(f"environment init, env_id={self.env_id}")
+
+        # Similarly for AirSimClient
+        airsim_logger_name = f"airsim_logger_{self.env_id}"
+        self.airsim_logger = logging.getLogger(airsim_logger_name)
+        self.airsim_logger.setLevel(logging.DEBUG)
+
+        airsim_file_path = os.path.join(log_directory, f"airsim_{self.env_id}.log")
+        if not self.airsim_logger.handlers:
+            fh2 = logging.FileHandler(airsim_file_path, mode='a')
+            fh2.setLevel(logging.DEBUG)
+            formatter2 = logging.Formatter(
+                '%(asctime)s [AIRSIM %(name)s] %(levelname)s: %(message)s',
+                datefmt='%H:%M:%S'
+            )
+            fh2.setFormatter(formatter2)
+            self.airsim_logger.addHandler(fh2)
 
         # Initialize AirSimClient
-        self.airsim_client = AirSimClient(manager_port=port, remote_ip=remote_ip, logger=self.logger)
+        self.airsim_client = AirSimClient(manager_port=port, remote_ip=remote_ip, logger=self.airsim_logger)
 
         # Set local port and session
         self.manager_port = port
@@ -117,14 +150,15 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.error_counter = 0
             return obs, {}
         except (AirSimRetryError, AirSimInfoError) as e:
-            self.logger.warning(f"Error during reset: {e}")
+            self.gym_logger.warning(f"Error during reset: {e}")
             time.sleep(2)
             self.error_counter += 1
             if self.error_counter >= 2:
                 self._handle_port_error()
             return self.reset()
         except Exception as e:
-            self.logger.warning(f"Unexpected error during reset: {e}")
+            self.gym_logger.warning(traceback.format_exc())
+            self.gym_logger.warning(f"Unexpected error during reset: {e}")
             self.error_counter += 1
             time.sleep(2)
             if self.error_counter >= 2:
@@ -145,15 +179,16 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.prev_obs = obs
             return obs, reward, terminated, truncated, {}
         except AirSimRetryError:
-            self.logger.warning("Network-related error during step, resetting to previous position.")
+            self.gym_logger.warning("Network-related error during step, resetting to previous position.")
             return self.prev_obs, 0, False, True, {"error": "Environment reset due to network error"}
         except AirSimInfoError as e:
-            self.logger.warning(f"Failed to parse information during step: {e}")
+            self.gym_logger.warning(f"Failed to parse information during step: {e}")
             time.sleep(5)
             self.error_counter += 1
             return self.prev_obs, 0, False, True, {"error": "Environment reset due to info parsing error"}
         except Exception as e:
-            self.logger.warning(f"Unexpected error during step: {e}")
+            self.gym_logger.warning()
+            self.gym_logger.warning(f"Unexpected error during step: {e}")
             self.error_counter += 1
             time.sleep(2)
             if self.error_counter >= 2:
@@ -300,7 +335,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _handle_port_error(self):
         if self.airsim_client.local_port is not None:
-            self.logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.airsim_client.local_port}")
+            self.gym_logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.airsim_client.local_port}")
             self.airsim_client.set_local_port_died()
             self.airsim_client.kill_airsim()
             self.airsim_client.local_port = None
