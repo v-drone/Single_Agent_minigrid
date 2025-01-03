@@ -8,6 +8,7 @@ import logging
 import argparse
 import requests
 import threading
+import traceback
 from flask import Flask, request, jsonify, abort
 from airsim_car_connector import CarConnector
 from airsim_utils import kill_airsim, load_config
@@ -45,12 +46,15 @@ class CarClient:
             logging.error(f"Failed to kill AirSim with PID {self.pid}: {e}")
 
 
+# start flask
 app = Flask(__name__)
 airsim_config = load_config(parser.parse_args().config)
 airsim_client = CarClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
+
+# add node to manager
 try:
-    response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
+    response = requests.post('http://192.168.3.31:7575/add', json={'port': airsim_config["server_port"]})
     logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
 except requests.RequestException as e:
     logging.error(f"Failed to add server to management system: {e}")
@@ -59,13 +63,14 @@ except requests.RequestException as e:
 @app.route('/reset', methods=['POST'])
 def reset():
     data = request.get_json()
-    if not data or not data.get('map'):
-        abort(500, "Map data not provided")
     try:
-        with open(airsim_client.config["map"], "w") as f:
-            json.dump(data['map'], f)
-        time.sleep(1)  # simulate map reset delay
-        airsim_client.connector.reset()
+        if not data or data.get("map", None) is not None:
+            with open(airsim_client.config["map"], "w") as f:
+                json.dump(data['map'], f)
+            time.sleep(1)
+            airsim_client.connector.reset()
+        else:
+            abort(501, "Map data not provided")
         logging.info("Map reset successfully.")
         return jsonify({"signal": True})
     except Exception as exc:

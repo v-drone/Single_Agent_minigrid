@@ -19,7 +19,8 @@ parser.add_argument("-l", "--log_path", dest="log", type=str)
 parser.add_argument("-p", "--pid", dest="pid", type=str)
 
 # Configure logging to write to a file
-logging.basicConfig(level=logging.INFO, filename=parser.parse_args().log, filemode='w',
+args = parser.parse_args()
+logging.basicConfig(level=logging.DEBUG, filename=args.log, filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger('werkzeug')
 
@@ -38,33 +39,38 @@ class DroneClient:
         logging.info("DroneClient initialized with config.")
 
     def kill_airsim(self):
-        kill_airsim(self.pid)
-        logging.info(f"Airsim killed with PID: {self.pid}")
+        try:
+            kill_airsim(self.pid, str(self.config["server_port"]))
+            logging.info(f"Airsim killed with PID: {self.pid}")
+        except Exception as e:
+            logging.error(f"Failed to kill AirSim with PID {self.pid}: {e}")
 
-    def restart(self):
-        logging.info("Restarting Airsim.")
-        self.kill_airsim()
 
-
+# start flask
 app = Flask(__name__)
 airsim_config = load_config(parser.parse_args().config)
 airsim_client = DroneClient(airsim_config, parser.parse_args().pid)
 logging.info(f"Configuration loaded: {airsim_config}")
-response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
-logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
+
+# add node to manager
+try:
+    response = requests.post('http://192.168.3.31:7575/add', json={'port': airsim_config["server_port"]})
+    logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
+except requests.RequestException as e:
+    logging.error(f"Failed to add server to management system: {e}")
 
 
 @app.route('/reset', methods=['POST'])
 def reset():
     data = request.get_json()
     try:
-        if data.get("map", None) is not None:
+        if not data or data.get("map", None) is not None:
             with open(airsim_client.config["map"], "w") as f:
                 json.dump(data['map'], f)
+            time.sleep(1)
             airsim_client.connector.reset()
         else:
             abort(501, "Map data not provided")
-        time.sleep(1)
         logging.info("Map reset successfully.")
         return jsonify({"signal": True})
     except Exception as exc:
@@ -111,7 +117,6 @@ def ping():
         else:
             abort(503, "Failed to connect to CarConnector")
     except Exception as e:
-        print(traceback.format_exc())
         logging.error(f"Ping failed: {str(e)}")
         abort(500, f"Ping failed: {str(e)}")
 

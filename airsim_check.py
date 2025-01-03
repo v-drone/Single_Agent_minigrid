@@ -20,14 +20,14 @@ def load_ports_from_file(filepath):
 
 
 def manage_servers():
-    data = requests.get("http://192.168.0.104:7575/info").json()
+    data = requests.get("http://192.168.3.31:7575/info").json()
     active_ports = data["available"]
     died_ports = data["died"]
     backup_ports = load_ports_from_file('./backup_ports.txt')
     todo_ports = load_ports_from_file('./todo_ports.txt')
 
     # Ensure there are always at least 5 active ports if possible
-    needed_ports = 10 - len(active_ports)
+    needed_ports =  3 - len(active_ports)
     ports_to_add = backup_ports[:needed_ports]
     todo_ports.extend(ports_to_add)
     backup_ports = backup_ports[needed_ports:]

@@ -7,16 +7,16 @@ $ErrorActionPreference = 'SilentlyContinue'
 $port = [int]$args[0]
 
 # Define configuration and log paths based on the port
-$configPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\airsim_empty_car_configs\$port.json"
-$logPath = "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
+$configPath = "C:\Users\mingzhi\Documents\UAV\Single_Agent_minigrid\airsim_empty_car_configs\$port.json"
+$logPath = "C:\Users\mingzhi\Documents\UAV\Single_Agent_minigrid\Logs\$port.log"
 
 # Calculate the Unity port
 $unityPortOffset = 36450
 $unityPort = $port + $unityPortOffset
 
 # Paths for Unity executable and settings
-$unityExecutablePath = "C:\Users\Administrator\Documents\airsimcar$unityPort\AirSimAssets.exe"
-$settingsPath = "C:\Users\Administrator\Documents\AirSim\settings.json"
+$unityExecutablePath = "C:\Users\mingzhi\Documents\UAV\airsimcar$unityPort\AirSimAssets.exe"
+$settingsPath = "C:\Users\mingzhi\Documents\AirSim\settings.json"
 
 # Verify Unity executable's existence
 if (Test-Path -Path $unityExecutablePath -PathType Leaf)
@@ -37,11 +37,7 @@ if (Test-Path -Path $unityExecutablePath -PathType Leaf)
             Write-Host "Unity started with PID: $unityPID"
 
             # Set the directory for subsequent operations
-            Set-Location -Path "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid"
-
-            # Start Docker container
-            Write-Host "Starting Docker container for port $port..."
-            docker start "$port"
+            Set-Location -Path "C:\Users\mingzhi\Documents\UAV\Single_Agent_minigrid"
 
             # Define Python command
             $pythonScriptPath = ".\airsim_client\airsim_car_runner.py"

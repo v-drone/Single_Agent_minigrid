@@ -1,7 +1,7 @@
 {
     "port": 41745,
-    "path": "c:\\Users\\Administrator\\Documents\\airsimcar41745\\AirSimAssets.exe",
-    "setting": "c:\\Users\\Administrator\\Documents\\AirSim\\settings.json",
-    "map": "c:\\Users\\Administrator\\Documents\\airsimcar41745\\AirSimAssets_Data\\StreamingAssets\\Test1.json",
+    "path": "C:\\Users\\mingzhi\\Documents\\UAV\\airsimcar41745\\AirSimAssets.exe",
+    "setting": "C:\\Users\\mingzhi\\Documents\\AirSim\\settings.json",
+    "map": "C:\\Users\\mingzhi\\Documents\\UAV\\airsimcar41745\\AirSimAssets_Data\\StreamingAssets\\Test1.json",
     "server_port": 5295
 }

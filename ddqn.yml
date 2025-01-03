@@ -7,7 +7,7 @@ hyper_parameters:
   adam_epsilon: .00015
   exploration_config:
     type: EpsilonGreedy
-    epsilon_timesteps: 1000000
+    epsilon_timesteps: 500000
     initial_epsilon: 1
     final_epsilon: 0.01
   lr: 0.0005

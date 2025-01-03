@@ -2,6 +2,7 @@ class AirSimError(Exception):
     """Base class for AirSim errors."""
     pass
 
+
 class AirSimRetryError(AirSimError):
     """Exception raised when failing to connect to the AirSim server."""
 
@@ -10,7 +11,6 @@ class AirSimRetryError(AirSimError):
         if e is not None:
             self.message += f"; {e}"
         super().__init__(self.message)
-
 
 
 class AirSimConnectionError(AirSimError):
@@ -57,6 +57,19 @@ class AirSimUnknownError(AirSimError):
     """Exception raised for errors in the response from AirSim."""
 
     def __init__(self, message="Unknown error", e=None):
+        self.message = message
+        if e is not None:
+            self.message += f"; {e}"
+        super().__init__(self.message)
+
+
+class GenException(Exception):
+    """
+    Raised when the environment fails to generate a valid slice of the map
+    (e.g., no valid start_pos found).
+    """
+
+    def __init__(self, message="Gen Error", e=None):
         self.message = message
         if e is not None:
             self.message += f"; {e}"

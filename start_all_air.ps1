@@ -17,18 +17,11 @@ do
 
         $scriptBlock = {
             param($port)
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Administrator\Documents\UAV\Single_Agent_minigrid\run_airsim.ps1" $port
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\mingzhi\Documents\UAV\Single_Agent_minigrid\run_airsim_uav.ps1" $port
         }
         Start-Job -ScriptBlock $scriptBlock -ArgumentList $port
 
         Start-Sleep -Seconds 30
-    }
-
-
-    Get-Content died_ports.txt | ForEach-Object {
-        $port = $_
-        Write-Host "Stopping and removing Docker container for port $port..."
-        docker stop "$port"
     }
 
     Clear-Content todo_ports.txt
@@ -38,7 +31,7 @@ do
     $startTime = Get-Date
     while ((New-TimeSpan -Start $startTime -End (Get-Date)).TotalSeconds -lt 20 -and -not [Console]::KeyAvailable)
     {
-        Start-Sleep -Milliseconds 2000
+        Start-Sleep -Milliseconds 1000
     }
     if ([Console]::KeyAvailable)
     {

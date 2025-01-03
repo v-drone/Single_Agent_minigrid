@@ -3,6 +3,7 @@ from gymnasium import spaces
 from scipy.ndimage import zoom
 from minigrid.wrappers import ObservationWrapper
 
+
 class AddMapWrapper(ObservationWrapper):
     def __init__(self, env, render_map_size=100):
         super().__init__(env)
@@ -26,12 +27,11 @@ class AddMapWrapper(ObservationWrapper):
         )
 
     def observation(self, obs):
-        map_obs = self.get_frame(tile_size=self.tile_size)
-        H, W = map_obs.shape[:2]
-        zoom_factors = (self.render_map_size / H, self.render_map_size / W, 1)
+        map_obs = self.get_frame(tile_size=self.render_rate)
+        h, w = map_obs.shape[:2]
+        zoom_factors = (self.render_map_size / h, self.render_map_size / w, 1)
         map_obs_resized = zoom(map_obs, zoom_factors, order=1)
-
-        walked_zoom_factors = (self.render_map_size / H, self.render_map_size / W)
+        walked_zoom_factors = (self.render_map_size / h, self.render_map_size / w)
         walked_resized = zoom(self.walked, walked_zoom_factors, order=0)
         walked_resized = np.expand_dims(walked_resized, -1)
 

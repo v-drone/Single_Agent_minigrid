@@ -71,9 +71,13 @@ class CarConnector(object):
 
     def get_info(self):
         client_state = car_state_to_dict(self.client.getCarState())
+        # position
         self.client_state["position"] = client_state["position"]
         self.client_state["orientation"] = client_state["orientation"]
+        # collision
         self.client_state["collision"] = self.client.simGetCollisionInfo().has_collided
+        # other info
+
         self.client_state["speed"] = client_state["speed"]
         self.client_state["gear"] = client_state["gear"]
         return self._get_obs(), self.client_state
@@ -93,11 +97,11 @@ class CarConnector(object):
         return image
 
     def _setup_client(self):
+        self.client.reset()
         self.client.enableApiControl(False)
         self.client.enableApiControl(True)
-        self.client.reset()
         self.client.setCarControls(self.client_controls)
-        time.sleep(1)
+        time.sleep(0.5)
 
     def _ensure_stopped(self):
         for _ in range(10):

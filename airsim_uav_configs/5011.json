@@ -1,0 +1,8 @@
+{
+  "port": 41461,
+  "path": "C:\\Users\\mingzhi\\Documents\\UAV\\airsimdrone41461\\AirSimAssets.exe",
+  "setting": "C:\\Users\\mingzhi\\Documents\\AirSim\\settings.json",
+  "map": "C:\\Users\\mingzhi\\Documents\\UAV\\airsimdrone41461\\AirSimAssets_Data\\StreamingAssets\\Test1.json",
+  "server_port": 5011,
+  "drone": true
+}

@@ -26,7 +26,7 @@ class DroneConnector(object):
 
     def reset(self):
         self._setup_client()
-        self.get_info()
+        return self.get_info()
 
     def do_action(self, action):
         if action == 0:
@@ -51,14 +51,17 @@ class DroneConnector(object):
 
     def get_info(self):
         client_state = drone_state_to_dict(self.client.getMultirotorState())
+        # position
         self.client_state["prev_position"] = copy.copy(self.client_state["position"])
         self.client_state["position"] = client_state["position"]
         self.client_state["prev_orientation"] = copy.copy(self.client_state["orientation"])
         self.client_state["orientation"] = client_state["orientation"]
+        # collision
         if 1.1 > self.client.simGetCameraInfo("0").fov > 0.9:
             self.client_state["collision"] = True
         else:
             self.client_state["collision"] = False
+        # other info
         damage_value = int(self.client.simGetCameraInfo("0").pose.position.x_val)
         if damage_value not in self.client_state["damage"] and int(damage_value) != 0:
             self.client_state["damage"].append(damage_value)
@@ -84,7 +87,7 @@ class DroneConnector(object):
         self.client.armDisarm(True)
         self.client.simGetSegmentationObjectID("")
         self.client.moveToZAsync(self.height, self.speed).join()
-        time.sleep(0.01)
+        time.sleep(0.5)
 
 
 # runner = DroneConnector("127.0.0.1", port=41453)
