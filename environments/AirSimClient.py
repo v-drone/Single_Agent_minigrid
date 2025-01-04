@@ -1,3 +1,4 @@
+import traceback
 import requests
 import time
 import base64
@@ -10,19 +11,49 @@ from environments.AirSimException import AirSimConnectionError, AirSimInfoError,
 class RetryOperation:
     @staticmethod
     def execute(operation, retries=3, delay=2, *args, **kwargs):
+        """
+        Execute the given 'operation' with a retry mechanism.
+        If all attempts fail, raise AirSimRetryError with detailed info.
+
+        Args:
+            operation: A function that takes a 'requests.Session' plus other args/kwargs
+                       and performs an HTTP request or some operation that might fail.
+            retries: How many times to retry.
+            delay: How many seconds to sleep before each retry (if it fails).
+            *args, **kwargs: Extra arguments passed to 'operation'.
+
+        Returns:
+            The return value of 'operation' if it succeeds within the retry limit.
+
+        Raises:
+            AirSimRetryError: If all retries fail. It will include traceback info
+                              or other debug details about what went wrong.
+        """
+        last_exception = None
         for attempt in range(retries):
             try:
                 with requests.Session() as session:
                     return operation(session, *args, **kwargs)
             except requests.exceptions.ConnectionError as e:
-                _e = e
+                # Typically network or connection issue
+                logging.warning(f"[RetryOperation] ConnectionError on attempt {attempt + 1}/{retries}: {e}")
+                last_exception = e
                 if attempt < retries - 1:
                     time.sleep(delay)
             except Exception as e:
-                _e = e
+                # Catch-all for other issues
+                logging.warning(f"[RetryOperation] Exception on attempt {attempt + 1}/{retries}: {e}")
+                last_exception = e
                 if attempt < retries - 1:
                     time.sleep(delay)
-        raise AirSimRetryError(f"Operation failed after {retries} retries")
+
+        # If code reaches here, we have exhausted all retries
+        # We can attach the traceback of the last exception (or all exceptions).
+        exc_trace = traceback.format_exc()
+        raise AirSimRetryError(
+            f"Operation {operation.__name__} failed after {retries} retries. "
+            f"Last exception: {last_exception}. Traceback:\n{exc_trace}"
+        )
 
 
 class AirSimClient:

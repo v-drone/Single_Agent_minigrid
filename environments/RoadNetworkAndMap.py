@@ -9,7 +9,6 @@ from minigrid.core.actions import IntEnum
 from gymnasium import spaces
 import numpy as np
 import itertools
-import logging
 import random
 import math
 import json
@@ -85,7 +84,8 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                          agent_view_size=agent_view_size, camera=camera,
                          port=port, render_mode=render_mode,
                          render_rate=render_rate,
-                         tile_size=kwargs.get("render_rate", 5))
+                         tile_size=kwargs.get("render_rate", 5),
+                         **kwargs)
 
         # Discrete action space
         self.actions = self.Actions

@@ -41,8 +41,8 @@ class CarClient:
         try:
             kill_airsim(self.pid, str(self.config["server_port"]))
             logging.info(f"Airsim killed with PID: {self.pid}")
-        except Exception as e:
-            logging.error(f"Failed to kill AirSim with PID {self.pid}: {e}")
+        except Exception as ex:
+            logging.error(f"Failed to kill AirSim with PID {self.pid}: {ex}")
 
 
 # start flask
@@ -115,9 +115,9 @@ def ping():
             return "Pong! CarConnector is active.", 200
         else:
             abort(503, "Failed to connect to CarConnector")
-    except Exception as e:
-        logging.error(f"Ping failed: {str(e)}")
-        abort(500, f"Ping failed: {str(e)}")
+    except Exception as ex:
+        logging.error(f"Ping failed: {str(ex)}")
+        abort(500, f"Ping failed: {str(ex)}")
 
 
 @app.route('/exit', methods=['GET'])
@@ -126,9 +126,9 @@ def exit_server():
         airsim_client.kill_airsim()
         response_info = {"info": "Kill Succeed"}
         threading.Thread(target=shutdown_server).start()
-    except Exception as e:
+    except Exception as ex:
         logging.error(f"Kill Airsim failed: {str(e)}")
-        response_info = {"info": "Kill Failed", "error": str(e)}
+        response_info = {"info": "Kill Failed", "error": str(ex)}
     return jsonify(response_info)
 
 

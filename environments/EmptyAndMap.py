@@ -58,7 +58,7 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def __init__(self, size=30, max_steps=400, battery=100,
                  agent_view_size=3, port=7575, camera=100,
-                 render_mode="human", render_rate=3, remote_ip="192.168.3.10", **kwargs):
+                 render_mode="human", render_rate=3, remote_ip="192.168.3.10", log_directory="./logs/", **kwargs):
         super().__init__(size=size, max_steps=max_steps, agent_view_size=agent_view_size,
                          render_mode=render_mode, tile_size=kwargs.get("render_rate", 5))
 
@@ -69,9 +69,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         logger_name = f"gym_logger_{self.env_id}"
         self.gym_logger = logging.getLogger(logger_name)
         self.gym_logger.setLevel(logging.DEBUG)
-
         # Construct a unique file path
-        log_directory = "C:/Users/seven/Documents/UAV/Single_Agent_minigrid/Logs/"
         os.makedirs(log_directory, exist_ok=True)
         file_path = os.path.join(log_directory, f"gym_{self.env_id}.log")
 
@@ -335,7 +333,8 @@ class EmptyWithMapEmpty(EmptyEnv):
 
     def _handle_port_error(self):
         if self.airsim_client.local_port is not None:
-            self.gym_logger.error(f"Port error occurred, marking port as dead and resetting, port: {self.airsim_client.local_port}")
+            self.gym_logger.error(
+                f"Port error occurred, marking port as dead and resetting, port: {self.airsim_client.local_port}")
             self.airsim_client.set_local_port_died()
             self.airsim_client.kill_airsim()
             self.airsim_client.local_port = None
