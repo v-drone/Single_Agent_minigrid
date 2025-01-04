@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Optional
-from environments.AirSimException import GenException
+from environments.AirSimException import GenException, AirSimRetryError
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile, WalkWayTile
 from environments.EmptyAndMap import EmptyWithMapEmpty
 from minigrid.core.actions import IntEnum
@@ -144,12 +144,12 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                 tile.reset_tile()
 
         if retry <= 0:
-            raise GenException("Exceeded max attempts to generate map. Check map data.")
+            raise AirSimRetryError("Exceeded max attempts to generate map. Check map data.")
 
         try:
             obs, info = super().reset(seed=seed, options=options)
         except GenException:
-            logging.warning("GenException encountered during reset. Retrying...")
+            # logging.warning("GenException encountered during reset. Retrying...")
             return self.reset(seed=seed, options=options, retry=retry)
 
         self.movement = []
@@ -220,9 +220,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         base_reward = self.reward
 
         if truncated:
-            bonus = -100
+            bonus = -5
         elif terminated:
-            bonus = 100
+            bonus = 10
         else:
             bonus = 0
 

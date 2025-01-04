@@ -260,7 +260,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         return False, False
 
     def _check_success(self):
-        return bool(self.info.get("gear", False))  # 示例
+        return bool(self.info.get("gear", False))
 
     def _check_fail(self):
         if self.battery <= 0:
