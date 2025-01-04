@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import traceback
 from typing import Any, Optional
 from environments.AirSimException import GenException, AirSimRetryError
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile, WalkWayTile
@@ -137,7 +139,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             obs, info: Observation and info from the parent environment's reset.
 
         Raises:
-            GenException: If all retries fail to generate a valid map.
+            AirSimRetryError: If all retries fail to generate a valid map.
         """
         for tile in self.whole_grid.grid:
             if tile is not None:
@@ -148,9 +150,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         try:
             obs, info = super().reset(seed=seed, options=options)
-        except GenException:
-            # logging.warning("GenException encountered during reset. Retrying...")
-            return self.reset(seed=seed, options=options, retry=retry)
+        except GenException as e:
+            logging.warning("GenException encountered during reset:\n%s", traceback.format_exc())
+            return self.reset(seed=seed, options=options, retry=retry - 1)
 
         self.movement = []
         self.agent_dir = 3
@@ -161,27 +163,20 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         """
         Take one step in the environment using the given action.
         After calling the parent's step, compute custom reward logic here.
-
-        Args:
-            action: Discrete action index.
-
-        Returns:
-            obs, reward, terminated, truncated, info
         """
         obs, reward, terminated, truncated, info = super().step(action)
-        # If the agent is on a StartPoint tile, reset the battery
         if isinstance(self.grid.get(*self.agent_pos), StartPoint):
             self.battery = self.full_battery
 
-        # Recompute reward based on custom logic
+        # Recompute reward
         reward = self._reward()
 
         return obs, reward, terminated, truncated, info
 
     def _check_fail(self):
         """
-        Override the parent's _get_fail to check additional conditions such as collision,
-        battery, and high altitude (z > 100).
+        Override the parent's _get_fail to check additional conditions:
+        collision, battery, or high altitude (z > 100).
         """
         if self.info["collision"]:
             return True
@@ -229,19 +224,41 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         return base_reward + bonus
 
     def _gen_grid(self, width, height):
-        self.sliced_info = {"damages": {}}
+        """
+        Modified to attempt multiple tries of random center.
+        If none succeed, raise GenException.
+        """
+        max_tries = 5
+        for attempt in range(max_tries):
+            self.gym_logger.debug(f"Attempt {attempt + 1}/{max_tries} to slice subgrid.")
+            try:
+                self._try_slice_and_place(width, height)
+                # If successful, break out
+                self.gym_logger.debug("Successfully sliced subgrid and placed start_pos/damages.")
+                return
+            except GenException as e:
+                self.gym_logger.debug(f"Attempt {attempt + 1} failed: {e}")
+        # If all attempts fail
+        raise GenException(f"Failed to generate a valid subgrid after {max_tries} attempts.")
 
+    def _try_slice_and_place(self, width, height):
+        """
+        Actually pick a random center, slice the subgrid, place start pos, place damages.
+        May raise GenException if no valid start_pos or other failure.
+        """
+        self.sliced_info = {"damages": {}}
         subgrid = Grid(width, height, self.whole_grid.agent_size)
 
-        # Randomly pick a center (center_x, center_y)
-        center_x = np.random.randint(100 + int(self.size / 2), 400 - int(self.size / 2))
-        center_y = np.random.randint(100 + int(self.size / 2), 400 - int(self.size / 2))
+        # Random center
+        center_x = np.random.randint(80 + int(self.size / 2), 420 - int(self.size / 2))
+        center_y = np.random.randint(80 + int(self.size / 2), 420 - int(self.size / 2))
+        self.gym_logger.debug(f"_try_slice_and_place: center=({center_x}, {center_y})")
 
-        # Calculate the top-left coordinate
+        # top-left corner
         top_left = np.array([int(center_x - (self.size / 2)), int(center_y - int(self.size / 2))])
         top_left_unity = top_left + self.whole_grid_start
 
-        # Copy tiles from the original grid to the subgrid
+        # copy tiles from whole_grid to subgrid
         x_range = range(center_x - int(self.size / 2), center_x + int(self.size / 2))
         y_range = range(center_y - int(self.size / 2), center_y + int(self.size / 2))
         locations = list(itertools.product(x_range, y_range))
@@ -260,15 +277,17 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.slice_array = slice_array
         self.sliced_info["top_left"] = top_left
 
-        self._place_start_pos()
-        self._place_damages()
+        self.gym_logger.debug(f"RoadTile count={np.sum(slice_array == 4)}, NoneTile count={np.sum(slice_array == 0)}")
+
+        # place start pos and damages
+        self._place_start_pos()  # may raise GenException
+        self._place_damages()  # might fail to place damages, but won't raise GenException unless you want it to
 
     def _update_grid(self):
         """
-        Update agent position in the subgrid based on info from AirSim (self.info),
-        calculate reward for walking through tiles, and update agent direction based on yaw.
+        Update agent position in subgrid based on info from AirSim,
+        then compute step-based reward, update direction etc.
         """
-        # Current position
         relative_y = int(self.info["position"]["x"] / self.render_rate - self.reset_start[1])
         relative_x = int(self.info["position"]["y"] / self.render_rate - self.reset_start[0])
         x = self.start_pos[0] + relative_x
@@ -277,7 +296,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         y = max(0, min(y, self.height - 1))
         self.agent_pos = [x, y]
 
-        # Previous position
+        # previous
         prev_relative_y = int(self.info["prev_position"]["x"] / self.render_rate - self.reset_start[1])
         prev_relative_x = int(self.info["prev_position"]["y"] / self.render_rate - self.reset_start[0])
         prev_x = self.start_pos[0] + prev_relative_x
@@ -285,17 +304,16 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         prev_y = self.start_pos[1] + prev_relative_y
         prev_y = max(0, min(prev_y, self.height - 1))
 
-        # Compute step-based reward
+        # step-based reward
         self.reward = self._mark_path(prev_x, prev_y, x, y)
 
-        # Update direction based on yaw
+        # update direction
         roll, pitch, yaw = self.info["orientation"]
         yaw_degrees = math.degrees(yaw)
         if yaw_degrees < 0:
             yaw_degrees += 360
         self.info["yaw_degrees"] = yaw_degrees
 
-        # Divide the circle into 4 quadrants
         if 45 <= yaw_degrees < 135:
             self.agent_dir = 2  # West
         elif 135 <= yaw_degrees < 225:
@@ -307,8 +325,8 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
     def _mark_path(self, start_x, start_y, end_x, end_y):
         """
-        Mark the path between (start_x, start_y) and (end_x, end_y),
-        interpolating to cover intermediate cells, and accumulate reward.
+        Mark the path from (start_x, start_y) to (end_x, end_y),
+        accumulate reward for each walked cell.
         """
         reward = 0
         steps = max(abs(end_x - start_x), abs(end_y - start_y)) + 1
@@ -321,7 +339,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
     def _walk(self, x, y):
         """
-        Increase the 'walked' counter for nearby cells and accumulate tile-based rewards.
+        Increase 'walked' counter for nearby cells; accumulate tile-based rewards.
         """
         reward = 0
         for i in range(max(0, y - 1), min(y + 2, self.height)):
@@ -337,7 +355,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
     def load_whole_map(self):
         """
         Load the entire map from the specified file into self.whole_grid.
-        This method is called only once in __init__.
+        Only once in __init__.
         """
         with open(self.map_path, "r") as f:
             data = json.load(f)
@@ -361,41 +379,40 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         """
         road_positions = np.argwhere(self.slice_array == OBJ_TO_ID_DICT[RoadTile])
         start_pos_list = []
+
         for (y, x) in road_positions:
+            # Instead of checking a 3x3 block,
+            # we'll just look at some neighbors where slice_array == 0
             neighbors = [
                 (y + dy, x + dx)
                 for dy in (-3, -2, -1, 0, 1, 2, 3)
                 for dx in (-3, -2, -1, 0, 1, 2, 3)
                 if (dy, dx) != (0, 0)
             ]
-            # Check if the 3x3 block around (ny, nx) is free (all 0)
             for ny, nx in neighbors:
-                block = self.slice_array[ny - 1:ny + 2, nx - 1:nx + 2]
-                if (
-                        (3 < ny < self.size - 3) and
-                        (3 < nx < self.size - 3) and
-                        (block.shape == (3, 3)) and
-                        (np.sum(block) == 0)
-                ):
-                    start_pos_list.append((nx, ny))
+                # Make sure in range
+                if 0 <= ny < self.size and 0 <= nx < self.size:
+                    # Check 1x1 is empty => slice_array[ny, nx] == 0
+                    if self.slice_array[ny, nx] == 0:
+                        start_pos_list.append((nx, ny))
 
-        if len(start_pos_list) == 0:
-            raise GenException("No valid start_pos found in the sliced map.")
+        if not start_pos_list:
+            raise GenException("No valid start_pos found in the sliced map (1x1 check).")
 
         self.start_pos_list = start_pos_list
         self.start_pos = random.choice(start_pos_list)
         self.agent_pos = self.start_pos
         self.agent_dir = 1
 
-        # Place StartPoint tiles in a 5x5 block around the chosen start
+        # Now place a 5×5 block of StartPoint around that start
         sx = self.start_pos[0] - 2
         ex = self.start_pos[0] + 3
         sy = self.start_pos[1] - 2
         ey = self.start_pos[1] + 3
-        sy = max(sy, 0)
-        ey = min(ey, self.slice_array.shape[0] - 2)
         sx = max(sx, 0)
-        ex = min(ex, self.slice_array.shape[1] - 2)
+        ex = min(ex, self.slice_array.shape[1])
+        sy = max(sy, 0)
+        ey = min(ey, self.slice_array.shape[0])
 
         for (x, y) in itertools.product(range(sx, ex), range(sy, ey)):
             obj = StartPoint()
@@ -407,41 +424,36 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
     def _place_damages(self):
         """
-        Find potential positions for DamageTiles on RoadTiles and randomly place 2-5 damage areas.
-        Each damage area overrides the subgrid with DamageTile.
+        Place 2-5 damage areas near RoadTile.
+        We keep your existing logic checking 3x3,5x5,7x7.
+        If random.choice fails, we skip.
         """
         road_positions = np.argwhere(self.slice_array == OBJ_TO_ID_DICT[RoadTile])
         damaged_list = []
 
         for (y, x) in road_positions:
             # 3x3
-            block_3x3 = self.slice_array[y - 1:y + 2, x - 1:x + 2]
-            if (
-                    (1 <= y < self.size - 1) and
-                    (1 <= x < self.size - 1) and
-                    (block_3x3.shape == (3, 3)) and
-                    (np.all(block_3x3 == 4))
-            ):
+            block_3x3 = self.slice_array[y - 1:y + 2, x - 1:x + 2] \
+                if (y - 1 >= 0 and x - 1 >= 0
+                    and y + 2 <= self.slice_array.shape[0]
+                    and x + 2 <= self.slice_array.shape[1]) else None
+            if block_3x3 is not None and (block_3x3.shape == (3, 3)) and (np.all(block_3x3 == 4)):
                 damaged_list.append((x, y, 1))
 
             # 5x5
-            block_5x5 = self.slice_array[y - 2:y + 3, x - 2:x + 3]
-            if (
-                    (2 <= y < self.size - 2) and
-                    (2 <= x < self.size - 2) and
-                    (block_5x5.shape == (5, 5)) and
-                    (np.all(block_5x5 == 4))
-            ):
+            block_5x5 = self.slice_array[y - 2:y + 3, x - 2:x + 3] \
+                if (y - 2 >= 0 and x - 2 >= 0
+                    and y + 3 <= self.slice_array.shape[0]
+                    and x + 3 <= self.slice_array.shape[1]) else None
+            if block_5x5 is not None and (block_5x5.shape == (5, 5)) and (np.all(block_5x5 == 4)):
                 damaged_list.append((x, y, 2))
 
             # 7x7
-            block_7x7 = self.slice_array[y - 3:y + 4, x - 3:x + 4]
-            if (
-                    (3 <= y < self.size - 3) and
-                    (3 <= x < self.size - 3) and
-                    (block_7x7.shape == (7, 7)) and
-                    (np.all(block_7x7 == 4))
-            ):
+            block_7x7 = self.slice_array[y - 3:y + 4, x - 3:x + 4] \
+                if (y - 3 >= 0 and x - 3 >= 0
+                    and y + 4 <= self.slice_array.shape[0]
+                    and x + 4 <= self.slice_array.shape[1]) else None
+            if block_7x7 is not None and (block_7x7.shape == (7, 7)) and (np.all(block_7x7 == 4)):
                 damaged_list.append((x, y, 3))
 
         # Randomly pick 2-5 damage positions
@@ -458,10 +470,10 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             ex = cen_x + size
             sy = cen_y - size
             ey = cen_y + size
-            sy = max(sy, 0)
-            ey = min(ey, self.slice_array.shape[0] - 1)
             sx = max(sx, 0)
             ex = min(ex, self.slice_array.shape[1] - 1)
+            sy = max(sy, 0)
+            ey = min(ey, self.slice_array.shape[0] - 1)
 
             for (x, y) in itertools.product(range(sx, ex + 1), range(sy, ey + 1)):
                 obj = DamageTile()

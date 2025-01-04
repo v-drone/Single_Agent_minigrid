@@ -148,11 +148,14 @@ class PrioritizedBlockReplayBuffer(PrioritizedReplayBuffer):
             self._sub_store.append([data, weight])
         if len(self._sub_store) == self.num_save:
             _list = split_list_into_n_parts(self._sub_store, n=self.split_mini_batch)
-            result_ids = [compress_sample_block_loop.remote(batch, self.store) for batch in _list]
-            results = ray.get(result_ids)
-            results = list(chain(*results))
-            for each in results:
-                self._add_single_batch(each[0], weight=each[1])
+            try:
+                result_ids = [compress_sample_block_loop.remote(batch, self.store) for batch in _list]
+                results = ray.get(result_ids)
+                results = list(chain(*results))
+                for each in results:
+                    self._add_single_batch(each[0], weight=each[1])
+            except ValueError:
+                pass
 
             self._sub_store = []
 
