@@ -21,8 +21,8 @@ class DroneConnector(object):
             "damage": [],
         }
         self.img_shape = 100
-        self.speed = 4
-        self.height = -6
+        self.speed = 3
+        self.height = -12
         self.counter = 0
 
     def reset(self):
@@ -53,7 +53,7 @@ class DroneConnector(object):
             self.client.moveToZAsync(self.height, self.speed).join()
             self.counter = 0
         else:
-            self.client.moveByVelocityBodyFrameAsync(0, 0, 0.01, 0.1).join()
+            self.client.moveByVelocityBodyFrameAsync(0, 0, 1, 1).join()
             self.counter += 1
 
     def get_info(self):
@@ -90,11 +90,12 @@ class DroneConnector(object):
 
     def _setup_client(self):
         self.client.reset()
+        time.sleep(2)
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
         self.client.simGetSegmentationObjectID("")
         self.client.moveToZAsync(self.height, self.speed).join()
-        time.sleep(2)
+        time.sleep(1)
 
 
 # runner = DroneConnector("127.0.0.1", port=41453)
@@ -115,4 +116,5 @@ class DroneConnector(object):
 # print(runner.get_info()[1])
 # runner.do_action(1)
 # print(runner.get_info()[1])
-# print(runner.client.simGetCameraInfo("0").pose.position.x_val)
+# runner.client.moveToZAsync(runner.height, runner.speed).join()
+# print(runner.get_info()[1])

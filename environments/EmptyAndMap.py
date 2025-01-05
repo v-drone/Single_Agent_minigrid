@@ -68,7 +68,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         # Create a logger name that includes the env_id
         logger_name = f"gym_logger_{self.env_id}"
         self.gym_logger = logging.getLogger(logger_name)
-        self.gym_logger.setLevel(logging.DEBUG)
+        self.gym_logger.setLevel(logging.WARNING)
         # Construct a unique file path
         os.makedirs(log_directory, exist_ok=True)
         file_path = os.path.join(log_directory, f"gym_{self.env_id}.log")
@@ -76,7 +76,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         # Only add a FileHandler if there is none
         if not self.gym_logger.handlers:
             fh1 = logging.FileHandler(file_path, mode='a')
-            fh1.setLevel(logging.DEBUG)
+            fh1.setLevel(logging.WARNING)
             formatter = logging.Formatter(
                 '%(asctime)s [GYM %(name)s] %(levelname)s: %(message)s',
                 datefmt='%H:%M:%S'
@@ -89,12 +89,12 @@ class EmptyWithMapEmpty(EmptyEnv):
         # Similarly for AirSimClient
         airsim_logger_name = f"airsim_logger_{self.env_id}"
         self.airsim_logger = logging.getLogger(airsim_logger_name)
-        self.airsim_logger.setLevel(logging.DEBUG)
+        self.airsim_logger.setLevel(logging.WARNING)
 
         airsim_file_path = os.path.join(log_directory, f"airsim_{self.env_id}.log")
         if not self.airsim_logger.handlers:
             fh2 = logging.FileHandler(airsim_file_path, mode='a')
-            fh2.setLevel(logging.DEBUG)
+            fh2.setLevel(logging.WARNING)
             formatter2 = logging.Formatter(
                 '%(asctime)s [AIRSIM %(name)s] %(levelname)s: %(message)s',
                 datefmt='%H:%M:%S'
