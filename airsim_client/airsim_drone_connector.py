@@ -21,8 +21,9 @@ class DroneConnector(object):
             "damage": [],
         }
         self.img_shape = 100
-        self.speed = 1
+        self.speed = 4
         self.height = -6
+        self.counter = 0
 
     def reset(self):
         self._setup_client()
@@ -31,13 +32,13 @@ class DroneConnector(object):
     def do_action(self, action):
         if action == 0:
             # Move forward at low speed
-            self.client.moveByVelocityBodyFrameAsync(self.speed, 0, 0, 3).join()
+            self.client.moveByVelocityBodyFrameAsync(self.speed, 0, 0, 1).join()
         elif action == 1:
             # Move forward at medium speed in the current body frame
-            self.client.moveByVelocityBodyFrameAsync(self.speed * 2, 0, 0, 3).join()
+            self.client.moveByVelocityBodyFrameAsync(self.speed * 2, 0, 0, 1).join()
         elif action == 2:
             # Move forward at high speed in the current body frame
-            self.client.moveByVelocityBodyFrameAsync(self.speed * 4, 0, 0, 3).join()
+            self.client.moveByVelocityBodyFrameAsync(self.speed * 4, 0, 0, 1).join()
         elif 3 <= action <= 4:
             # Rotate in place at various yaw rates
             yaw_rate = 45 * (action - 2)  # Degrees per second
@@ -48,6 +49,12 @@ class DroneConnector(object):
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         else:
             raise Exception("Invalid action")
+        if self.counter >= 10:
+            self.client.moveToZAsync(self.height, self.speed).join()
+            self.counter = 0
+        else:
+            self.client.moveByVelocityBodyFrameAsync(0, 0, 0.01, 0.1).join()
+            self.counter += 1
 
     def get_info(self):
         client_state = drone_state_to_dict(self.client.getMultirotorState())
@@ -87,12 +94,24 @@ class DroneConnector(object):
         self.client.armDisarm(True)
         self.client.simGetSegmentationObjectID("")
         self.client.moveToZAsync(self.height, self.speed).join()
-        time.sleep(0.5)
+        time.sleep(2)
 
 
 # runner = DroneConnector("127.0.0.1", port=41453)
 # runner.reset()
 # runner.do_action(4)
+# print(runner.get_info()[1])
+# runner.do_action(1)
+# print(runner.get_info()[1])
+# runner.do_action(1)
+# print(runner.get_info()[1])
+# runner.do_action(1)
+# print(runner.get_info()[1])
+# runner.do_action(4)
+# print(runner.get_info()[1])
+# runner.do_action(1)
+# print(runner.get_info()[1])
+# runner.do_action(1)
 # print(runner.get_info()[1])
 # runner.do_action(1)
 # print(runner.get_info()[1])
