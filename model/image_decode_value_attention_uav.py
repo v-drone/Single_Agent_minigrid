@@ -115,8 +115,8 @@ class AttentionCNN(DQNTorchModel):
             nn.Flatten(1),
         )
 
-        self.map_attention = ValueAttention(256, value_dim=3)
-        self.front_attention = ValueAttention(256, value_dim=2)
+        self.map_attention = ValueAttention(256, value_dim=2)
+        self.front_attention = ValueAttention(256, value_dim=1)
 
     def import_from_h5(self, h5_file: str) -> None:
         pass
@@ -146,15 +146,14 @@ class AttentionCNN(DQNTorchModel):
         map_features = self.map_layers(map_image)  # (batch, 256)
         view_features = self.view_layers(view_image)  # (batch, 256)
 
-        # yaw, speed, bat
-        yaw = obs[:, -3]
-        speed = obs[:, -2]
+        # yaw, bat
+        yaw = obs[:, -2]
         bat = obs[:, -1]
         bat = self.normalize_bat(bat)
 
         # ValueAttention
-        img = self.map_attention(map_features, torch.stack([yaw, speed, bat], dim=1))
-        view_ = self.front_attention(view_features, torch.stack([yaw, speed], dim=1))
+        img = self.map_attention(map_features, torch.stack([yaw, bat], dim=1))
+        view_ = self.front_attention(view_features, torch.stack([yaw], dim=1))
 
         return torch.concat([img, view_], dim=-1), state
 
@@ -220,14 +219,13 @@ class WrappedEmbedding(nn.Module):
             batch_size, 4, self.map_size, self.map_size)
 
         yaw = obs[:, -3]
-        speed = obs[:, -2]
         bat = obs[:, -1]
         bat = self.original_model.normalize_bat(bat)
 
         img = self.original_model.map_layers(map_img)
         view_feat = self.original_model.view_layers(view_image)
 
-        img = self.original_model.map_attention(img, torch.stack([yaw, speed, bat], dim=1))
-        view_feat = self.original_model.front_attention(view_feat, torch.stack([yaw, speed], dim=1))
+        img = self.original_model.map_attention(img, torch.stack([yaw, bat], dim=1))
+        view_feat = self.original_model.front_attention(view_feat, torch.stack([yaw], dim=1))
 
         return torch.cat([img, view_feat], dim=-1)

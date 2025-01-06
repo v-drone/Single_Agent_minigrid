@@ -150,8 +150,8 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         try:
             obs, info = super().reset(seed=seed, options=options)
-        except GenException as e:
-            logging.warning("GenException encountered during reset:\n%s", traceback.format_exc())
+        except GenException:
+            self.gym_logger.warning("GenException encountered during reset")
             return self.reset(seed=seed, options=options, retry=retry - 1)
 
         self.movement = []

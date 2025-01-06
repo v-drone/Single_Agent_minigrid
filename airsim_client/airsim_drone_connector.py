@@ -21,7 +21,7 @@ class DroneConnector(object):
             "damage": [],
         }
         self.img_shape = 100
-        self.speed = 3
+        self.speed = 1
         self.height = -12
         self.counter = 0
 
@@ -33,12 +33,16 @@ class DroneConnector(object):
         if action == 0:
             # Move forward at low speed
             self.client.moveByVelocityBodyFrameAsync(self.speed, 0, 0, 1).join()
+            self.client.moveByVelocityBodyFrameAsync(0, 0, 1, 1).join()
         elif action == 1:
             # Move forward at medium speed in the current body frame
             self.client.moveByVelocityBodyFrameAsync(self.speed * 2, 0, 0, 1).join()
+            self.client.moveByVelocityBodyFrameAsync(0, 0, 1, 1).join()
+
         elif action == 2:
             # Move forward at high speed in the current body frame
             self.client.moveByVelocityBodyFrameAsync(self.speed * 4, 0, 0, 1).join()
+            self.client.moveByVelocityBodyFrameAsync(0, 0, 1, 1).join()
         elif 3 <= action <= 4:
             # Rotate in place at various yaw rates
             yaw_rate = 45 * (action - 2)  # Degrees per second
@@ -53,7 +57,6 @@ class DroneConnector(object):
             self.client.moveToZAsync(self.height, self.speed).join()
             self.counter = 0
         else:
-            self.client.moveByVelocityBodyFrameAsync(0, 0, 1, 1).join()
             self.counter += 1
 
     def get_info(self):
@@ -90,15 +93,13 @@ class DroneConnector(object):
 
     def _setup_client(self):
         self.client.reset()
-        time.sleep(2)
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
         self.client.simGetSegmentationObjectID("")
         self.client.moveToZAsync(self.height, self.speed).join()
-        time.sleep(1)
+        time.sleep(2)
 
-
-# runner = DroneConnector("127.0.0.1", port=41453)
+# runner = DroneConnector("192.168.3.10", port=41453)
 # runner.reset()
 # runner.do_action(4)
 # print(runner.get_info()[1])
