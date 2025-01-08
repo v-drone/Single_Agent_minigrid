@@ -77,5 +77,6 @@ class DroneConnector(BaseConnector):
         self.client.reset()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
+        self.client.simGetSegmentationObjectID("")
         self.client.moveToZAsync(self.height, 1).join()
         time.sleep(2)

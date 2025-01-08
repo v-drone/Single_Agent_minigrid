@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import traceback
 from typing import Any, Optional
 from environments.AirSimException import GenException, AirSimRetryError
 from environments.CustomGrid import Grid, Lava, StartPoint, BuildTile, RoadTile, DamageTile, WalkWayTile
@@ -230,14 +228,14 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         """
         max_tries = 5
         for attempt in range(max_tries):
-            self.gym_logger.debug(f"Attempt {attempt + 1}/{max_tries} to slice subgrid.")
+            self.gym_logger.info(f"Attempt {attempt + 1}/{max_tries} to slice subgrid.")
             try:
                 self._try_slice_and_place(width, height)
                 # If successful, break out
-                self.gym_logger.debug("Successfully sliced subgrid and placed start_pos/damages.")
+                self.gym_logger.info("Successfully sliced subgrid and placed start_pos/damages.")
                 return
             except GenException as e:
-                self.gym_logger.debug(f"Attempt {attempt + 1} failed: {e}")
+                self.gym_logger.warning(f"Attempt {attempt + 1} failed: {e}")
         # If all attempts fail
         raise GenException(f"Failed to generate a valid subgrid after {max_tries} attempts.")
 
@@ -256,7 +254,6 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         # top-left corner
         top_left = np.array([int(center_x - (self.size / 2)), int(center_y - int(self.size / 2))])
-        top_left_unity = top_left + self.whole_grid_start
 
         # copy tiles from whole_grid to subgrid
         x_range = range(center_x - int(self.size / 2), center_x + int(self.size / 2))

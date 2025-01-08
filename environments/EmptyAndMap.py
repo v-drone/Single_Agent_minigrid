@@ -7,7 +7,6 @@ from minigrid.core.actions import IntEnum
 from minigrid.core.mission import MissionSpace
 from gymnasium import spaces
 from typing import Any, Optional
-import traceback
 import copy
 import uuid
 import numpy as np
@@ -146,6 +145,7 @@ class EmptyWithMapEmpty(EmptyEnv):
             obs = self._trans_obs(self.info["obs"])
             self.prev_obs = copy.copy(obs)
             self.error_counter = 0
+            self.gym_logger.info(f"successfully reset {self.env_id}")
             return obs, {}
         except (AirSimRetryError, AirSimInfoError) as e:
             # self.gym_logger.warning(f"Error during reset: {e}")
@@ -155,7 +155,6 @@ class EmptyWithMapEmpty(EmptyEnv):
                 self._handle_port_error()
             return self.reset()
         except Exception as e:
-            self.gym_logger.warning(traceback.format_exc())
             self.gym_logger.warning(f"Unexpected error during reset: {e}")
             self.error_counter += 1
             time.sleep(2)
@@ -175,6 +174,7 @@ class EmptyWithMapEmpty(EmptyEnv):
             terminated, truncated = self._check_status()
             reward = self._reward()
             self.prev_obs = obs
+            self.gym_logger.info(f"Step Successful: {terminated}, {truncated}")
             return obs, reward, terminated, truncated, {}
         except AirSimRetryError:
             self.gym_logger.warning("Network-related error during step, resetting to previous position.")
