@@ -148,7 +148,7 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.error_counter = 0
             return obs, {}
         except (AirSimRetryError, AirSimInfoError) as e:
-            self.gym_logger.warning(f"Error during reset: {e}")
+            # self.gym_logger.warning(f"Error during reset: {e}")
             time.sleep(2)
             self.error_counter += 1
             if self.error_counter >= 2:
@@ -185,7 +185,6 @@ class EmptyWithMapEmpty(EmptyEnv):
             self.error_counter += 1
             return self.prev_obs, 0, False, True, {"error": "Environment reset due to info parsing error"}
         except Exception as e:
-            self.gym_logger.warning()
             self.gym_logger.warning(f"Unexpected error during step: {e}")
             self.error_counter += 1
             time.sleep(2)

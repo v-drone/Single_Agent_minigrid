@@ -2,7 +2,6 @@
 
 param (
     [int]$unityPID,
-    [string]$dockerContainerName
 )
 
 # Terminate Unity process
@@ -13,13 +12,6 @@ try {
     Write-Host "Failed to terminate Unity process with PID ${unityPID}: $_"
 }
 
-# Stop Docker container
-try {
-    docker stop $dockerContainerName
-    Write-Host "Docker container $dockerContainerName has been stopped."
-} catch {
-    Write-Host "Failed to stop Docker container ${dockerContainerName}: $_"
-}
 
 # Terminate any related Python processes
 try {

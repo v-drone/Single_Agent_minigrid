@@ -76,7 +76,7 @@ class AirSimClient:
             else:
                 raise AirSimConnectionError("Failed to get valid port from handshake")
 
-        RetryOperation.execute(operation, retries=retry)
+        return RetryOperation.execute(operation, retries=retry)
 
     def release(self):
         if self.local_port is None:
@@ -90,7 +90,7 @@ class AirSimClient:
             return True
 
         try:
-            RetryOperation.execute(operation, retries=3)
+            return RetryOperation.execute(operation, retries=3)
         except Exception as e:
             self.logger.warning(f"Release failed: {e}")
 
@@ -105,7 +105,7 @@ class AirSimClient:
             return True
 
         try:
-            RetryOperation.execute(operation, retries=3)
+            return RetryOperation.execute(operation, retries=3)
         except Exception as e:
             self.logger.warning(f"Set port died failed: {e}")
 
@@ -121,7 +121,7 @@ class AirSimClient:
             return True
 
         try:
-            RetryOperation.execute(operation, retries=3)
+            return RetryOperation.execute(operation, retries=3)
         except Exception as e:
             self.logger.warning(f"Kill AirSim failed: {e}")
 
@@ -132,7 +132,7 @@ class AirSimClient:
             response.raise_for_status()
             return True
 
-        RetryOperation.execute(operation, retries=retry)
+        return RetryOperation.execute(operation, retries=retry)
 
     def reset_env(self, map_json, retry=3):
         def operation(session):
@@ -143,7 +143,7 @@ class AirSimClient:
                 raise AirSimConnectionError("Failed to reset environment")
             return True
 
-        RetryOperation.execute(operation, retries=retry)
+        return RetryOperation.execute(operation, retries=retry)
 
     def step_env(self, action, retry=3):
         def operation(session):
@@ -154,7 +154,7 @@ class AirSimClient:
                 raise AirSimConnectionError("Failed to step environment")
             return True
 
-        RetryOperation.execute(operation, retries=retry)
+        return RetryOperation.execute(operation, retries=retry)
 
     def get_env_info(self, retry=5):
         def operation(session):
