@@ -19,7 +19,7 @@ parser.add_argument("-p", "--pid", dest="pid", type=str)
 
 # Configure logging to write to a file
 args = parser.parse_args()
-logging.basicConfig(level=logging.DEBUG, filename=args.log, filemode='w',
+logging.basicConfig(level=logging.WARNING, filename=args.log, filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger('werkzeug')
 
@@ -53,7 +53,7 @@ logging.info(f"Configuration loaded: {airsim_config}")
 
 # add node to manager
 try:
-    response = requests.post('http://192.168.3.31:7575/add', json={'port': airsim_config["server_port"]})
+    response = requests.post('http://192.168.0.104:7575/add', json={'port': airsim_config["server_port"]})
     logging.info(f"Added: {response.status_code}, {airsim_config['server_port']}")
 except requests.RequestException as e:
     logging.error(f"Failed to add server to management system: {e}")
