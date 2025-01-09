@@ -65,7 +65,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.env_id = str(uuid.uuid4())
 
         # Create a logger name that includes the env_id
-        logger_name = f"gym_logger_{self.env_id}"
+        logger_name = f"{self.env_id}_gym_logger"
         self.gym_logger = logging.getLogger(logger_name)
         self.gym_logger.setLevel(logging.WARNING)
         # Construct a unique file path
@@ -86,7 +86,7 @@ class EmptyWithMapEmpty(EmptyEnv):
         self.gym_logger.info(f"environment init, env_id={self.env_id}")
 
         # Similarly for AirSimClient
-        airsim_logger_name = f"airsim_logger_{self.env_id}"
+        airsim_logger_name = f"{self.env_id}_airsim_logger"
         self.airsim_logger = logging.getLogger(airsim_logger_name)
         self.airsim_logger.setLevel(logging.WARNING)
 

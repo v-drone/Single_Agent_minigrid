@@ -149,7 +149,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         try:
             obs, info = super().reset(seed=seed, options=options)
         except GenException:
-            self.gym_logger.warning("GenException encountered during reset")
+            self.gym_logger.info("GenException encountered during reset")
             return self.reset(seed=seed, options=options, retry=retry - 1)
 
         self.movement = []
@@ -235,7 +235,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
                 self.gym_logger.info("Successfully sliced subgrid and placed start_pos/damages.")
                 return
             except GenException as e:
-                self.gym_logger.warning(f"Attempt {attempt + 1} failed: {e}")
+                self.gym_logger.info(f"Attempt {attempt + 1} failed: {e}")
         # If all attempts fail
         raise GenException(f"Failed to generate a valid subgrid after {max_tries} attempts.")
 
