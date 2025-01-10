@@ -87,7 +87,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         # Discrete action space
         self.actions = self.Actions
-        self.action_space = spaces.Discrete(7)
+        self.action_space = spaces.Discrete(6)
 
         # Additional attributes
         self.sliced_info = {"damages": {}}
