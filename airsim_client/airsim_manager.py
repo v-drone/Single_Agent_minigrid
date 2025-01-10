@@ -34,22 +34,6 @@ class AirSimManager:
         if port not in self.available_ports:
             self.available_ports.add(port)
 
-    def modify_ports(self, action: str, port: str, set_name: str):
-        """Modify the sets based on the action."""
-        if set_name not in ['available_ports', 'active_ports', 'died_ports']:
-            raise ValueError("Invalid set name")
-
-        target_set = getattr(self, set_name)
-
-        if action == "add":
-            target_set.add(port)
-        elif action == "remove":
-            target_set.discard(port)
-        else:
-            raise ValueError("Invalid action. Use 'add' or 'remove'.")
-
-        return True
-
 
 airsim_manager = AirSimManager()
 app = FastAPI()
@@ -93,6 +77,7 @@ async def get_info():
             "live": list(airsim_manager.active_ports),
             "available": list(airsim_manager.available_ports),
         }
+        print(response)
         return JSONResponse(response)
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to retrieve information")
@@ -104,54 +89,7 @@ async def add(data: PortData):
         airsim_manager.add_new(data.port)
         return JSONResponse({"message": "Add successful", "port": data.port})
     except Exception:
-        raise HTTPException(status_code=500, detail="Add Failed")
-
-
-# New endpoints to control the sets directly without changing the original endpoints
-
-@app.post("/modify/available_ports/{port}")
-async def modify_available_ports(action: str, port: str):
-    """Add or remove ports to/from the available_ports set."""
-    try:
-        if action not in ["add", "remove"]:
-            raise HTTPException(status_code=400, detail="Action must be 'add' or 'remove'")
-        if action == "add":
-            airsim_manager.available_ports.add(port)
-        elif action == "remove":
-            airsim_manager.available_ports.discard(port)
-        return JSONResponse({"message": f"Port {action}ed to available_ports", "port": port})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/modify/active_ports/{port}")
-async def modify_active_ports(action: str, port: str):
-    """Add or remove ports to/from the active_ports set."""
-    try:
-        if action not in ["add", "remove"]:
-            raise HTTPException(status_code=400, detail="Action must be 'add' or 'remove'")
-        if action == "add":
-            airsim_manager.active_ports.add(port)
-        elif action == "remove":
-            airsim_manager.active_ports.discard(port)
-        return JSONResponse({"message": f"Port {action}ed to active_ports", "port": port})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/modify/died_ports/{port}")
-async def modify_died_ports(action: str, port: str):
-    """Add or remove ports to/from the died_ports set."""
-    try:
-        if action not in ["add", "remove"]:
-            raise HTTPException(status_code=400, detail="Action must be 'add' or 'remove'")
-        if action == "add":
-            airsim_manager.died_ports.add(port)
-        elif action == "remove":
-            airsim_manager.died_ports.discard(port)
-        return JSONResponse({"message": f"Port {action}ed to died_ports", "port": port})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Add. Failed")
 
 
 if __name__ == "__main__":

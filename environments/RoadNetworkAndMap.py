@@ -38,12 +38,11 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         # forward
         forward_0 = 0
         forward_1 = 1
-        forward_2 = 2
         # yaw
-        yaw_45 = 3
-        yaw_90 = 4
-        yaw_n_45 = 5
-        yaw_n_90 = 6
+        yaw_45 = 2
+        yaw_90 = 3
+        yaw_n_45 = 4
+        yaw_n_90 = 5
 
     def __init__(self, size=50, max_steps=500, battery=200,
                  agent_view_size=5, port=7575, camera=100,
@@ -76,6 +75,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.map_path = map_path
         self.flip_y = flip_y
         self.load_whole_map()
+        self.trajectory = []
 
         # Call parent constructor
         super().__init__(size=size, max_steps=max_steps, battery=battery,
@@ -91,7 +91,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
 
         # Additional attributes
         self.sliced_info = {"damages": {}}
-        self.movement = []
+        self.trajectory = []
         self.reward = 0
 
     def to_json(self):
@@ -152,7 +152,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
             self.gym_logger.info("GenException encountered during reset")
             return self.reset(seed=seed, options=options, retry=retry - 1)
 
-        self.movement = []
+        self.trajectory = []
         self.agent_dir = 3
         self.reward = 0
         return obs, info
@@ -327,27 +327,31 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         accumulate reward for each walked cell.
         """
         reward = 0
+        visited = set()  # Initialize visited set for the entire path
         steps = max(abs(end_x - start_x), abs(end_y - start_y)) + 1
-        for step in range(steps + 1):
+        for step in range(steps):
             t = step / steps
             interp_x = round(start_x + t * (end_x - start_x))
             interp_y = round(start_y + t * (end_y - start_y))
-            reward += self._walk(interp_x, interp_y)
+            reward += self._walk(interp_x, interp_y, visited)  # Pass visited set to _walk
         return reward
 
-    def _walk(self, x, y):
+    def _walk(self, x, y, visited):
         """
         Increase 'walked' counter for nearby cells; accumulate tile-based rewards.
+        Avoiding multiple updates to the same cell in a single trajectory.
         """
         reward = 0
         for i in range(max(0, y - 1), min(y + 2, self.height)):
             for j in range(max(0, x - 1), min(x + 2, self.width)):
-                self.walked[i][j] += 1
-                self.movement.append([j, i])
-                tile = self.grid.get(j, i)
-                if tile is not None:
-                    reward += tile.reward
-                    tile.update_color()
+                if (i, j) not in visited:  # Check if the cell has already been updated
+                    visited.add((i, j))  # Mark this cell as visited
+                    self.walked[i][j] += 1
+                    self.trajectory.append([j, i])
+                    tile = self.grid.get(j, i)
+                    if tile is not None:
+                        reward += tile.reward
+                        tile.update_color()
         return reward
 
     def load_whole_map(self):
