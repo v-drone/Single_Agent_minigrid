@@ -162,6 +162,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         Take one step in the environment using the given action.
         After calling the parent's step, compute custom reward logic here.
         """
+        self.reward = 0
         obs, reward, terminated, truncated, info = super().step(action)
         if isinstance(self.grid.get(*self.agent_pos), StartPoint):
             self.battery = self.full_battery
@@ -213,9 +214,9 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         base_reward = self.reward
 
         if truncated:
-            bonus = -5
+            bonus = -2
         elif terminated:
-            bonus = 10
+            bonus = 5
         else:
             bonus = 0
 
