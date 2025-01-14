@@ -41,11 +41,11 @@ class DroneConnector(BaseConnector):
             self.client.moveByVelocityZBodyFrameAsync(self.speed * 2, 0, self.height, 2).join()
         elif action == 2 or action == 3:
             # Rotate right (45 degrees per second for action=2, 90 degrees per second for action=3)
-            yaw_rate = 45 if action == 2 else 90
+            yaw_rate = 45 * (action - 1)  # e.g., action=3 -> 45 deg/s, action=4 -> 90 deg/s
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         elif action == 4 or action == 5:
             # Rotate left (-45 degrees per second for action=4, -90 degrees per second for action=5)
-            yaw_rate = -45 if action == 4 else -90
+            yaw_rate = - (180 - 45 * (action - 1))  # e.g., for demonstration
             self.client.rotateByYawRateAsync(yaw_rate, 1).join()
         else:
             raise Exception("Invalid action for DroneConnector")

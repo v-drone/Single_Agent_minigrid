@@ -385,18 +385,16 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         for (y, x) in road_positions:
             # Instead of checking a 3x3 block,
             # we'll just look at some neighbors where slice_array == 0
-            neighbors = [
-                (y + dy, x + dx)
-                for dy in (-3, -2, -1, 0, 1, 2, 3)
-                for dx in (-3, -2, -1, 0, 1, 2, 3)
-                if (dy, dx) != (0, 0)
-            ]
-            for ny, nx in neighbors:
+            if (
+                    y - 2 >= 0
+                    and y + 3 <= self.slice_array.shape[0]
+                    and x - 2 >= 0
+                    and x + 3 <= self.slice_array.shape[1]
+            ):
+                block_5x5 = self.slice_array[y - 2 : y + 3, x - 2 : x + 3]
                 # Make sure in range
-                if 0 <= ny < self.size and 0 <= nx < self.size:
-                    # Check 1x1 is empty => slice_array[ny, nx] == 0
-                    if self.slice_array[ny, nx] == 0:
-                        start_pos_list.append((nx, ny))
+                if block_5x5.shape == (5, 5) and np.all(block_5x5 == OBJ_TO_ID_DICT[RoadTile]):
+                    start_pos_list.append((x, y))
 
         if not start_pos_list:
             raise GenException("No valid start_pos found in the sliced map (1x1 check).")
@@ -406,11 +404,11 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.agent_pos = self.start_pos
         self.agent_dir = 1
 
-        # Now place a 5×5 block of StartPoint around that start
-        sx = self.start_pos[0] - 2
-        ex = self.start_pos[0] + 3
-        sy = self.start_pos[1] - 2
-        ey = self.start_pos[1] + 3
+        # Now place a 3×3 block of StartPoint around that start
+        sx = self.start_pos[0] - 1
+        ex = self.start_pos[0] + 2
+        sy = self.start_pos[1] - 1
+        ey = self.start_pos[1] + 2
         sx = max(sx, 0)
         ex = min(ex, self.slice_array.shape[1])
         sy = max(sy, 0)
