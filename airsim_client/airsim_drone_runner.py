@@ -66,7 +66,7 @@ def reset():
         if not data or data.get("map", None) is not None:
             with open(airsim_client.config["map"], "w") as f:
                 json.dump(data['map'], f)
-            time.sleep(1)
+            time.sleep(5)
             airsim_client.connector.reset()
         else:
             abort(501, "Map data not provided")

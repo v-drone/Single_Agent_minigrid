@@ -93,6 +93,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.sliced_info = {"damages": {}}
         self.trajectory = []
         self.reward = 0
+        self.path_label_count = 0
 
     def to_json(self):
         """
@@ -155,6 +156,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         self.trajectory = []
         self.agent_dir = 3
         self.reward = 0
+        self.path_label_count = 0
         return obs, info
 
     def step(self, action):
@@ -303,6 +305,7 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         prev_y = max(0, min(prev_y, self.height - 1))
 
         # step-based reward
+        self.path_label_count += 1
         self.reward = self._mark_path(prev_x, prev_y, x, y)
 
         # update direction
@@ -327,26 +330,24 @@ class RoadNetworkAndMap(EmptyWithMapEmpty):
         accumulate reward for each walked cell.
         """
         reward = 0
-        visited = set()  # Initialize visited set for the entire path
+        visited = set()
         steps = max(abs(end_x - start_x), abs(end_y - start_y)) + 1
+
         for step in range(steps):
             t = step / steps
             interp_x = round(start_x + t * (end_x - start_x))
             interp_y = round(start_y + t * (end_y - start_y))
-            reward += self._walk(interp_x, interp_y, visited)  # Pass visited set to _walk
+            reward += self._walk(interp_x, interp_y, visited)
+
         return reward
 
     def _walk(self, x, y, visited):
-        """
-        Increase 'walked' counter for nearby cells; accumulate tile-based rewards.
-        Avoiding multiple updates to the same cell in a single trajectory.
-        """
         reward = 0
         for i in range(max(0, y - 1), min(y + 2, self.height)):
             for j in range(max(0, x - 1), min(x + 2, self.width)):
-                if (i, j) not in visited:  # Check if the cell has already been updated
-                    visited.add((i, j))  # Mark this cell as visited
-                    self.walked[i][j] += 1
+                if (i, j) not in visited:
+                    visited.add((i, j))
+                    self.walked[i][j] = self.path_label_count
                     self.trajectory.append([j, i])
                     tile = self.grid.get(j, i)
                     if tile is not None:
